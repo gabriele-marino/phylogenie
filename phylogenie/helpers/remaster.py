@@ -1,0 +1,134 @@
+from xml.etree.ElementTree import Element, tostring
+
+from phylogenie.parameterizations import Rates
+from phylogenie.skyline import SkylineParameter
+from phylogenie.utils.xmls import beautify_xml
+
+TREE_ID = "Tree"
+
+
+def _get_reactions(
+    rates: Rates,
+    populations: list[str],
+) -> list[Element]:
+    reactions = []
+    for (
+        p1,
+        birth_rate,
+        death_rate,
+        sampling_rate,
+        migration_rates_row,
+        birth_rates_among_demes_row,
+    ) in zip(
+        populations,
+        rates.birth_rates,
+        rates.death_rates,
+        rates.sampling_rates,
+        rates.migration_rates,
+        rates.birth_rates_among_demes,
+    ):
+        reaction_configs: list[tuple[SkylineParameter, str]] = [
+            (birth_rate, f"{p1} -> 2{p1}"),
+            (death_rate, f"{p1} -> 0"),
+            (sampling_rate, f"{p1} -> sample"),
+        ]
+
+        for p2 in [p for p in populations if p != p1]:
+            for migration_rate in migration_rates_row:
+                reaction_configs.append((migration_rate, f"{p1} -> {p2}"))
+            for birth_rate_among_demes in birth_rates_among_demes_row:
+                reaction_configs.append(
+                    (birth_rate_among_demes, f"{p1} -> {p1} + {p2}")
+                )
+
+        for rate, reaction in reaction_configs:
+            if not rate:
+                continue
+            attrs = {
+                "spec": "Reaction",
+                "rate": " ".join(str(v) for v in rate.value),
+                "value": reaction,
+            }
+            if rate.change_times:
+                attrs["changeTimes"] = " ".join(str(t) for t in rate.change_times)
+            reactions.append(Element("reaction", attrs))
+    return reactions
+
+
+def _get_trajectory(
+    rates: Rates,
+    populations: list[str],
+    init_values: list[int],
+    trajectory_attrs: dict[str, str] | None = None,
+) -> Element:
+    N = len(populations)
+    if len(init_values) != N:
+        raise ValueError(
+            f"Number of initial values ({len(init_values)}) does not match number of populations ({N})."
+        )
+
+    if trajectory_attrs is None:
+        trajectory_attrs = {}
+    trajectory = Element(
+        "trajectory", {"spec": "StochasticTrajectory", **trajectory_attrs}
+    )
+
+    for population, init_value in zip(populations, init_values):
+        trajectory.append(
+            Element(
+                "population",
+                {"spec": "RealParameter", "id": population, "value": str(init_value)},
+            )
+        )
+    trajectory.append(
+        Element(
+            "samplePopulation", {"spec": "RealParameter", "id": "sample", "value": "0"}
+        )
+    )
+    trajectory.extend(_get_reactions(rates, populations))
+    return trajectory
+
+
+def prepare_config_file(
+    rates: Rates,
+    populations: list[str],
+    init_values: list[int],
+    output_tree_file: str = "trees.nex",
+    output_xml_file: str = "pymaster.xml",
+    trajectory_attrs: dict[str, str] | None = None,
+    n_simulations: int = 1,
+) -> None:
+    simulate = Element("simulate", {"spec": "SimulatedTree", "id": TREE_ID})
+    simulate.append(_get_trajectory(rates, populations, init_values, trajectory_attrs))
+
+    logger = Element(
+        "logger", {"spec": "Logger", "mode": "tree", "fileName": output_tree_file}
+    )
+    logger.append(
+        Element(
+            "log",
+            {
+                "spec": "TypedTreeLogger",
+                "tree": f"@{TREE_ID}",
+                "removeSingletonNodes": "true",
+                "noLabels": "true",
+            },
+        )
+    )
+
+    run = Element("run", {"spec": "Simulator", "nSims": str(n_simulations)})
+    run.append(simulate)
+    run.append(logger)
+
+    beast = Element(
+        "beast",
+        {
+            "version": "2.0",
+            "namespace": ":".join(
+                ["beast.base.inference", "beast.base.inference.parameter", "remaster"]
+            ),
+        },
+    )
+    beast.append(run)
+    with open(output_xml_file, "w") as f:
+        f.write(beautify_xml(tostring(beast, method="xml")))
