@@ -1,11 +1,11 @@
 import os
 from typing import Annotated
 
+from kitpy.mixins import YAMLMixin
 from pydantic import BaseModel, Field
 
 from phylogenie.generators.msas import MSAsGenerator
 from phylogenie.generators.trees import TreesGenerator
-from phylogenie.utils.mixins import YAMLMixin
 
 DATA_DIR_NAME = "data"
 METADATA_FILE_NAME = "metadata.csv"

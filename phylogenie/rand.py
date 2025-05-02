@@ -3,10 +3,9 @@ from enum import Enum
 from typing import Annotated, Literal
 
 import numpy as np
+from kitpy.type_hints import Numeric, OneOrSequence
+from kitpy.validators import ensure_list
 from pydantic import BaseModel, Field
-
-from phylogenie.utils.type_hints import Numeric, OneOrSequence
-from phylogenie.utils.validators import ensure_list
 
 
 class RandomVariableType(str, Enum):

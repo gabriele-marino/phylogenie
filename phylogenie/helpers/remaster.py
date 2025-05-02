@@ -1,10 +1,11 @@
 import subprocess
 from xml.etree.ElementTree import Element, tostring
 
+from kitpy.xmls import beautify_xml
+
 from phylogenie.parameterizations import Parameterization, Rates
 from phylogenie.skyline import SkylineParameter
-from phylogenie.utils.phylo import extract_newick_from_nexus, process_newick_taxa_names
-from phylogenie.utils.xmls import beautify_xml
+from phylogenie.utils import extract_newick_from_nexus, process_newick_taxa_names
 
 TREE_ID = "Tree"
 

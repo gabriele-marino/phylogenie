@@ -1,5 +1,6 @@
 from typing import Any, Sequence
 
+from kitpy.type_hints import OneOrSequence
 from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import core_schema
 
@@ -8,7 +9,6 @@ from phylogenie.skyline.rand.parameter import (
     RandomSkylineParameter,
     RandomSkylineParameterConfig,
 )
-from phylogenie.utils.type_hints import OneOrSequence
 
 
 class RandomSkylineVectorModel(BaseModel):

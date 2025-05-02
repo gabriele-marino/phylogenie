@@ -3,8 +3,7 @@ from typing import Callable
 
 import numpy as np
 from Bio.SeqIO import parse
-
-from phylogenie.utils.type_hints import Numeric
+from kitpy.type_hints import Numeric
 
 
 def default_extract_sequence_date(name: str) -> float:

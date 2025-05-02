@@ -1,12 +1,13 @@
 from typing import Callable, Iterator, Union
 
+from kitpy.type_hints import Numeric, OneOrSequence
+from kitpy.validators import ensure_list
+
 from phylogenie.skyline.core.parameter import (
     ParameterOperand,
     SerialSkylineParameter,
     SkylineParameter,
 )
-from phylogenie.utils.type_hints import Numeric, OneOrSequence
-from phylogenie.utils.validators import ensure_list
 
 VectorOperand = Union[ParameterOperand, "SkylineVector"]
 

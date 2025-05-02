@@ -1,8 +1,8 @@
 from bisect import bisect_right
 from typing import Callable, Union
 
-from phylogenie.utils.type_hints import Numeric, Vector
-from phylogenie.utils.validators import ensure_list
+from kitpy.type_hints import Numeric, Vector
+from kitpy.validators import ensure_list
 
 ParameterOperand = Union[Numeric, "SkylineParameter"]
 

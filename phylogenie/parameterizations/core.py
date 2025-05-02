@@ -2,9 +2,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from functools import cached_property
 
+from kitpy import flatten_dict
+from kitpy.type_hints import Vector
+
 from phylogenie.skyline import SkylineMatrix, SkylineParameter, SkylineVector
-from phylogenie.utils import flatten_dict
-from phylogenie.utils.type_hints import Vector
 
 
 @dataclass

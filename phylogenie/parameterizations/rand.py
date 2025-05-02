@@ -2,6 +2,7 @@ from abc import ABC
 from enum import Enum
 from typing import Annotated, Literal
 
+from kitpy.validators import EnsuredList
 from pydantic import BaseModel, Field
 
 from phylogenie.parameterizations.core import (
@@ -17,7 +18,6 @@ from phylogenie.skyline import (
     RandomSkylineVector,
     SkylineMatrix,
 )
-from phylogenie.utils.validators import EnsuredList
 
 
 class ParameterizationType(str, Enum):
