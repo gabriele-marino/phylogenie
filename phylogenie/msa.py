@@ -33,9 +33,7 @@ class MSA:
             Sequence(name=name, date=date, sequence=sequence)
             for name, date, sequence in zip(self.names, self.dates, self.alignment)
         )
-        if not any(
-            len(sequence) != len(self.alignment[0]) for sequence in self.alignment
-        ):
+        if any(len(sequence) != len(self.alignment[0]) for sequence in self.alignment):
             raise ValueError(
                 "All sequences in the alignment must have the same length."
             )
