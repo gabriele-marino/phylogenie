@@ -4,18 +4,16 @@ from treesimulator import STATE, save_forest
 from treesimulator.generator import generate
 from treesimulator.mtbd_models import Model
 
-from phylogenie.parameterizations import Rates
+from phylogenie.parameterizations import Parameterization
 from phylogenie.skyline import SkylineVector
 
 
 def generate_tree(
-    rates: Rates,
-    populations: list[str],
+    parameterization: Parameterization,
     output_file: str,
     **kwargs: Any,
 ) -> None:
-    populations = populations
-    rates = rates
+    rates = parameterization.rates
     become_uninfectious_rates = rates.death_rates + rates.sampling_rates
     sampling_proportions = SkylineVector(
         [
@@ -54,7 +52,7 @@ def generate_tree(
 
         models.append(
             Model(
-                states=populations,
+                states=parameterization.populations,
                 transition_rates=transition_rates,
                 transmission_rates=transmission_rates,
                 removal_rates=become_uninfectious_rates.get_value_at_time(t),

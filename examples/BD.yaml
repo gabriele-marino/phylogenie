@@ -1,0 +1,30 @@
+output_dir: outputs/BD
+n_jobs: 1
+n_samples:
+  train: 100
+  test: 10
+generator:
+  type: msas
+  backend: alisim
+  model: LG
+  length: 1000
+  branch_scale:
+    type: normal
+    mean: 0.001
+    std: 0.00005
+  trees:
+    backend: treesimulator
+    parameterization:
+      type: BD
+      reproduction_number:
+        type: lognormal
+        mean: 1.0
+        std: 0.2
+      infectious_period:
+        type: lognormal
+        mean: 1.0
+        std: 0.3
+      sampling_proportion: 0.25
+    kwargs:
+      min_tips: 50
+      max_tips: 500

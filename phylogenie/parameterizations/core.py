@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 
 from phylogenie.skyline import SkylineMatrix, SkylineParameter, SkylineVector
@@ -16,20 +16,22 @@ class Rates:
     birth_rates_among_demes: SkylineMatrix
 
 
-def _init_optional_matrix(matrix: SkylineMatrix | None, N: int) -> SkylineMatrix:
-    if matrix is None:
-        return SkylineMatrix([[0] * (N - 1)] * N)
-    return matrix
-
-
 @dataclass(kw_only=True, frozen=True)
 class Parameterization(ABC):
+    populations: list[str] = field(default_factory=lambda: ["X"])
+
     @property
     @abstractmethod
     def rates(self) -> Rates: ...
 
     @abstractmethod
-    def serialize(self, keys: list[str] | None = None) -> dict[str, Vector]: ...
+    def serialize(self) -> dict[str, Vector]: ...
+
+    def _init_optional_matrix(self, matrix: SkylineMatrix | None) -> SkylineMatrix:
+        N = len(self.populations)
+        if matrix is None:
+            return SkylineMatrix([[0] * (N - 1)] * N)
+        return matrix
 
 
 @dataclass(frozen=True)
@@ -42,28 +44,27 @@ class CanonicalParameterization(Parameterization):
 
     @cached_property
     def rates(self) -> Rates:
-        N = len(self.birth_rates)
         return Rates(
             birth_rates=self.birth_rates,
             death_rates=self.death_rates,
             sampling_rates=self.sampling_rates,
-            migration_rates=_init_optional_matrix(self.migration_rates, N),
-            birth_rates_among_demes=_init_optional_matrix(
-                self.birth_rates_among_demes, N
+            migration_rates=self._init_optional_matrix(self.migration_rates),
+            birth_rates_among_demes=self._init_optional_matrix(
+                self.birth_rates_among_demes
             ),
         )
 
-    def serialize(self, keys: list[str] | None = None) -> dict[str, Vector]:
+    def serialize(self) -> dict[str, Vector]:
         rates = {
-            "birth_rates": self.birth_rates.serialize(keys),
-            "death_rates": self.death_rates.serialize(keys),
-            "sampling_rates": self.sampling_rates.serialize(keys),
+            "birth_rates": self.birth_rates.serialize(self.populations),
+            "death_rates": self.death_rates.serialize(self.populations),
+            "sampling_rates": self.sampling_rates.serialize(self.populations),
         }
         if self.migration_rates is not None:
-            rates["migration_rates"] = self.migration_rates.serialize(keys)
+            rates["migration_rates"] = self.migration_rates.serialize(self.populations)
         if self.birth_rates_among_demes is not None:
             rates["birth_rates_among_demes"] = self.birth_rates_among_demes.serialize(
-                keys
+                self.populations
             )
         return flatten_dict(rates)
 
@@ -78,36 +79,42 @@ class EpidemiologicalParameterization(Parameterization):
 
     @cached_property
     def rates(self) -> Rates:
-        N = len(self.reproduction_numbers)
         return Rates(
             birth_rates=self.reproduction_numbers * self.become_uninfectious_rates,
             death_rates=self.become_uninfectious_rates
             * (1 - self.sampling_proportions),
             sampling_rates=self.become_uninfectious_rates * self.sampling_proportions,
-            migration_rates=_init_optional_matrix(self.migration_rates, N),
-            birth_rates_among_demes=_init_optional_matrix(
-                self.reproduction_numbers_among_demes, N
+            migration_rates=self._init_optional_matrix(self.migration_rates),
+            birth_rates_among_demes=self._init_optional_matrix(
+                self.reproduction_numbers_among_demes
             )
             * self.become_uninfectious_rates,
         )
 
-    def serialize(self, keys: list[str] | None = None) -> dict[str, Vector]:
+    def serialize(self) -> dict[str, Vector]:
         rates = {
-            "reproduction_numbers": self.reproduction_numbers.serialize(keys),
-            "become_uninfectious_rates": self.become_uninfectious_rates.serialize(keys),
-            "sampling_proportions": self.sampling_proportions.serialize(keys),
+            "reproduction_numbers": self.reproduction_numbers.serialize(
+                self.populations
+            ),
+            "become_uninfectious_rates": self.become_uninfectious_rates.serialize(
+                self.populations
+            ),
+            "sampling_proportions": self.sampling_proportions.serialize(
+                self.populations
+            ),
         }
         if self.migration_rates is not None:
-            rates["migration_rates"] = self.migration_rates.serialize(keys)
+            rates["migration_rates"] = self.migration_rates.serialize(self.populations)
         if self.reproduction_numbers_among_demes is not None:
             rates["reproduction_numbers_among_demes"] = (
-                self.reproduction_numbers_among_demes.serialize(keys)
+                self.reproduction_numbers_among_demes.serialize(self.populations)
             )
         return flatten_dict(rates)
 
 
 @dataclass(kw_only=True, frozen=True)
 class BDParameterization(Parameterization):
+    populations: list[str] = field(default_factory=lambda: ["I"])
     reproduction_number: SkylineParameter
     infectious_period: SkylineParameter
     sampling_proportion: SkylineParameter
@@ -115,12 +122,13 @@ class BDParameterization(Parameterization):
     @cached_property
     def rates(self) -> Rates:
         return EpidemiologicalParameterization(
+            populations=self.populations,
             reproduction_numbers=SkylineVector([self.reproduction_number]),
             become_uninfectious_rates=SkylineVector([1 / self.infectious_period]),
             sampling_proportions=SkylineVector([self.sampling_proportion]),
         ).rates
 
-    def serialize(self, keys: list[str] | None = None) -> dict[str, Vector]:
+    def serialize(self) -> dict[str, Vector]:
         return flatten_dict(
             {
                 "reproduction_number": self.reproduction_number.serialize(),
@@ -132,6 +140,7 @@ class BDParameterization(Parameterization):
 
 @dataclass(kw_only=True, frozen=True)
 class BDEIParameterization(Parameterization):
+    populations: list[str] = field(default_factory=lambda: ["E", "I"])
     reproduction_number: SkylineParameter
     sampling_proportion: SkylineParameter
 
@@ -146,13 +155,14 @@ class BDEIParameterization(Parameterization):
     @cached_property
     def rates(self) -> Rates:
         return EpidemiologicalParameterization(
+            populations=self.populations,
             reproduction_numbers=SkylineVector([0, self.reproduction_number]),
             become_uninfectious_rates=SkylineVector([0, 1 / self.infectious_period_]),
             sampling_proportions=SkylineVector([0, self.sampling_proportion]),
             migration_rates=SkylineMatrix([[1 / self.incubation_period_], [0]]),
         ).rates
 
-    def serialize(self, keys: list[str] | None = None) -> dict[str, Vector]:
+    def serialize(self) -> dict[str, Vector]:
         return flatten_dict(
             {
                 "reproduction_number": self.reproduction_number.serialize(),

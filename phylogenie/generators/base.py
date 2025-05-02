@@ -17,6 +17,5 @@ class BaseGenerator(ABC, BaseModel):
         self,
         n_samples: int,
         output_dir: str,
-        output_metadata_file: str,
         n_jobs: int,
     ) -> None: ...

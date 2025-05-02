@@ -1,16 +1,15 @@
+import subprocess
 from xml.etree.ElementTree import Element, tostring
 
-from phylogenie.parameterizations import Rates
+from phylogenie.parameterizations import Parameterization, Rates
 from phylogenie.skyline import SkylineParameter
+from phylogenie.utils.phylo import extract_newick_from_nexus, process_newick_taxa_names
 from phylogenie.utils.xmls import beautify_xml
 
 TREE_ID = "Tree"
 
 
-def _get_reactions(
-    rates: Rates,
-    populations: list[str],
-) -> list[Element]:
+def _get_reactions(rates: Rates, populations: list[str]) -> list[Element]:
     reactions = []
     for (
         p1,
@@ -56,11 +55,11 @@ def _get_reactions(
 
 
 def _get_trajectory(
-    rates: Rates,
-    populations: list[str],
+    parameterization: Parameterization,
     init_values: list[int],
     trajectory_attrs: dict[str, str] | None = None,
 ) -> Element:
+    populations = parameterization.populations
     N = len(populations)
     if len(init_values) != N:
         raise ValueError(
@@ -85,13 +84,12 @@ def _get_trajectory(
             "samplePopulation", {"spec": "RealParameter", "id": "sample", "value": "0"}
         )
     )
-    trajectory.extend(_get_reactions(rates, populations))
+    trajectory.extend(_get_reactions(parameterization.rates, populations))
     return trajectory
 
 
 def prepare_config_file(
-    rates: Rates,
-    populations: list[str],
+    parameterization: Parameterization,
     init_values: list[int],
     output_tree_file: str = "trees.nex",
     output_xml_file: str = "pymaster.xml",
@@ -99,7 +97,7 @@ def prepare_config_file(
     n_simulations: int = 1,
 ) -> None:
     simulate = Element("simulate", {"spec": "SimulatedTree", "id": TREE_ID})
-    simulate.append(_get_trajectory(rates, populations, init_values, trajectory_attrs))
+    simulate.append(_get_trajectory(parameterization, init_values, trajectory_attrs))
 
     logger = Element(
         "logger", {"spec": "Logger", "mode": "tree", "fileName": output_tree_file}
@@ -132,3 +130,32 @@ def prepare_config_file(
     beast.append(run)
     with open(output_xml_file, "w") as f:
         f.write(beautify_xml(tostring(beast, method="xml")))
+
+
+def generate_tree(
+    parameterization: Parameterization,
+    init_values: list[int],
+    output_file: str,
+    trajectory_attrs: dict[str, str] | None = None,
+) -> None:
+    temp_nexus_file = f"{output_file}-temp.nex"
+    temp_xml_file = f"{output_file}-temp.xml"
+    prepare_config_file(
+        parameterization=parameterization,
+        init_values=init_values,
+        output_tree_file=temp_nexus_file,
+        output_xml_file=temp_xml_file,
+        trajectory_attrs=trajectory_attrs,
+    )
+
+    subprocess.run(
+        ["beast", temp_xml_file],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+    extract_newick_from_nexus(temp_nexus_file, output_file)
+    process_newick_taxa_names(output_file, output_file, ["type", "time"])
+    subprocess.run(["rm", temp_nexus_file], check=True)
+    subprocess.run(["rm", temp_xml_file], check=True)
