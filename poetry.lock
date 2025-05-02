@@ -115,14 +115,14 @@ files = []
 develop = false
 
 [package.dependencies]
-pydantic = "^2.10.6"
-pyyaml = "^6.0.2"
+pydantic = "^2.7.4"
+pyyaml = "^6.0.1"
 
 [package.source]
 type = "git"
 url = "https://github.com/gabriele-marino/kitpy.git"
 reference = "main"
-resolved_reference = "8d68e3a937267c36d9ad0c4d4e8ae8bf22942a73"
+resolved_reference = "a4dbcddbef53b3da7b2dd91f837c0c16660e0a69"
 
 [[package]]
 name = "mpmath"
@@ -855,4 +855,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "73ae6206e417685063191080e084fe1ac1d606f6ae0a9a294ae17ac8c8d9ce11"
+content-hash = "6cb7aab85b8a19ceb6ade07e9de646be0334ebac2a0a5b512f11e7041044292d"
