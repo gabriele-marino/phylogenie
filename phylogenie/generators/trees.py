@@ -83,7 +83,7 @@ class ReMASTERGenerator(BaseTreesGenerator):
         parameterization: Parameterization,
         output_file: str,
     ) -> None:
-        remaster.generate_tree(
+        remaster.generate_trees(
             parameterization=parameterization,
             init_values=(
                 [1] + [0] * (len(parameterization.populations) - 1)

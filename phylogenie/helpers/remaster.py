@@ -133,24 +133,31 @@ def prepare_config_file(
         f.write(beautify_xml(tostring(beast, method="xml")))
 
 
-def generate_tree(
+def generate_trees(
     parameterization: Parameterization,
     init_values: list[int],
     output_file: str,
     trajectory_attrs: dict[str, str] | None = None,
+    xml_file: str | None = None,
+    n_simulations: int = 1,
 ) -> None:
+    if xml_file is None:
+        output_xml_file = f"{output_file}-temp.xml"
+    else:
+        output_xml_file = xml_file
     temp_nexus_file = f"{output_file}-temp.nex"
-    temp_xml_file = f"{output_file}-temp.xml"
+
     prepare_config_file(
         parameterization=parameterization,
         init_values=init_values,
         output_tree_file=temp_nexus_file,
-        output_xml_file=temp_xml_file,
+        output_xml_file=output_xml_file,
         trajectory_attrs=trajectory_attrs,
+        n_simulations=n_simulations,
     )
 
     subprocess.run(
-        ["beast", temp_xml_file],
+        ["beast", output_xml_file],
         check=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -159,4 +166,5 @@ def generate_tree(
     extract_newick_from_nexus(temp_nexus_file, output_file)
     process_newick_taxa_names(output_file, output_file, ["type", "time"])
     subprocess.run(["rm", temp_nexus_file], check=True)
-    subprocess.run(["rm", temp_xml_file], check=True)
+    if xml_file is None:
+        subprocess.run(["rm", output_xml_file], check=True)
