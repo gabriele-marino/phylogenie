@@ -12,7 +12,7 @@ from phylogenie.generators.base import BaseGenerator, GeneratorType
 from phylogenie.helpers import remaster, treesimulator
 from phylogenie.parameterizations import Parameterization, RandomParameterization
 
-TREES_DIRNAME = "msas"
+TREES_DIRNAME = "trees"
 METADATA_FILENAME = "metadata.csv"
 
 
