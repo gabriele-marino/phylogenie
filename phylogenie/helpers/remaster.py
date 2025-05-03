@@ -1,3 +1,4 @@
+import re
 import subprocess
 from xml.etree.ElementTree import Element, tostring
 
@@ -5,7 +6,6 @@ from kitpy.xmls import beautify_xml
 
 from phylogenie.parameterizations import Parameterization, Rates
 from phylogenie.skyline import SkylineParameter
-from phylogenie.utils import extract_newick_from_nexus, process_newick_taxa_names
 
 TREE_ID = "Tree"
 
@@ -33,13 +33,13 @@ def _get_reactions(rates: Rates, populations: list[str]) -> list[Element]:
             (sampling_rate, f"{p1} -> sample"),
         ]
 
-        for p2 in [p for p in populations if p != p1]:
-            for migration_rate in migration_rates_row:
-                reaction_configs.append((migration_rate, f"{p1} -> {p2}"))
-            for birth_rate_among_demes in birth_rates_among_demes_row:
-                reaction_configs.append(
-                    (birth_rate_among_demes, f"{p1} -> {p1} + {p2}")
-                )
+        for p2, migration_rate, birth_rate_among_demes in zip(
+            [p for p in populations if p != p1],
+            migration_rates_row,
+            birth_rates_among_demes_row,
+        ):
+            reaction_configs.append((migration_rate, f"{p1} -> {p2}"))
+            reaction_configs.append((birth_rate_among_demes, f"{p1} -> {p1} + {p2}"))
 
         for rate, reaction in reaction_configs:
             if not rate:
@@ -89,10 +89,10 @@ def _get_trajectory(
     return trajectory
 
 
-def prepare_config_file(
+def _prepare_config_file(
     parameterization: Parameterization,
     init_values: list[int],
-    output_tree_file: str = "trees.nex",
+    tree_file_name: str = "trees.nex",
     output_xml_file: str = "pymaster.xml",
     trajectory_attrs: dict[str, str] | None = None,
     n_simulations: int = 1,
@@ -101,7 +101,7 @@ def prepare_config_file(
     simulate.append(_get_trajectory(parameterization, init_values, trajectory_attrs))
 
     logger = Element(
-        "logger", {"spec": "Logger", "mode": "tree", "fileName": output_tree_file}
+        "logger", {"spec": "Logger", "mode": "tree", "fileName": tree_file_name}
     )
     logger.append(
         Element(
@@ -133,6 +133,29 @@ def prepare_config_file(
         f.write(beautify_xml(tostring(beast, method="xml")))
 
 
+def _postprocess_tree(
+    input_file: str, output_file: str, attributes: list[str], sep: str = "|"
+) -> None:
+
+    def _replace_metadata(match: re.Match[str]) -> str:
+        metadata = match.group(0)
+        attrs = re.findall(r'(\w+)=(".*?"|[^,)\]]+)', metadata)
+        values = [v.strip('"') for k, v in attrs if k in attributes]
+        return sep + sep.join(values)
+
+    with open(input_file, "r") as infile:
+        with open(output_file, "w") as outfile:
+            for line in infile:
+                line = line.strip()
+                if line.lower().startswith("tree"):
+                    parts = line.split("=", 1)
+                    newick = parts[1].strip()
+                    transformed_newick = re.sub(
+                        r"\[\&[^\]]*\]", _replace_metadata, newick
+                    )
+                    outfile.write(transformed_newick + "\n")
+
+
 def generate_trees(
     parameterization: Parameterization,
     init_values: list[int],
@@ -145,12 +168,12 @@ def generate_trees(
         output_xml_file = f"{output_file}-temp.xml"
     else:
         output_xml_file = xml_file
-    temp_nexus_file = f"{output_file}-temp.nex"
 
-    prepare_config_file(
+    temp_tree_file = f"{output_file}-temp.nex"
+    _prepare_config_file(
         parameterization=parameterization,
         init_values=init_values,
-        output_tree_file=temp_nexus_file,
+        tree_file_name=temp_tree_file,
         output_xml_file=output_xml_file,
         trajectory_attrs=trajectory_attrs,
         n_simulations=n_simulations,
@@ -163,8 +186,7 @@ def generate_trees(
         stderr=subprocess.PIPE,
     )
 
-    extract_newick_from_nexus(temp_nexus_file, output_file)
-    process_newick_taxa_names(output_file, output_file, ["type", "time"])
-    subprocess.run(["rm", temp_nexus_file], check=True)
+    _postprocess_tree(temp_tree_file, output_file, ["type", "time"])
     if xml_file is None:
         subprocess.run(["rm", output_xml_file], check=True)
+    subprocess.run(["rm", temp_tree_file], check=True)
