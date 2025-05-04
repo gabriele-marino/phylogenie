@@ -28,25 +28,31 @@ class Parameterization(ABC):
     @abstractmethod
     def serialize(self) -> dict[str, Vector]: ...
 
+    def _init_optional_vector(self, vector: SkylineVector | None) -> SkylineVector:
+        if vector is None:
+            N = len(self.populations)
+            return SkylineVector([0] * N)
+        return vector
+
     def _init_optional_matrix(self, matrix: SkylineMatrix | None) -> SkylineMatrix:
-        N = len(self.populations)
         if matrix is None:
+            N = len(self.populations)
             return SkylineMatrix([[0] * (N - 1)] * N)
         return matrix
 
 
 @dataclass(frozen=True)
 class CanonicalParameterization(Parameterization):
-    birth_rates: SkylineVector
     death_rates: SkylineVector
     sampling_rates: SkylineVector
+    birth_rates: SkylineVector | None = None
     migration_rates: SkylineMatrix | None = None
     birth_rates_among_demes: SkylineMatrix | None = None
 
     @cached_property
     def rates(self) -> Rates:
         return Rates(
-            birth_rates=self.birth_rates,
+            birth_rates=self._init_optional_vector(self.birth_rates),
             death_rates=self.death_rates,
             sampling_rates=self.sampling_rates,
             migration_rates=self._init_optional_matrix(self.migration_rates),
@@ -57,10 +63,11 @@ class CanonicalParameterization(Parameterization):
 
     def serialize(self) -> dict[str, Vector]:
         rates = {
-            "birth_rates": self.birth_rates.serialize(self.populations),
             "death_rates": self.death_rates.serialize(self.populations),
             "sampling_rates": self.sampling_rates.serialize(self.populations),
         }
+        if self.birth_rates is not None:
+            rates["birth_rates"] = self.birth_rates.serialize(self.populations)
         if self.migration_rates is not None:
             rates["migration_rates"] = self.migration_rates.serialize(self.populations)
         if self.birth_rates_among_demes is not None:
@@ -72,16 +79,19 @@ class CanonicalParameterization(Parameterization):
 
 @dataclass(frozen=True)
 class EpidemiologicalParameterization(Parameterization):
-    reproduction_numbers: SkylineVector
     become_uninfectious_rates: SkylineVector
     sampling_proportions: SkylineVector
+    reproduction_numbers: SkylineVector | None = None
     migration_rates: SkylineMatrix | None = None
     reproduction_numbers_among_demes: SkylineMatrix | None = None
 
     @cached_property
     def rates(self) -> Rates:
         return Rates(
-            birth_rates=self.reproduction_numbers * self.become_uninfectious_rates,
+            birth_rates=(
+                self._init_optional_vector(self.reproduction_numbers)
+                * self.become_uninfectious_rates
+            ),
             death_rates=self.become_uninfectious_rates
             * (1 - self.sampling_proportions),
             sampling_rates=self.become_uninfectious_rates * self.sampling_proportions,
@@ -94,9 +104,6 @@ class EpidemiologicalParameterization(Parameterization):
 
     def serialize(self) -> dict[str, Vector]:
         rates = {
-            "reproduction_numbers": self.reproduction_numbers.serialize(
-                self.populations
-            ),
             "become_uninfectious_rates": self.become_uninfectious_rates.serialize(
                 self.populations
             ),
@@ -104,6 +111,10 @@ class EpidemiologicalParameterization(Parameterization):
                 self.populations
             ),
         }
+        if self.reproduction_numbers is not None:
+            rates["reproduction_numbers"] = self.reproduction_numbers.serialize(
+                self.populations
+            )
         if self.migration_rates is not None:
             rates["migration_rates"] = self.migration_rates.serialize(self.populations)
         if self.reproduction_numbers_among_demes is not None:
@@ -157,10 +168,12 @@ class BDEIParameterization(Parameterization):
     def rates(self) -> Rates:
         return EpidemiologicalParameterization(
             populations=self.populations,
-            reproduction_numbers=SkylineVector([0, self.reproduction_number]),
             become_uninfectious_rates=SkylineVector([0, 1 / self.infectious_period_]),
             sampling_proportions=SkylineVector([0, self.sampling_proportion]),
             migration_rates=SkylineMatrix([[1 / self.incubation_period_], [0]]),
+            reproduction_numbers_among_demes=SkylineMatrix(
+                [[0], [self.reproduction_number]]
+            ),
         ).rates
 
     def serialize(self) -> dict[str, Vector]:

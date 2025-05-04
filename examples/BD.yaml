@@ -1,8 +1,8 @@
 output_dir: outputs/BD
-n_jobs: 1
 n_samples:
   train: 100
-  test: 10
+  val: 20
+  test: 20
 generator:
   type: msas
   backend: alisim
@@ -13,7 +13,7 @@ generator:
     mean: 0.001
     std: 0.00005
   trees:
-    backend: treesimulator
+    backend: remaster
     parameterization:
       type: BD
       reproduction_number:

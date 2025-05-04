@@ -1,7 +1,8 @@
 output_dir: outputs/BDEI
 n_samples:
   train: 100
-  test: 10
+  val: 20
+  test: 20
 generator:
   type: msas
   backend: alisim

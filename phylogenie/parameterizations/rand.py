@@ -17,6 +17,7 @@ from phylogenie.skyline import (
     RandomSkylineParameter,
     RandomSkylineVector,
     SkylineMatrix,
+    SkylineVector,
 )
 
 
@@ -32,20 +33,28 @@ class BaseRandomParameterization(ABC, BaseModel):
     type: ParameterizationType
     populations: EnsuredList[str] = Field(default_factory=lambda: ["X"])
 
+    def _sample_optional_vector(
+        self, vector: RandomSkylineVector | None
+    ) -> SkylineVector | None:
+        if vector is None:
+            return None
+        N = len(self.populations)
+        return vector.sample(N)
+
     def _sample_optional_matrix(
         self, matrix: RandomSkylineMatrix | None
     ) -> SkylineMatrix | None:
-        N = len(self.populations)
         if matrix is None:
             return None
+        N = len(self.populations)
         return matrix.sample(N)
 
 
 class RandomCanonicalParameterization(BaseRandomParameterization):
     type: Literal[ParameterizationType.CANONICAL] = ParameterizationType.CANONICAL
-    birth_rates: RandomSkylineVector
     death_rates: RandomSkylineVector
     sampling_rates: RandomSkylineVector
+    birth_rates: RandomSkylineVector | None = None
     migration_rates: RandomSkylineMatrix | None = None
     birth_rates_among_demes: RandomSkylineMatrix | None = None
 
@@ -53,7 +62,7 @@ class RandomCanonicalParameterization(BaseRandomParameterization):
         N = len(self.populations)
         return CanonicalParameterization(
             populations=self.populations,
-            birth_rates=self.birth_rates.sample(N),
+            birth_rates=self._sample_optional_vector(self.birth_rates),
             death_rates=self.death_rates.sample(N),
             sampling_rates=self.sampling_rates.sample(N),
             migration_rates=self._sample_optional_matrix(self.migration_rates),
@@ -67,7 +76,7 @@ class RandomEpidemiologicalParameterization(BaseRandomParameterization):
     type: Literal[ParameterizationType.EPIDEMIOLOGICAL] = (
         ParameterizationType.EPIDEMIOLOGICAL
     )
-    reproduction_numbers: RandomSkylineVector
+    reproduction_numbers: RandomSkylineVector | None = None
     become_uninfectious_rates: RandomSkylineVector
     sampling_proportions: RandomSkylineVector
     migration_rates: RandomSkylineMatrix | None = None
@@ -77,7 +86,9 @@ class RandomEpidemiologicalParameterization(BaseRandomParameterization):
         N = len(self.populations)
         return EpidemiologicalParameterization(
             populations=self.populations,
-            reproduction_numbers=self.reproduction_numbers.sample(N),
+            reproduction_numbers=self._sample_optional_vector(
+                self.reproduction_numbers
+            ),
             become_uninfectious_rates=self.become_uninfectious_rates.sample(N),
             sampling_proportions=self.sampling_proportions.sample(N),
             migration_rates=self._sample_optional_matrix(self.migration_rates),
