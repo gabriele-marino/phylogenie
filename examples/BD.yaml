@@ -13,7 +13,7 @@ generator:
     mean: 0.001
     std: 0.00005
   trees:
-    backend: remaster
+    backend: treesimulator
     parameterization:
       type: BD
       reproduction_number:

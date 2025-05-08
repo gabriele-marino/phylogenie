@@ -56,7 +56,7 @@ def generate_tree(
                 transition_rates=transition_rates,
                 transmission_rates=transmission_rates,
                 removal_rates=become_uninfectious_rates.get_value_at_time(t),
-                sampling_probabilities=sampling_proportions.get_value_at_time(t),
+                ps=sampling_proportions.get_value_at_time(t),
             )
         )
 
