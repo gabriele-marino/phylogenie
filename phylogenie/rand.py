@@ -13,6 +13,7 @@ class RandomVariableType(str, Enum):
     NORMAL = "normal"
     LOGNORMAL = "lognormal"
     WEIBULL = "weibull"
+    EXPONENTIAL = "exponential"
 
 
 class BaseRandomVariable(ABC, BaseModel):
@@ -58,13 +59,22 @@ class WeibullRandomVariable(BaseRandomVariable):
         return np.random.weibull(self.shape) * self.scale
 
 
+class ExponentialRandomVariable(BaseRandomVariable):
+    type: Literal[RandomVariableType.EXPONENTIAL] = RandomVariableType.EXPONENTIAL
+    rate: float
+
+    def sample(self) -> float:
+        return np.random.exponential(1 / self.rate)
+
+
 RandomVariable = (
     Numeric
     | Annotated[
         UniformRandomVariable
         | NormalRandomVariable
         | LogNormalRandomVariable
-        | WeibullRandomVariable,
+        | WeibullRandomVariable
+        | ExponentialRandomVariable,
         Field(discriminator="type"),
     ]
 )
