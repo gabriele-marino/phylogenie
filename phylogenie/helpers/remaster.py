@@ -2,15 +2,38 @@ import re
 import subprocess
 from xml.etree.ElementTree import Element, tostring
 
-from kitpy.xmls import beautify_xml
+from pydantic import BaseModel, model_validator
+from pykit.type_hints import OneOrSequence
+from pykit.validators import EnsuredList
+from pykit.xmls import beautify_xml
 
 from phylogenie.parameterizations import Parameterization, Rates
 from phylogenie.skyline import SkylineParameter
 
+
+class PunctualReaction(BaseModel):
+    times: EnsuredList[float]
+    p: EnsuredList[float] | None = None
+    n: EnsuredList[int] | None = None
+
+    @model_validator(mode="after")
+    def check_p_or_n_present(self) -> "PunctualReaction":
+        if (self.p is None) == (self.n is None):
+            raise ValueError(
+                'Provide exactly one of "p" or "n" for punctual reactions.'
+            )
+        return self
+
+
 TREE_ID = "Tree"
+SAMPLE_ID = "sample"
 
 
-def _get_reactions(rates: Rates, populations: list[str]) -> list[Element]:
+def _get_reactions(
+    rates: Rates,
+    populations: list[str],
+    punctual_reactions: OneOrSequence[PunctualReaction] | None = None,
+) -> list[Element]:
     reactions = []
     for (
         p1,
@@ -19,6 +42,7 @@ def _get_reactions(rates: Rates, populations: list[str]) -> list[Element]:
         sampling_rate,
         migration_rates_row,
         birth_rates_among_demes_row,
+        ancestor_sampling_rate,
     ) in zip(
         populations,
         rates.birth_rates,
@@ -26,11 +50,13 @@ def _get_reactions(rates: Rates, populations: list[str]) -> list[Element]:
         rates.sampling_rates,
         rates.migration_rates,
         rates.birth_rates_among_demes,
+        rates.ancestor_sampling_rates,
     ):
         reaction_configs: list[tuple[SkylineParameter, str]] = [
             (birth_rate, f"{p1} -> 2{p1}"),
             (death_rate, f"{p1} -> 0"),
-            (sampling_rate, f"{p1} -> sample"),
+            (sampling_rate, f"{p1} -> {SAMPLE_ID}"),
+            (ancestor_sampling_rate, f"{p1} -> {p1} + {SAMPLE_ID}"),
         ]
 
         for p2, migration_rate, birth_rate_among_demes in zip(
@@ -52,6 +78,22 @@ def _get_reactions(rates: Rates, populations: list[str]) -> list[Element]:
             if rate.change_times:
                 attrs["changeTimes"] = " ".join(str(t) for t in rate.change_times)
             reactions.append(Element("reaction", attrs))
+
+    if punctual_reactions is not None:
+        if isinstance(punctual_reactions, PunctualReaction):
+            punctual_reactions = [punctual_reactions] * len(populations)
+        for p, punctual_reaction in zip(populations, punctual_reactions):
+            attrs = {
+                "spec": "PunctualReaction",
+                "value": f"{p} -> {SAMPLE_ID}",
+                "times": " ".join(str(t) for t in punctual_reaction.times),
+            }
+            if punctual_reaction.p is not None:
+                attrs["p"] = " ".join(str(v) for v in punctual_reaction.p)
+            if punctual_reaction.n is not None:
+                attrs["n"] = " ".join(str(v) for v in punctual_reaction.n)
+            reactions.append(Element("reaction", attrs))
+
     return reactions
 
 
@@ -59,6 +101,7 @@ def _get_trajectory(
     parameterization: Parameterization,
     init_values: list[int],
     trajectory_attrs: dict[str, str] | None = None,
+    punctual_reactions: OneOrSequence[PunctualReaction] | None = None,
 ) -> Element:
     populations = parameterization.populations
     N = len(populations)
@@ -82,10 +125,12 @@ def _get_trajectory(
         )
     trajectory.append(
         Element(
-            "samplePopulation", {"spec": "RealParameter", "id": "sample", "value": "0"}
+            "samplePopulation", {"spec": "RealParameter", "id": SAMPLE_ID, "value": "0"}
         )
     )
-    trajectory.extend(_get_reactions(parameterization.rates, populations))
+    trajectory.extend(
+        _get_reactions(parameterization.rates, populations, punctual_reactions)
+    )
     return trajectory
 
 
@@ -94,11 +139,16 @@ def _prepare_config_file(
     init_values: list[int],
     tree_file_name: str = "trees.nex",
     output_xml_file: str = "pymaster.xml",
+    punctual_reactions: OneOrSequence[PunctualReaction] | None = None,
     trajectory_attrs: dict[str, str] | None = None,
     n_simulations: int = 1,
 ) -> None:
     simulate = Element("simulate", {"spec": "SimulatedTree", "id": TREE_ID})
-    simulate.append(_get_trajectory(parameterization, init_values, trajectory_attrs))
+    simulate.append(
+        _get_trajectory(
+            parameterization, init_values, trajectory_attrs, punctual_reactions
+        )
+    )
 
     logger = Element(
         "logger", {"spec": "Logger", "mode": "tree", "fileName": tree_file_name}
@@ -160,6 +210,7 @@ def generate_trees(
     parameterization: Parameterization,
     init_values: list[int],
     output_file: str,
+    punctual_reactions: OneOrSequence[PunctualReaction] | None = None,
     trajectory_attrs: dict[str, str] | None = None,
     xml_file: str | None = None,
     n_simulations: int = 1,
@@ -175,6 +226,7 @@ def generate_trees(
         init_values=init_values,
         tree_file_name=temp_tree_file,
         output_xml_file=output_xml_file,
+        punctual_reactions=punctual_reactions,
         trajectory_attrs=trajectory_attrs,
         n_simulations=n_simulations,
     )

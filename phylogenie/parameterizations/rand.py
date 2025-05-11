@@ -2,15 +2,15 @@ from abc import ABC
 from enum import Enum
 from typing import Annotated, Literal
 
-from kitpy.validators import EnsuredList
 from pydantic import BaseModel, Field
+from pykit.validators import EnsuredList
 
 from phylogenie.parameterizations.core import (
+    BDEIParameterization,
     BDParameterization,
-    CanonicalBDEIParameterization,
     CanonicalParameterization,
     EpidemiologicalParameterization,
-    IncubationFractionBDEIParameterization,
+    FractionalBDEIParameterization,
 )
 from phylogenie.skyline import (
     RandomSkylineMatrix,
@@ -25,8 +25,8 @@ class ParameterizationType(str, Enum):
     CANONICAL = "canonical"
     EPIDEMIOLOGICAL = "epidemiological"
     BD = "BD"
-    CANONICAL_BDEI = "canonical-BDEI"
-    INCUBATION_FRACTION_BDEI = "incubation_fraction-BDEI"
+    BDEI = "BDEI"
+    INCUBATION_FRACTION_BDEI = "fractional-BDEI"
 
 
 class BaseRandomParameterization(ABC, BaseModel):
@@ -57,6 +57,7 @@ class RandomCanonicalParameterization(BaseRandomParameterization):
     birth_rates: RandomSkylineVector | None = None
     migration_rates: RandomSkylineMatrix | None = None
     birth_rates_among_demes: RandomSkylineMatrix | None = None
+    ancestor_sampling_rates: RandomSkylineVector | None = None
 
     def sample(self) -> CanonicalParameterization:
         N = len(self.populations)
@@ -68,6 +69,9 @@ class RandomCanonicalParameterization(BaseRandomParameterization):
             migration_rates=self._sample_optional_matrix(self.migration_rates),
             birth_rates_among_demes=self._sample_optional_matrix(
                 self.birth_rates_among_demes
+            ),
+            ancestor_sampling_rates=self._sample_optional_vector(
+                self.ancestor_sampling_rates
             ),
         )
 
@@ -81,6 +85,7 @@ class RandomEpidemiologicalParameterization(BaseRandomParameterization):
     sampling_proportions: RandomSkylineVector
     migration_rates: RandomSkylineMatrix | None = None
     reproduction_numbers_among_demes: RandomSkylineMatrix | None = None
+    ancestor_sampling_rates: RandomSkylineVector | None = None
 
     def sample(self) -> EpidemiologicalParameterization:
         N = len(self.populations)
@@ -94,6 +99,9 @@ class RandomEpidemiologicalParameterization(BaseRandomParameterization):
             migration_rates=self._sample_optional_matrix(self.migration_rates),
             reproduction_numbers_among_demes=self._sample_optional_matrix(
                 self.reproduction_numbers_among_demes
+            ),
+            ancestor_sampling_rates=self._sample_optional_vector(
+                self.ancestor_sampling_rates
             ),
         )
 
@@ -120,15 +128,13 @@ class BaseRandomBDEIParameterization(BaseRandomParameterization):
     sampling_proportion: RandomSkylineParameter
 
 
-class RandomCanonicalBDEIParameterization(BaseRandomBDEIParameterization):
-    type: Literal[ParameterizationType.CANONICAL_BDEI] = (
-        ParameterizationType.CANONICAL_BDEI
-    )
+class RandomBDEIParameterization(BaseRandomBDEIParameterization):
+    type: Literal[ParameterizationType.BDEI] = ParameterizationType.BDEI
     infectious_period: RandomSkylineParameter
     incubation_period: RandomSkylineParameter
 
-    def sample(self) -> CanonicalBDEIParameterization:
-        return CanonicalBDEIParameterization(
+    def sample(self) -> BDEIParameterization:
+        return BDEIParameterization(
             populations=self.populations,
             reproduction_number=self.reproduction_number.sample(),
             infectious_period=self.infectious_period.sample(),
@@ -137,15 +143,15 @@ class RandomCanonicalBDEIParameterization(BaseRandomBDEIParameterization):
         )
 
 
-class RandomIncubationFractionBDEIParameterization(BaseRandomBDEIParameterization):
+class RandomFractionalBDEIParameterization(BaseRandomBDEIParameterization):
     type: Literal[ParameterizationType.INCUBATION_FRACTION_BDEI] = (
         ParameterizationType.INCUBATION_FRACTION_BDEI
     )
     infection_period: RandomSkylineParameter
     incubation_fraction: RandomSkylineParameter
 
-    def sample(self) -> IncubationFractionBDEIParameterization:
-        return IncubationFractionBDEIParameterization(
+    def sample(self) -> FractionalBDEIParameterization:
+        return FractionalBDEIParameterization(
             populations=self.populations,
             reproduction_number=self.reproduction_number.sample(),
             infection_period=self.infection_period.sample(),
@@ -158,7 +164,7 @@ RandomParameterization = Annotated[
     RandomCanonicalParameterization
     | RandomEpidemiologicalParameterization
     | RandomBDParameterization
-    | RandomCanonicalBDEIParameterization
-    | RandomIncubationFractionBDEIParameterization,
+    | RandomBDEIParameterization
+    | RandomFractionalBDEIParameterization,
     Field(discriminator="type"),
 ]

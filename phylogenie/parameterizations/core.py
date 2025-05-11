@@ -1,25 +1,24 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from functools import cached_property
 
-from kitpy import flatten_dict
-from kitpy.type_hints import Vector
+from pydantic import BaseModel, Field
+from pykit import flatten_dict
+from pykit.type_hints import Vector
 
 from phylogenie.skyline import SkylineMatrix, SkylineParameter, SkylineVector
 
 
-@dataclass
-class Rates:
+class Rates(BaseModel):
     birth_rates: SkylineVector
     death_rates: SkylineVector
     sampling_rates: SkylineVector
     migration_rates: SkylineMatrix
     birth_rates_among_demes: SkylineMatrix
+    ancestor_sampling_rates: SkylineVector
 
 
-@dataclass(kw_only=True, frozen=True)
-class Parameterization(ABC):
-    populations: list[str] = field(default_factory=lambda: ["X"])
+class Parameterization(ABC, BaseModel):
+    populations: list[str] = Field(default_factory=lambda: ["X"])
 
     @property
     @abstractmethod
@@ -41,31 +40,33 @@ class Parameterization(ABC):
         return matrix
 
 
-@dataclass(frozen=True)
 class CanonicalParameterization(Parameterization):
     death_rates: SkylineVector
-    sampling_rates: SkylineVector
+    sampling_rates: SkylineVector | None = None
     birth_rates: SkylineVector | None = None
     migration_rates: SkylineMatrix | None = None
     birth_rates_among_demes: SkylineMatrix | None = None
+    ancestor_sampling_rates: SkylineVector | None = None
 
     @cached_property
     def rates(self) -> Rates:
         return Rates(
             birth_rates=self._init_optional_vector(self.birth_rates),
             death_rates=self.death_rates,
-            sampling_rates=self.sampling_rates,
+            sampling_rates=self._init_optional_vector(self.sampling_rates),
             migration_rates=self._init_optional_matrix(self.migration_rates),
             birth_rates_among_demes=self._init_optional_matrix(
                 self.birth_rates_among_demes
             ),
+            ancestor_sampling_rates=self._init_optional_vector(
+                self.ancestor_sampling_rates
+            ),
         )
 
     def serialize(self) -> dict[str, Vector]:
-        rates = {
-            "death_rates": self.death_rates.serialize(self.populations),
-            "sampling_rates": self.sampling_rates.serialize(self.populations),
-        }
+        rates = {"death_rates": self.death_rates.serialize(self.populations)}
+        if self.sampling_rates is not None:
+            rates["sampling_rates"] = self.sampling_rates.serialize(self.populations)
         if self.birth_rates is not None:
             rates["birth_rates"] = self.birth_rates.serialize(self.populations)
         if self.migration_rates is not None:
@@ -77,13 +78,13 @@ class CanonicalParameterization(Parameterization):
         return flatten_dict(rates)
 
 
-@dataclass(frozen=True)
 class EpidemiologicalParameterization(Parameterization):
     become_uninfectious_rates: SkylineVector
     sampling_proportions: SkylineVector
     reproduction_numbers: SkylineVector | None = None
     migration_rates: SkylineMatrix | None = None
     reproduction_numbers_among_demes: SkylineMatrix | None = None
+    ancestor_sampling_rates: SkylineVector | None = None
 
     @cached_property
     def rates(self) -> Rates:
@@ -100,6 +101,9 @@ class EpidemiologicalParameterization(Parameterization):
                 self.reproduction_numbers_among_demes
             )
             * self.become_uninfectious_rates,
+            ancestor_sampling_rates=self._init_optional_vector(
+                self.ancestor_sampling_rates
+            ),
         )
 
     def serialize(self) -> dict[str, Vector]:
@@ -124,9 +128,8 @@ class EpidemiologicalParameterization(Parameterization):
         return flatten_dict(rates)
 
 
-@dataclass(kw_only=True, frozen=True)
 class BDParameterization(Parameterization):
-    populations: list[str] = field(default_factory=lambda: ["I"])
+    populations: list[str] = Field(default_factory=lambda: ["I"])
     reproduction_number: SkylineParameter
     infectious_period: SkylineParameter
     sampling_proportion: SkylineParameter
@@ -150,27 +153,20 @@ class BDParameterization(Parameterization):
         )
 
 
-@dataclass(kw_only=True, frozen=True)
 class BDEIParameterization(Parameterization):
-    populations: list[str] = field(default_factory=lambda: ["E", "I"])
+    populations: list[str] = Field(default_factory=lambda: ["E", "I"])
     reproduction_number: SkylineParameter
+    infectious_period: SkylineParameter
+    incubation_period: SkylineParameter
     sampling_proportion: SkylineParameter
-
-    @property
-    @abstractmethod
-    def infectious_period_(self) -> SkylineParameter: ...
-
-    @property
-    @abstractmethod
-    def incubation_period_(self) -> SkylineParameter: ...
 
     @cached_property
     def rates(self) -> Rates:
         return EpidemiologicalParameterization(
             populations=self.populations,
-            become_uninfectious_rates=SkylineVector([0, 1 / self.infectious_period_]),
+            become_uninfectious_rates=SkylineVector([0, 1 / self.infectious_period]),
             sampling_proportions=SkylineVector([0, self.sampling_proportion]),
-            migration_rates=SkylineMatrix([[1 / self.incubation_period_], [0]]),
+            migration_rates=SkylineMatrix([[1 / self.incubation_period], [0]]),
             reproduction_numbers_among_demes=SkylineMatrix(
                 [[0], [self.reproduction_number]]
             ),
@@ -180,36 +176,31 @@ class BDEIParameterization(Parameterization):
         return flatten_dict(
             {
                 "reproduction_number": self.reproduction_number.serialize(),
-                "infectious_period": self.infectious_period_.serialize(),
-                "incubation_period": self.incubation_period_.serialize(),
+                "infectious_period": self.infectious_period.serialize(),
+                "incubation_period": self.incubation_period.serialize(),
                 "sampling_proportion": self.sampling_proportion.serialize(),
             }
         )
 
 
-@dataclass(frozen=True)
-class CanonicalBDEIParameterization(BDEIParameterization):
-    infectious_period: SkylineParameter
-    incubation_period: SkylineParameter
+class FractionalBDEIParameterization(BDEIParameterization):
+    def __init__(
+        self,
+        infection_period: SkylineParameter,
+        incubation_fraction: SkylineParameter,
+        reproduction_number: SkylineParameter,
+        sampling_proportion: SkylineParameter,
+        populations: list[str] | None = None,
+    ):
+        if populations is None:
+            populations = ["E", "I"]
+        infectious_period = infection_period * (1 - incubation_fraction)
+        incubation_period = infection_period * incubation_fraction
 
-    @property
-    def infectious_period_(self) -> SkylineParameter:
-        return self.infectious_period
-
-    @property
-    def incubation_period_(self) -> SkylineParameter:
-        return self.incubation_period
-
-
-@dataclass(frozen=True)
-class IncubationFractionBDEIParameterization(BDEIParameterization):
-    infection_period: SkylineParameter
-    incubation_fraction: SkylineParameter
-
-    @cached_property
-    def infectious_period_(self) -> SkylineParameter:
-        return self.infection_period * (1 - self.incubation_fraction)
-
-    @cached_property
-    def incubation_period_(self) -> SkylineParameter:
-        return self.infection_period * self.incubation_fraction
+        super().__init__(
+            populations=populations,
+            infectious_period=infectious_period,
+            incubation_period=incubation_period,
+            reproduction_number=reproduction_number,
+            sampling_proportion=sampling_proportion,
+        )

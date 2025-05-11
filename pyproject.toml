@@ -10,7 +10,7 @@ python = "^3.10"
 
 biopython = "^1.83"
 joblib = "^1.4.2"
-kitpy = { git = "https://github.com/gabriele-marino/kitpy.git", branch = "main" }
+pykit = { git = "https://github.com/gabriele-marino/kitpy.git", branch = "main" }
 pandas = "^2.2.2"
 tqdm = "^4.66.4"
 treesimulator = "^0.2.15"

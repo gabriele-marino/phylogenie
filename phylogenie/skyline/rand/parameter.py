@@ -33,8 +33,13 @@ class RandomSkylineParameter:
     def __get_pydantic_core_schema__(
         cls, _: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.no_info_after_validator_function(
-            cls.from_config, handler(RandomSkylineParameterConfig)
+        return core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                core_schema.no_info_after_validator_function(
+                    cls.from_config, handler(RandomSkylineParameterConfig)
+                ),
+            ]
         )
 
     @classmethod

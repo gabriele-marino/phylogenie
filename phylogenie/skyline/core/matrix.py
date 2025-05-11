@@ -1,13 +1,18 @@
-from typing import Callable, Iterator, Sequence, Union
+from typing import Any, Callable, Iterator, Sequence, Union
 
-from kitpy.type_hints import Numeric
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pykit.type_hints import Numeric
 
 from phylogenie.skyline.core.parameter import (
     ParameterOperand,
     SerialSkylineParameter,
     SkylineParameter,
+    SkylineParameterConfig,
 )
 from phylogenie.skyline.core.vector import SkylineVector, VectorOperand
+
+SkylineMatrixConfig = Sequence[Sequence[SkylineParameterConfig]]
 
 MatrixOperand = Union[VectorOperand, "SkylineMatrix"]
 
@@ -121,3 +126,22 @@ class SkylineMatrix:
             for row, k1 in zip(self.params, keys)
             for param, k2 in zip(row, [k for k in keys if k != k1])
         }
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                core_schema.no_info_after_validator_function(
+                    cls.from_config, handler(SkylineMatrixConfig)
+                ),
+            ]
+        )
+
+    @classmethod
+    def from_config(cls, m: SkylineMatrixConfig) -> "SkylineMatrix":
+        return SkylineMatrix(
+            [[SkylineParameter.from_config(param) for param in row] for row in m]
+        )

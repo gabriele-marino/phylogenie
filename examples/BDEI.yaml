@@ -15,7 +15,7 @@ generator:
   trees:
     backend: treesimulator
     parameterization:
-      type: incubation_fraction-BDEI
+      type: fractional-BDEI
       reproduction_number:
         type: lognormal
         mean: 1.0

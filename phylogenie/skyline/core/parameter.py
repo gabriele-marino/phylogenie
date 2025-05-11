@@ -1,8 +1,18 @@
 from bisect import bisect_right
-from typing import Callable, Union
+from typing import Any, Callable, Union
 
-from kitpy.type_hints import Numeric, Vector
-from kitpy.validators import ensure_list
+from pydantic import BaseModel, GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pykit.type_hints import Numeric, Vector
+from pykit.validators import ensure_list
+
+
+class SkylineParameterModel(BaseModel):
+    value: Vector
+    change_times: Vector | None = None
+
+
+SkylineParameterConfig = Numeric | SkylineParameterModel
 
 ParameterOperand = Union[Numeric, "SkylineParameter"]
 
@@ -88,3 +98,22 @@ class SkylineParameter:
                 else self.change_times[0]
             ),
         }
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                core_schema.no_info_after_validator_function(
+                    cls.from_config, handler(SkylineParameterConfig)
+                ),
+            ]
+        )
+
+    @classmethod
+    def from_config(cls, p: SkylineParameterConfig) -> "SkylineParameter":
+        if isinstance(p, SkylineParameterModel):
+            return SkylineParameter(p.value, p.change_times)
+        return SkylineParameter(p)

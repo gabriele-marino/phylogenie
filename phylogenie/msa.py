@@ -3,10 +3,10 @@ from typing import Callable
 
 import numpy as np
 from Bio.SeqIO import parse
-from kitpy.type_hints import Numeric
+from pykit.type_hints import Numeric
 
 
-def default_extract_sequence_date(name: str) -> float:
+def _default_extract_sequence_date(name: str) -> float:
     return float(name.split("|")[-1])
 
 
@@ -21,7 +21,7 @@ class MSA:
     def __init__(
         self,
         msa_file: str,
-        extract_sequence_date: Callable[[str], float] = default_extract_sequence_date,
+        extract_sequence_date: Callable[[str], float] = _default_extract_sequence_date,
     ):
         Bio_sequences = tuple(parse(msa_file, "fasta"))
         self.names = tuple(sequence.name for sequence in Bio_sequences)

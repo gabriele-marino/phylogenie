@@ -1,14 +1,11 @@
 import os
 from typing import Annotated
 
-from kitpy.mixins import YAMLMixin
 from pydantic import BaseModel, Field
+from pykit.mixins import YAMLMixin
 
 from phylogenie.generators.msas import MSAsGenerator
 from phylogenie.generators.trees import TreesGenerator
-
-DATA_DIR_NAME = "data"
-METADATA_FILE_NAME = "metadata.csv"
 
 Generator = Annotated[
     MSAsGenerator | TreesGenerator,

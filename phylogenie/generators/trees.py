@@ -6,10 +6,12 @@ from typing import Annotated, Any, Literal
 import joblib
 import pandas as pd
 from pydantic import Field
+from pykit.type_hints import OneOrSequence
 from tqdm import tqdm
 
 from phylogenie.generators.base import BaseGenerator, GeneratorType
 from phylogenie.helpers import remaster, treesimulator
+from phylogenie.helpers.remaster import PunctualReaction
 from phylogenie.parameterizations import Parameterization, RandomParameterization
 
 TREES_DIRNAME = "trees"
@@ -76,6 +78,7 @@ class ReMASTERGenerator(BaseTreesGenerator):
         TreesGeneratorBackendType.REMASTER
     )
     init_values: list[int] | None = None
+    punctual_reactions: OneOrSequence[PunctualReaction] | None = None
     trajectory_attrs: dict[str, str] | None = None
 
     def generate_one(
@@ -91,6 +94,7 @@ class ReMASTERGenerator(BaseTreesGenerator):
                 else self.init_values
             ),
             output_file=output_file,
+            punctual_reactions=self.punctual_reactions,
             trajectory_attrs=self.trajectory_attrs,
         )
 

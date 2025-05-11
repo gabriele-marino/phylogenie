@@ -1,8 +1,8 @@
 from typing import Any, Sequence
 
-from kitpy.type_hints import OneOrMatrix
 from pydantic import BaseModel, GetCoreSchemaHandler
 from pydantic_core import core_schema
+from pykit.type_hints import OneOrMatrix
 
 from phylogenie.skyline.core.matrix import SkylineMatrix
 from phylogenie.skyline.rand.parameter import (
@@ -60,8 +60,13 @@ class RandomSkylineMatrix:
     def __get_pydantic_core_schema__(
         cls, _: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.no_info_after_validator_function(
-            cls.from_config, handler(RandomSkylineMatrixConfig)
+        return core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                core_schema.no_info_after_validator_function(
+                    cls.from_config, handler(RandomSkylineMatrixConfig)
+                ),
+            ]
         )
 
     @classmethod

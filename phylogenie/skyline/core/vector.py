@@ -1,13 +1,18 @@
-from typing import Callable, Iterator, Union
+from typing import Any, Callable, Iterator, Sequence, Union
 
-from kitpy.type_hints import Numeric, OneOrSequence
-from kitpy.validators import ensure_list
+from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pykit.type_hints import Numeric, OneOrSequence
+from pykit.validators import ensure_list
 
 from phylogenie.skyline.core.parameter import (
     ParameterOperand,
     SerialSkylineParameter,
     SkylineParameter,
+    SkylineParameterConfig,
 )
+
+SkylineVectorConfig = OneOrSequence[SkylineParameterConfig]
 
 VectorOperand = Union[ParameterOperand, "SkylineVector"]
 
@@ -90,3 +95,22 @@ class SkylineVector:
         if keys is None:
             keys = [str(i + 1) for i in range(len(self.params))]
         return {key: param.serialize() for key, param in zip(keys, self.params)}
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(cls),
+                core_schema.no_info_after_validator_function(
+                    cls.from_config, handler(SkylineVectorConfig)
+                ),
+            ]
+        )
+
+    @classmethod
+    def from_config(cls, v: SkylineVectorConfig) -> "SkylineVector":
+        if isinstance(v, Sequence):
+            return SkylineVector([SkylineParameter.from_config(param) for param in v])
+        return SkylineVector(SkylineParameter.from_config(v))
