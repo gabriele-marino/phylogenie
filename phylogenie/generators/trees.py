@@ -80,6 +80,7 @@ class ReMASTERGenerator(BaseTreesGenerator):
     init_values: list[int] | None = None
     punctual_reactions: OneOrSequence[PunctualReaction] | None = None
     trajectory_attrs: dict[str, str] | None = None
+    remove_singleton_nodes: bool = True
 
     def generate_one(
         self,
@@ -96,6 +97,7 @@ class ReMASTERGenerator(BaseTreesGenerator):
             output_file=output_file,
             punctual_reactions=self.punctual_reactions,
             trajectory_attrs=self.trajectory_attrs,
+            remove_singleton_nodes=self.remove_singleton_nodes,
         )
 
 
