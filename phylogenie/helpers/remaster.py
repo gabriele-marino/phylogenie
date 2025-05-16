@@ -141,7 +141,6 @@ def _prepare_config_file(
     output_xml_file: str = "pymaster.xml",
     punctual_reactions: OneOrSequence[PunctualReaction] | None = None,
     trajectory_attrs: dict[str, str] | None = None,
-    remove_singleton_nodes: bool = True,
     n_simulations: int = 1,
 ) -> None:
     simulate = Element("simulate", {"spec": "SimulatedTree", "id": TREE_ID})
@@ -160,7 +159,7 @@ def _prepare_config_file(
             {
                 "spec": "TypedTreeLogger",
                 "tree": f"@{TREE_ID}",
-                "removeSingletonNodes": str(remove_singleton_nodes).lower(),
+                "removeSingletonNodes": "true",
                 "noLabels": "true",
             },
         )
@@ -213,7 +212,6 @@ def generate_trees(
     output_file: str,
     punctual_reactions: OneOrSequence[PunctualReaction] | None = None,
     trajectory_attrs: dict[str, str] | None = None,
-    remove_singleton_nodes: bool = True,
     xml_file: str | None = None,
     n_simulations: int = 1,
 ) -> None:
@@ -230,7 +228,6 @@ def generate_trees(
         output_xml_file=output_xml_file,
         punctual_reactions=punctual_reactions,
         trajectory_attrs=trajectory_attrs,
-        remove_singleton_nodes=remove_singleton_nodes,
         n_simulations=n_simulations,
     )
 
