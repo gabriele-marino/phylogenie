@@ -1,0 +1,33 @@
+output_dir: outputs/treesimulator-BDEI
+n_samples:
+  train: 100
+  val: 10
+  test: 10
+n_jobs: -1
+seed: 42
+
+data_type: trees
+backend: treesimulator
+
+parameterization: BDEI
+reproduction_number: R_0
+infectious_period: infection_time*(1-incubation_fraction)
+incubation_period: infection_time*incubation_fraction
+sampling_proportion: 0.25
+
+min_tips: 50
+max_tips: 250
+
+context:
+  R_0:
+    type: lognormal
+    mean: 1
+    std: 0.2
+  infection_time:
+    type: lognormal
+    mean: 1
+    std: 0.3
+  incubation_fraction:
+    type: uniform
+    low: 0
+    high: 0.75

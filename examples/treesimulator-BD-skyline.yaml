@@ -1,0 +1,44 @@
+output_dir: outputs/treesimulator-BD-skyline
+n_samples:
+  train: 100
+  val: 10
+  test: 10
+n_jobs: -1
+seed: 42
+
+data_type: trees
+backend: treesimulator
+
+parameterization: BD
+reproduction_number:
+  value: [R_0_t1, R_0_t2]
+  change_times: 0.5
+infectious_period:
+  value: [T_I_t1, T_I_t2]
+  change_times: T_I_change_time
+sampling_proportion: 0.25
+
+min_tips: 50
+max_tips: 250
+
+context:
+  R_0_t1:
+    type: lognormal
+    mean: 1
+    std: 0.2
+  R_0_t2:
+    type: lognormal
+    mean: 1
+    std: 0.25
+  T_I_t1:
+    type: lognormal
+    mean: 1
+    std: 0.3
+  T_I_t2:
+    type: lognormal
+    mean: 1
+    std: 0.3
+  T_I_change_time:
+    type: uniform
+    low: 0.1
+    high: 0.9

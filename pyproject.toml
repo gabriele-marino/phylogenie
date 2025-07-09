@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "phylogenie"
+version = "0.1.0"
+description = "Generate phylogenetic datasets with minimal set up overhead"
+authors = ["gabriele-marino <gabmarino.8601@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+joblib = "^1.4.2"
+pandas = "^2.2.2"
+pydantic = "^2.11.5"
+pyyaml = "^6.0.2"
+tqdm = "^4.66.4"
+treesimulator = "^0.2.15"
+
+[tool.poetry.group.dev.dependencies]
+joblib-stubs = "^1.5.0.1.20250510"
+pandas-stubs = "^2.3.0.250703"
+pyright = "^1.1.402"
+pytest = "^8.3.5"
+
+[tool.poetry.scripts]
+phylogenie = "phylogenie.main:main"
+
+[tool.pyright]
+include = [
+    "phylogenie",
+]
+typeCheckingMode = "strict"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
