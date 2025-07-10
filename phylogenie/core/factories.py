@@ -1,4 +1,4 @@
-from typing import Any, overload
+from typing import Any, Literal, overload
 
 import numpy as np
 
@@ -99,9 +99,6 @@ def skyline_parameter_like_factory(
         value=many_scalars_factory(x.value, data),
         change_times=many_scalars_factory(x.change_times, data),
     )
-
-
-from typing import Literal
 
 
 @overload
