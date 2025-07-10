@@ -23,8 +23,8 @@ def _eval_expression(expression: str, data: pgt.Data) -> Any:
             expression,
             {
                 "__builtins__": __builtins__,
-                # "np": np,
-                # **{k: np.array(v) for k, v in data.items()},
+                "np": np,
+                **{k: np.array(v) for k, v in data.items()},
             },
             {k: np.array(v) for k, v in data.items()},
         )
