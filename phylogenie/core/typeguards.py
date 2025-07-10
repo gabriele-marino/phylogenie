@@ -1,35 +1,27 @@
 from typing import TypeGuard
 
 import phylogenie.core.configs as cfg
-import phylogenie.typeguards as tg
-import phylogenie.typings as pgt
 
 
-def is_many_scalar_configs(x: object) -> TypeGuard[pgt.Many[cfg.ScalarConfig]]:
-    return tg.is_many(x) and all(isinstance(v, cfg.ScalarConfig) for v in x)
+def is_list(x: object) -> TypeGuard[list[object]]:
+    return isinstance(x, list)
 
 
-def is_many_2D_scalar_configs(x: object) -> TypeGuard[pgt.Many2D[cfg.ScalarConfig]]:
-    return tg.is_many(x) and all(is_many_scalar_configs(v) for v in x)
+def is_list_of_scalar_configs(x: object) -> TypeGuard[list[cfg.ScalarConfig]]:
+    return is_list(x) and all(isinstance(v, cfg.ScalarConfig) for v in x)
 
 
-def is_many_3D_scalar_configs(x: object) -> TypeGuard[pgt.Many3D[cfg.ScalarConfig]]:
-    return tg.is_many(x) and all(is_many_2D_scalar_configs(v) for v in x)
-
-
-def is_many_skyline_parameter_like_configs(
+def is_list_of_skyline_parameter_like_configs(
     x: object,
-) -> TypeGuard[pgt.Many[cfg.SkylineParameterLikeConfig]]:
-    return tg.is_many(x) and all(
-        isinstance(v, cfg.SkylineParameterLikeConfig) for v in x
-    )
+) -> TypeGuard[list[cfg.SkylineParameterLikeConfig]]:
+    return is_list(x) and all(isinstance(v, cfg.SkylineParameterLikeConfig) for v in x)
 
 
-def is_many_skyline_vector_like_configs(
+def is_list_of_skyline_vector_like_configs(
     x: object,
-) -> TypeGuard[pgt.Many[cfg.SkylineVectorLikeConfig]]:
-    return tg.is_many(x) and all(
-        isinstance(v, str | pgt.Scalar | cfg.SkylineVectorValueModel)
-        or is_many_skyline_parameter_like_configs(v)
+) -> TypeGuard[list[cfg.SkylineVectorLikeConfig]]:
+    return is_list(x) and all(
+        isinstance(v, str | cfg.SkylineVectorValueModel)
+        or is_list_of_skyline_parameter_like_configs(v)
         for v in x
     )

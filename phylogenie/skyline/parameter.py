@@ -4,32 +4,51 @@ from typing import TypeGuard, Union
 
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
-from phylogenie.utils import vectorify1D
 
 SkylineParameterLike = Union[pgt.Scalar, "SkylineParameter"]
+
+
+def is_skyline_parameter_like(x: object) -> TypeGuard[SkylineParameterLike]:
+    return isinstance(x, pgt.Scalar | SkylineParameter)
+
+
+def is_many_skyline_parameters_like(
+    x: object,
+) -> TypeGuard[pgt.Many[SkylineParameterLike]]:
+    return tg.is_many(x) and all(is_skyline_parameter_like(v) for v in x)
 
 
 class SkylineParameter:
     def __init__(
         self,
         value: pgt.OneOrManyScalars,
-        change_times: pgt.OneOrManyScalars | None = None,
+        change_times: pgt.ManyScalars | None = None,
     ) -> None:
-        value = vectorify1D(value)
-        change_times = vectorify1D(change_times)
+        if isinstance(value, pgt.Scalar):
+            value = [value]
+        elif not tg.is_many_scalars(value):
+            raise TypeError(
+                f"It is impossible to create a SkylineParameter from `value` {value} of type {type(value)}. Please provide a scalar or a sequence of scalars."
+            )
+
+        if change_times is None:
+            change_times = []
+        elif not tg.is_many_scalars(change_times):
+            raise TypeError(
+                f"It is impossible to create a SkylineParameter from `change_times` {change_times} of type {type(change_times)}. Please provide a sequence of scalars."
+            )
+
         if len(value) != len(change_times) + 1:
             raise ValueError(
                 f"`value` must have exactly one more element than `change_times` (got value={value} of length {len(value)} and change_times={change_times} of length {len(change_times)})."
             )
 
-        value_ = [value[0]]
-        change_times_: list[pgt.Scalar] = []
+        self.value = [value[0]]
+        self.change_times: list[pgt.Scalar] = []
         for i in range(1, len(value)):
             if value[i] != value[i - 1]:
-                value_.append(value[i])
-                change_times_.append(change_times[i - 1])
-        self.value = tuple(value_)
-        self.change_times = tuple(change_times_)
+                self.value.append(value[i])
+                self.value.append(change_times[i - 1])
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Scalar:
         return self.value[bisect_right(self.change_times, t)]
@@ -85,13 +104,3 @@ class SkylineParameter:
 
 def skyline_parameter(x: SkylineParameterLike) -> SkylineParameter:
     return SkylineParameter(x) if isinstance(x, pgt.Scalar) else x
-
-
-def is_skyline_parameter_like(x: object) -> TypeGuard[SkylineParameterLike]:
-    return isinstance(x, pgt.Scalar | SkylineParameter)
-
-
-def is_many_skyline_parameters_like(
-    x: object,
-) -> TypeGuard[pgt.Many[SkylineParameterLike]]:
-    return tg.is_many(x) and all(is_skyline_parameter_like(v) for v in x)

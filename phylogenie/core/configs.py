@@ -3,33 +3,38 @@ from phylogenie.configs import StrictBaseModel
 
 IntConfig = str | int
 ScalarConfig = str | pgt.Scalar
-OneOrManyIntsConfig = str | int | pgt.Many[IntConfig]
-OneOrManyScalarsConfig = str | pgt.Scalar | pgt.Many[ScalarConfig]
+ManyIntsConfig = str | list[IntConfig]
+ManyScalarsConfig = str | list[ScalarConfig]
+OneOrManyScalarsConfig = ScalarConfig | list[ScalarConfig]
+OneOrMany2DScalarsConfig = ScalarConfig | list[list[ScalarConfig]]
 
 
 class SkylineParameterValueModel(StrictBaseModel):
-    value: str | pgt.Many[ScalarConfig]
-    change_times: OneOrManyScalarsConfig
+    value: ManyScalarsConfig
+    change_times: ManyScalarsConfig
 
 
-SkylineParameterLikeConfig = str | pgt.Scalar | SkylineParameterValueModel
+SkylineParameterLikeConfig = ScalarConfig | SkylineParameterValueModel
 
 
 class SkylineVectorValueModel(StrictBaseModel):
-    value: str | pgt.Many[OneOrManyScalarsConfig]
-    change_times: OneOrManyScalarsConfig
+    value: str | list[OneOrManyScalarsConfig]
+    change_times: ManyScalarsConfig
 
 
+SkylineVectorCoercibleConfig = (
+    str | pgt.Scalar | list[SkylineParameterLikeConfig] | SkylineVectorValueModel
+)
 SkylineVectorLikeConfig = (
-    str | pgt.Scalar | pgt.Many[SkylineParameterLikeConfig] | SkylineVectorValueModel
+    str | list[SkylineParameterLikeConfig] | SkylineVectorValueModel
 )
 
 
 class SkylineMatrixValueModel(StrictBaseModel):
-    value: str | pgt.Many[pgt.OneOrMany2D[ScalarConfig]]
-    change_times: OneOrManyScalarsConfig
+    value: str | list[OneOrMany2DScalarsConfig]
+    change_times: ManyScalarsConfig
 
 
-SkylineMatrixLikeConfig = (
-    str | pgt.Scalar | pgt.Many[SkylineVectorLikeConfig] | SkylineMatrixValueModel
+SkylineMatrixCoercibleConfig = (
+    str | pgt.Scalar | list[SkylineVectorLikeConfig] | SkylineMatrixValueModel
 )

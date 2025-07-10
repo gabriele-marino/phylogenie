@@ -11,7 +11,6 @@ from phylogenie.backend.remaster.reactions import (
     Reaction,
 )
 from phylogenie.skyline import skyline_parameter
-from phylogenie.utils import vectorify1D
 
 TREE_ID = "Tree"
 
@@ -75,12 +74,12 @@ def _generate_config_file(
             attrs = {
                 "spec": "PunctualReaction",
                 "value": punctual_reaction.value,
-                "times": " ".join(map(str, vectorify1D(punctual_reaction.times))),
+                "times": " ".join(map(str, punctual_reaction.times)),
             }
             if punctual_reaction.p is not None:
-                attrs["p"] = " ".join(map(str, vectorify1D(punctual_reaction.p)))
+                attrs["p"] = " ".join(map(str, punctual_reaction.p))
             if punctual_reaction.n is not None:
-                attrs["n"] = " ".join(map(str, vectorify1D(punctual_reaction.n)))
+                attrs["n"] = " ".join(map(str, punctual_reaction.n))
             trajectory.append(Element("reaction", attrs))
 
     simulate.append(trajectory)
@@ -151,6 +150,7 @@ def generate_trees(
     output_xml_file: str | None = None,
     n_simulations: int = 1,
     seed: int | None = None,
+    beast_path: str = "beast",
 ) -> None:
     if isinstance(populations, str):
         populations = [populations]
@@ -175,7 +175,7 @@ def generate_trees(
         n_simulations=n_simulations,
     )
 
-    cmd = ["beast"]
+    cmd = [beast_path]
     if seed is not None:
         cmd.extend(["-seed", str(seed)])
     cmd.append(xml_file)

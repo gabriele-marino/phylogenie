@@ -17,7 +17,7 @@ transition_rates:
 transmission_rates: la
 removal_rates: psi
 sampling_proportions:
-  value: [0, s_t2, s_t3]
+  value: [0.2, s_t2, s_t3]
   change_times: [0.5, 0.75]
 
 min_tips: 50
@@ -59,8 +59,8 @@ context:
     N: 3
     x:
       type: uniform
-      low: 0.1
-      high: 0.5
+      low: 0.3
+      high: 0.7
   s_t3:
     n_dim: 1
     N: 3

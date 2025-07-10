@@ -3,8 +3,8 @@ from typing import Literal
 
 from numpy.random import Generator
 
+import phylogenie.typings as pgt
 from phylogenie.core.msas.base import BackendType, MSAsGenerator
-from phylogenie.core.typings import Data
 
 
 class AliSimGenerator(MSAsGenerator):
@@ -13,7 +13,7 @@ class AliSimGenerator(MSAsGenerator):
     args: dict[str, str | int | float]
 
     def _generate_one_from_tree(
-        self, filename: str, tree_file: str, rng: Generator, data: Data
+        self, filename: str, tree_file: str, rng: Generator, data: pgt.Data
     ) -> None:
         command = [
             self.iqtree_path,

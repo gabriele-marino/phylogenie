@@ -8,7 +8,7 @@ class ReactionConfig(StrictBaseModel):
 
 
 class PunctualReactionConfig(StrictBaseModel):
-    times: cfg.OneOrManyScalarsConfig
+    times: cfg.ManyScalarsConfig
     value: str
-    p: cfg.OneOrManyScalarsConfig | None = None
-    n: cfg.OneOrManyIntsConfig | None = None
+    p: cfg.ManyScalarsConfig | None = None
+    n: cfg.ManyIntsConfig | None = None

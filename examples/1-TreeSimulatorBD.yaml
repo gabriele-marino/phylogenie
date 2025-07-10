@@ -1,0 +1,95 @@
+# ---------------------------------
+# BD simulations with TreeSimulator
+# ---------------------------------
+
+# This configuration file is used to simulate phylogenetic trees using the TreeSimulator backend with a Birth-Death (BD) parameterization.
+# The BD parameterization includes three scalar parameters:
+# - `R_0`: Reproduction number;
+# - `T_I`: Infectious period;
+# - `s`: Sampling proportion.
+# In this example, we generate a dataset with 100 training samples, 10 validation samples, and 10 test samples. For each sample, the following parameters are sampled:
+# - The reproduction number is drawn from a lognormal distribution (mean=1, std=0.2);
+# - The infectious period is also drawn from a lognormal distribution (mean=1, std=0.3);
+# - The sampling proportion is fixed at 0.25.
+# The number of tips in the simulated trees is allowed to range from 50 to 250.
+# To run Phylogenie for this configuration, use: `phylogenie examples/1-TreeSimulatorBD.yaml`
+
+# ------------------
+# 1. General configs
+# ------------------
+# This section defines general configurations for the simulation, including output directory, number of samples, number parallel jobs, and random seed.
+# These configs are the same for all data types (trees or MSAs) and backends (ReMASTER, TreeSimulator, AliSim).
+
+output_dir: outputs/treesimulator-BD # Root directory where the simulated data and metadata will be saved
+data_dir: mydata # Name of the directory where the data will be saved ("data" by default)
+metadata_filename: mymetadata.csv # Name of the .csv file where sampled parameters will be stored ("metadata.csv" by default)
+
+data_type: trees # Specify the type of data to simulate: "trees" or "msas"
+backend: treesimulator # Backend simulator used for generating trees: "treesimulator" or "remaster"
+
+# The number of samples can be an integer as well as a dictionary specifying different numbers for each dataset splits. Dataset splits can have any name; here we use `train`, `val`, and `test`.
+n_samples:
+  train: 100 # 100 training samples
+  val: 10 # 10 validation samples
+  test: 10 # 10 test samples
+# For a single dataset split with 100 samples, use:
+# n_samples: 100
+
+n_jobs: -1 # Number of parallel jobs to use; -1 means use all available cores (-1 by default)
+seed: 42 # Random seed to ensure reproducibility (None by default)
+
+# ----------
+# 2. Context
+# ----------
+
+# The context section is what makes Phylogenie flexible and powerful.
+# This section defines the parameters that will be sampled for each dataset item.
+# The context is a dictionary of key-value pairs, where each key is a parameter name and the value is a distribution from which the parameter will be sampled. 
+# Phylogenie supports a wide range of distributions, including:
+# - `uniform(low: float, high: float)`,
+# - `normal(mean: float, std: float)`,
+# - `lognormal(mean: float, std: float)`,
+# - `weibull(scale: float, shape: float)`,
+# - `exponential(scale: float)`,
+# - `gamma(scale: float, shape: float)`,
+# - `beta(alpha: float, beta: float)`,
+# - `int-uniform(low: int, high: int)`,
+# - `categorical(categories: list[str], probabilities: list[float])`.
+# In this case, we sample the reproduction number `R_0` and the infectious period `T_I` from lognormal distributions with mean 1 and different standard deviations.
+
+context:
+  R_0:
+    type: lognormal
+    mean: 1
+    std: 0.2
+  T_I:
+    type: lognormal
+    mean: 1
+    std: 0.3
+
+# ------------------------------
+# 3. Backend-specific parameters
+# ------------------------------
+
+# This section defines TreeSimulator-specific parameters.
+# Here, we only specify the minimum and maximum number of tips in the simulated trees.
+
+min_tips: 50 # Minimum number of tips in the simulated trees
+max_tips: 250 # Maximum number of tips in the simulated trees
+
+# Additional (optional) TreeSimulator-specific parameters include:
+# - `T`: float (default: +infinity)
+#   Total simulation time. If specified, a forest will be simulated instead of one tree.
+# - `state_frequencies`: list[float] | None (default: None)
+#   State equilibrium frequencies, used to draw the root state. If not specified, they are inferred from the model.
+# - `root_state`: str | None (default: None)
+#   The state of the root node (default: None). If not specified, the state will be drawn randomly according to equilibrium frequencies
+
+# ---------------------------------------
+# 3. Parameterization-specific parameters
+# ---------------------------------------
+
+parameterization: BD # Use the Birth-Death parameterization
+reproduction_number: R_0 # Basic reproduction number
+infectious_period: T_I # Mean infectious period
+sampling_proportion: 0.25

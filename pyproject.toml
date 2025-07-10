@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "phylogenie"
-version = "0.1.0"
-description = "Generate phylogenetic datasets with minimal set up overhead"
-authors = ["gabriele-marino <gabmarino.8601@gmail.com>"]
+version = "1.0.1"
+description = "Generate phylogenetic datasets with minimal setup effort"
+authors = ["Gabriele Marino <gabmarino.8601@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = "^3.10"
 
 joblib = "^1.4.2"
 pandas = "^2.2.2"

@@ -6,6 +6,7 @@ from numpy.random import Generator
 from pydantic import Field
 
 import phylogenie.core.configs as cfg
+import phylogenie.typings as pgt
 from phylogenie.backend.remaster import (
     DEFAULT_POPULATION,
     SAMPLE_POPULATION,
@@ -16,8 +17,8 @@ from phylogenie.backend.remaster import (
     get_FBD_reactions,
 )
 from phylogenie.core.factories import (
-    skyline_matrix_like_factory,
-    skyline_vector_like_factory,
+    skyline_matrix_coercible_factory,
+    skyline_vector_coercible_factory,
 )
 from phylogenie.core.trees.base import BackendType, TreesGenerator
 from phylogenie.core.trees.remaster.configs import (
@@ -28,7 +29,6 @@ from phylogenie.core.trees.remaster.factories import (
     punctual_reaction_factory,
     reaction_factory,
 )
-from phylogenie.core.typings import Data
 
 
 class ParameterizationType(str, Enum):
@@ -39,6 +39,7 @@ class ParameterizationType(str, Enum):
 
 class ReMASTERGenerator(TreesGenerator):
     backend: Literal[BackendType.REMASTER] = BackendType.REMASTER
+    beast_path: str = "beast"
     populations: str | list[str] = DEFAULT_POPULATION
     init_population: str = DEFAULT_POPULATION
     sample_population: str = SAMPLE_POPULATION
@@ -47,7 +48,7 @@ class ReMASTERGenerator(TreesGenerator):
     trajectory_attrs: dict[str, str | int | float] = Field(default_factory=dict)
 
     def _generate_one_from_extra_reactions(
-        self, filename: str, rng: Generator, data: Data, reactions: list[Reaction]
+        self, filename: str, rng: Generator, data: pgt.Data, reactions: list[Reaction]
     ) -> None:
         generate_trees(
             tree_file_name=f"{filename}.nwk",
@@ -63,9 +64,10 @@ class ReMASTERGenerator(TreesGenerator):
                 for k, v in self.trajectory_attrs.items()
             },
             seed=int(rng.integers(0, 2**31 - 1)),
+            beast_path=self.beast_path,
         )
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         self._generate_one_from_extra_reactions(filename, rng, data, reactions=[])
 
 
@@ -73,25 +75,27 @@ class CanonicalReMASTERGenerator(ReMASTERGenerator):
     parameterization: Literal[ParameterizationType.CANONICAL] = (
         ParameterizationType.CANONICAL
     )
-    birth_rates: cfg.SkylineVectorLikeConfig = 0
-    death_rates: cfg.SkylineVectorLikeConfig = 0
-    sampling_rates: cfg.SkylineVectorLikeConfig = 0
-    removal_probabilities: cfg.SkylineVectorLikeConfig = 0
-    migration_rates: cfg.SkylineMatrixLikeConfig = 0
-    birth_rates_among_demes: cfg.SkylineMatrixLikeConfig = 0
+    birth_rates: cfg.SkylineVectorCoercibleConfig = 0
+    death_rates: cfg.SkylineVectorCoercibleConfig = 0
+    sampling_rates: cfg.SkylineVectorCoercibleConfig = 0
+    removal_probabilities: cfg.SkylineVectorCoercibleConfig = 0
+    migration_rates: cfg.SkylineMatrixCoercibleConfig = 0
+    birth_rates_among_demes: cfg.SkylineMatrixCoercibleConfig = 0
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         reactions = get_canonical_reactions(
             populations=self.populations,
             sample_population=self.sample_population,
-            birth_rates=skyline_vector_like_factory(self.birth_rates, data),
-            death_rates=skyline_vector_like_factory(self.death_rates, data),
-            sampling_rates=skyline_vector_like_factory(self.sampling_rates, data),
-            removal_probabilities=skyline_vector_like_factory(
+            birth_rates=skyline_vector_coercible_factory(self.birth_rates, data),
+            death_rates=skyline_vector_coercible_factory(self.death_rates, data),
+            sampling_rates=skyline_vector_coercible_factory(self.sampling_rates, data),
+            removal_probabilities=skyline_vector_coercible_factory(
                 self.removal_probabilities, data
             ),
-            migration_rates=skyline_matrix_like_factory(self.migration_rates, data),
-            birth_rates_among_demes=skyline_matrix_like_factory(
+            migration_rates=skyline_matrix_coercible_factory(
+                self.migration_rates, data
+            ),
+            birth_rates_among_demes=skyline_matrix_coercible_factory(
                 self.birth_rates_among_demes, data
             ),
         )
@@ -102,31 +106,33 @@ class EpidemiologicalReMASTERGenerator(ReMASTERGenerator):
     parameterization: Literal[ParameterizationType.EPIDEMIOLOGICAL] = (
         ParameterizationType.EPIDEMIOLOGICAL
     )
-    reproduction_numbers: cfg.SkylineVectorLikeConfig = 0
-    become_uninfectious_rates: cfg.SkylineVectorLikeConfig = 0
-    sampling_proportions: cfg.SkylineVectorLikeConfig = 0
-    removal_probabilities: cfg.SkylineVectorLikeConfig = 0
-    migration_rates: cfg.SkylineMatrixLikeConfig = 0
-    reproduction_numbers_among_demes: cfg.SkylineMatrixLikeConfig = 0
+    reproduction_numbers: cfg.SkylineVectorCoercibleConfig = 0
+    become_uninfectious_rates: cfg.SkylineVectorCoercibleConfig = 0
+    sampling_proportions: cfg.SkylineVectorCoercibleConfig = 0
+    removal_probabilities: cfg.SkylineVectorCoercibleConfig = 0
+    migration_rates: cfg.SkylineMatrixCoercibleConfig = 0
+    reproduction_numbers_among_demes: cfg.SkylineMatrixCoercibleConfig = 0
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         reactions = get_epidemiological_reactions(
             populations=self.populations,
             sample_population=self.sample_population,
-            reproduction_numbers=skyline_vector_like_factory(
+            reproduction_numbers=skyline_vector_coercible_factory(
                 self.reproduction_numbers, data
             ),
-            become_uninfectious_rates=skyline_vector_like_factory(
+            become_uninfectious_rates=skyline_vector_coercible_factory(
                 self.become_uninfectious_rates, data
             ),
-            sampling_proportions=skyline_vector_like_factory(
+            sampling_proportions=skyline_vector_coercible_factory(
                 self.sampling_proportions, data
             ),
-            removal_probabilities=skyline_vector_like_factory(
+            removal_probabilities=skyline_vector_coercible_factory(
                 self.removal_probabilities, data
             ),
-            migration_rates=skyline_matrix_like_factory(self.migration_rates, data),
-            reproduction_numbers_among_demes=skyline_matrix_like_factory(
+            migration_rates=skyline_matrix_coercible_factory(
+                self.migration_rates, data
+            ),
+            reproduction_numbers_among_demes=skyline_matrix_coercible_factory(
                 self.reproduction_numbers_among_demes, data
             ),
         )
@@ -135,27 +141,31 @@ class EpidemiologicalReMASTERGenerator(ReMASTERGenerator):
 
 class FBDReMASTERGenerator(ReMASTERGenerator):
     parameterization: Literal[ParameterizationType.FBD] = ParameterizationType.FBD
-    diversification: cfg.SkylineVectorLikeConfig = 0
-    turnover: cfg.SkylineVectorLikeConfig = 0
-    sampling_proportions: cfg.SkylineVectorLikeConfig = 0
-    removal_probabilities: cfg.SkylineVectorLikeConfig = 0
-    migration_rates: cfg.SkylineMatrixLikeConfig = 0
-    diversification_between_types: cfg.SkylineMatrixLikeConfig = 0
+    diversification: cfg.SkylineVectorCoercibleConfig = 0
+    turnover: cfg.SkylineVectorCoercibleConfig = 0
+    sampling_proportions: cfg.SkylineVectorCoercibleConfig = 0
+    removal_probabilities: cfg.SkylineVectorCoercibleConfig = 0
+    migration_rates: cfg.SkylineMatrixCoercibleConfig = 0
+    diversification_between_types: cfg.SkylineMatrixCoercibleConfig = 0
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         reactions = get_FBD_reactions(
             populations=self.populations,
             sample_population=self.sample_population,
-            diversification=skyline_vector_like_factory(self.diversification, data),
-            turnover=skyline_vector_like_factory(self.turnover, data),
-            sampling_proportions=skyline_vector_like_factory(
+            diversification=skyline_vector_coercible_factory(
+                self.diversification, data
+            ),
+            turnover=skyline_vector_coercible_factory(self.turnover, data),
+            sampling_proportions=skyline_vector_coercible_factory(
                 self.sampling_proportions, data
             ),
-            removal_probabilities=skyline_vector_like_factory(
+            removal_probabilities=skyline_vector_coercible_factory(
                 self.removal_probabilities, data
             ),
-            migration_rates=skyline_matrix_like_factory(self.migration_rates, data),
-            diversification_between_types=skyline_matrix_like_factory(
+            migration_rates=skyline_matrix_coercible_factory(
+                self.migration_rates, data
+            ),
+            diversification_between_types=skyline_matrix_coercible_factory(
                 self.diversification_between_types, data
             ),
         )

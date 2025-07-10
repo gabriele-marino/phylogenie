@@ -2,9 +2,9 @@ from dataclasses import dataclass
 
 import phylogenie.typings as pgt
 from phylogenie.skyline import (
-    SkylineMatrixLike,
+    SkylineMatrixCoercible,
     SkylineParameterLike,
-    SkylineVectorLike,
+    SkylineVectorCoercible,
     skyline_matrix,
     skyline_vector,
 )
@@ -21,21 +21,21 @@ class Reaction:
 
 @dataclass
 class PunctualReaction:
-    times: pgt.OneOrManyScalars
+    times: pgt.ManyScalars
     value: str
-    p: pgt.OneOrManyScalars | None = None
-    n: pgt.OneOrMany[int] | None = None
+    p: pgt.ManyScalars | None = None
+    n: pgt.Many[int] | None = None
 
 
 def get_canonical_reactions(
     populations: str | list[str] = DEFAULT_POPULATION,
     sample_population: str = SAMPLE_POPULATION,
-    birth_rates: SkylineVectorLike = 0,
-    death_rates: SkylineVectorLike = 0,
-    sampling_rates: SkylineVectorLike = 0,
-    removal_probabilities: SkylineVectorLike = 0,
-    migration_rates: SkylineMatrixLike = 0,
-    birth_rates_among_demes: SkylineMatrixLike = 0,
+    birth_rates: SkylineVectorCoercible = 0,
+    death_rates: SkylineVectorCoercible = 0,
+    sampling_rates: SkylineVectorCoercible = 0,
+    removal_probabilities: SkylineVectorCoercible = 0,
+    migration_rates: SkylineMatrixCoercible = 0,
+    birth_rates_among_demes: SkylineMatrixCoercible = 0,
 ) -> list[Reaction]:
     if isinstance(populations, str):
         populations = [populations]
@@ -84,12 +84,12 @@ def get_canonical_reactions(
 def get_epidemiological_reactions(
     populations: str | list[str] = DEFAULT_POPULATION,
     sample_population: str = SAMPLE_POPULATION,
-    reproduction_numbers: SkylineVectorLike = 0,
-    become_uninfectious_rates: SkylineVectorLike = 0,
-    sampling_proportions: SkylineVectorLike = 0,
-    removal_probabilities: SkylineVectorLike = 0,
-    migration_rates: SkylineMatrixLike = 0,
-    reproduction_numbers_among_demes: SkylineMatrixLike = 0,
+    reproduction_numbers: SkylineVectorCoercible = 0,
+    become_uninfectious_rates: SkylineVectorCoercible = 0,
+    sampling_proportions: SkylineVectorCoercible = 0,
+    removal_probabilities: SkylineVectorCoercible = 0,
+    migration_rates: SkylineMatrixCoercible = 0,
+    reproduction_numbers_among_demes: SkylineMatrixCoercible = 0,
 ) -> list[Reaction]:
     if isinstance(populations, str):
         populations = [populations]
@@ -125,12 +125,12 @@ def get_epidemiological_reactions(
 def get_FBD_reactions(
     populations: str | list[str] = DEFAULT_POPULATION,
     sample_population: str = SAMPLE_POPULATION,
-    diversification: SkylineVectorLike = 0,
-    turnover: SkylineVectorLike = 0,
-    sampling_proportions: SkylineVectorLike = 0,
-    removal_probabilities: SkylineVectorLike = 0,
-    migration_rates: SkylineMatrixLike = 0,
-    diversification_between_types: SkylineMatrixLike = 0,
+    diversification: SkylineVectorCoercible = 0,
+    turnover: SkylineVectorCoercible = 0,
+    sampling_proportions: SkylineVectorCoercible = 0,
+    removal_probabilities: SkylineVectorCoercible = 0,
+    migration_rates: SkylineMatrixCoercible = 0,
+    diversification_between_types: SkylineMatrixCoercible = 0,
 ):
     if isinstance(populations, str):
         populations = [populations]

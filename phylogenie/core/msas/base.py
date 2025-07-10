@@ -6,9 +6,9 @@ from typing import Literal
 
 from numpy.random import Generator
 
+import phylogenie.typings as pgt
 from phylogenie.core.dataset import DatasetGenerator, DataType
 from phylogenie.core.trees import TreesGeneratorConfig
-from phylogenie.core.typings import Data
 
 
 class BackendType(str, Enum):
@@ -22,10 +22,10 @@ class MSAsGenerator(DatasetGenerator):
 
     @abstractmethod
     def _generate_one_from_tree(
-        self, filename: str, tree_file: str, rng: Generator, data: Data
+        self, filename: str, tree_file: str, rng: Generator, data: pgt.Data
     ) -> None: ...
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         if isinstance(self.trees, str):
             tree_files = os.listdir(self.trees)
             tree_file = os.path.join(self.trees, str(rng.choice(tree_files)))

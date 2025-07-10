@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterator
-from typing import TypeGuard, Union, overload
+from typing import TypeGuard, Union
 
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
@@ -11,38 +11,51 @@ from phylogenie.skyline.parameter import (
     skyline_parameter,
 )
 
-SkylineVectorParams = pgt.OneOrMany[SkylineParameterLike]
 SkylineVectorOperand = Union[SkylineParameterLike, "SkylineVector"]
-SkylineVectorLike = Union[SkylineVectorParams, "SkylineVector"]
+SkylineVectorLike = Union[pgt.Many[SkylineParameterLike], "SkylineVector"]
+SkylineVectorCoercible = Union[pgt.OneOrMany[SkylineParameterLike], "SkylineVector"]
+
+
+def is_skyline_vector_operand(x: object) -> TypeGuard[SkylineVectorOperand]:
+    return isinstance(x, SkylineVector) or is_skyline_parameter_like(x)
+
+
+def is_skyline_vector_like(x: object) -> TypeGuard[SkylineVectorLike]:
+    return isinstance(x, SkylineVector) or is_many_skyline_parameters_like(x)
+
+
+def is_many_skyline_vectors_like(x: object) -> TypeGuard[pgt.Many[SkylineVectorLike]]:
+    return tg.is_many(x) and all(is_skyline_vector_like(v) for v in x)
 
 
 class SkylineVector:
     def __init__(
         self,
-        params: SkylineVectorParams | None = None,
-        value: pgt.Many[pgt.OneOrManyScalars] | None = None,
-        change_times: pgt.OneOrManyScalars | None = None,
+        params: pgt.Many[SkylineParameterLike] | None = None,
+        value: pgt.Many2DScalars | None = None,
+        change_times: pgt.ManyScalars | None = None,
     ) -> None:
         if params is not None and value is None and change_times is None:
-            if is_skyline_parameter_like(params):
-                self.params = [skyline_parameter(params)]
-            elif is_many_skyline_parameters_like(params):
+            if is_many_skyline_parameters_like(params):
                 self.params = [skyline_parameter(param) for param in params]
             else:
                 raise TypeError(
-                    f"It is impossible to create a SkylineVector from `params` {params} of type {type(params)}. Please provide a SkylineParameterLike object (i.e., a SkylineParameter or a scalar) or a sequence of them."
+                    f"It is impossible to create a SkylineVector from `params` {params} of type {type(params)}. Please provide a sequence of SkylineParameterLike objects (a SkylineParameterLike object can either be a SkylineParameter or a scalar)."
                 )
         elif value is not None and change_times is not None:
-            Ns = {len(row) for row in value if tg.is_many(row)}
-            if len(Ns) > 1:
-                raise ValueError(
-                    f"All rows in the `value` must be scalars or have the same length to create a SkylineVector (got value={value} with row lengths={Ns})."
+            if tg.is_many_2D_scalars(value):
+                vector_lengths = {len(vector) for vector in value}
+                if any(vl != len(value[0]) for vl in vector_lengths):
+                    raise ValueError(
+                        f"All rows in the `value` of a SkylineVector must have the same length (got value={value} with vector lengths={vector_lengths})."
+                    )
+            else:
+                raise TypeError(
+                    f"It is impossible to create a SkylineVector from `value` {value} of type {type(value)}. Please provide a nested (2D) sequence of scalar values."
                 )
-            N = Ns.pop() if Ns else 1
-            value = [[x] * N if isinstance(x, pgt.Scalar) else x for x in value]
             self.params = [
-                SkylineParameter([row[i] for row in value], change_times)
-                for i in range(N)
+                SkylineParameter([vector[i] for vector in value], change_times)
+                for i in range(len(value[0]))
             ]
         else:
             raise ValueError(
@@ -51,20 +64,18 @@ class SkylineVector:
 
     @property
     def change_times(self) -> pgt.Vector1D:
-        return tuple(
-            sorted(set(t for param in self.params for t in param.change_times))
-        )
+        return sorted(set(t for param in self.params for t in param.change_times))
 
     @property
     def value(self) -> pgt.Vector2D:
-        return tuple(self.get_value_at_time(t) for t in (0, *self.change_times))
+        return [self.get_value_at_time(t) for t in (0, *self.change_times)]
 
     @property
     def N(self) -> int:
         return len(self.params)
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Vector1D:
-        return tuple(param.get_value_at_time(t) for param in self.params)
+        return [param.get_value_at_time(t) for param in self.params]
 
     def operate(
         self,
@@ -117,48 +128,28 @@ class SkylineVector:
     def __iter__(self) -> Iterator[SkylineParameter]:
         return iter(self.params)
 
-    @overload
-    def __getitem__(self, item: int) -> SkylineParameter: ...
-    @overload
-    def __getitem__(self, item: slice) -> "SkylineVector": ...
-    def __getitem__(self, item: int | slice) -> "SkylineParameter | SkylineVector":
-        if isinstance(item, slice):
-            return SkylineVector(self.params[item])
+    def __getitem__(self, item: int) -> "SkylineParameter":
         return self.params[item]
 
     def __setitem__(self, item: int, value: SkylineParameterLike) -> None:
         if not is_skyline_parameter_like(value):
             raise TypeError(
-                f"`value` must be a SkylineParameterLike (got {type(value)})."
+                f"It is impossible to set item {item} of SkylineVector with value {value} of type {type(value)}. Please provide a SkylineParameterLike object (i.e., a scalar or a SkylineParameter)."
             )
         self.params[item] = skyline_parameter(value)
 
 
-def skyline_vector(x: SkylineVectorLike, N: int) -> SkylineVector:
+def skyline_vector(x: SkylineVectorCoercible, N: int) -> SkylineVector:
     if is_skyline_parameter_like(x):
         return SkylineVector([skyline_parameter(x)] * N)
-    if not isinstance(x, SkylineVector):
+    elif is_many_skyline_parameters_like(x):
         x = SkylineVector(x)
+    elif not isinstance(x, SkylineVector):
+        raise TypeError(
+            f"It is impossible to coerce {x} of type {type(x)} into a SkylineVector. Please provide a SkylineParameterLike object (i.e., a scalar or a SkylineParameter), or a sequence of them."
+        )
     if x.N != N:
         raise ValueError(
             f"Expected a SkylineVector of size {N}, got {x} of size {x.N}."
         )
     return x
-
-
-def is_skyline_vector_operand(value: object) -> TypeGuard[SkylineVectorOperand]:
-    return isinstance(value, SkylineVector) or is_skyline_parameter_like(value)
-
-
-def is_skyline_vector_like(value: object) -> TypeGuard[SkylineVectorLike]:
-    return (
-        isinstance(value, SkylineVector)
-        or is_skyline_parameter_like(value)
-        or is_many_skyline_parameters_like(value)
-    )
-
-
-def is_many_skyline_vectors_like(
-    value: object,
-) -> TypeGuard[pgt.Many[SkylineVectorLike]]:
-    return tg.is_many(value) and all(is_skyline_vector_like(v) for v in value)

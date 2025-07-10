@@ -7,9 +7,9 @@ import pandas as pd
 from numpy.random import Generator, default_rng
 from tqdm import tqdm
 
+import phylogenie.typings as pgt
 from phylogenie.configs import StrictBaseModel
 from phylogenie.core.context import ContextConfig, context_factory
-from phylogenie.core.typings import Data
 
 
 class DataType(str, Enum):
@@ -19,18 +19,18 @@ class DataType(str, Enum):
 
 class DatasetGenerator(ABC, StrictBaseModel):
     output_dir: str = "phylogenie-out"
-    n_samples: int | dict[str, int] = 1
-    context: ContextConfig | None = None
-    n_jobs: int = -1
-    seed: int | None = None
     data_dir: str = "data"
     metadata_filename: str = "metadata.csv"
+    n_samples: int | dict[str, int] = 1
+    n_jobs: int = -1
+    seed: int | None = None
+    context: ContextConfig | None = None
 
     @abstractmethod
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None: ...
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None: ...
 
     def generate_one(
-        self, filename: str, data: Data | None = None, seed: int | None = None
+        self, filename: str, data: pgt.Data | None = None, seed: int | None = None
     ) -> None:
         data = {} if data is None else data
         self._generate_one(filename=filename, rng=default_rng(seed), data=data)

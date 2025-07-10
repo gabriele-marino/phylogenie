@@ -12,10 +12,10 @@ backend: treesimulator
 parameterization: BD
 reproduction_number:
   value: [R_0_t1, R_0_t2]
-  change_times: 0.5
+  change_times: [0.5]
 infectious_period:
   value: [T_I_t1, T_I_t2]
-  change_times: T_I_change_time
+  change_times: [T_I_change_time]
 sampling_proportion: 0.25
 
 min_tips: 50

@@ -6,6 +6,7 @@ from numpy.random import Generator
 from pydantic import Field
 
 import phylogenie.core.configs as cfg
+import phylogenie.typings as pgt
 from phylogenie.backend.treesimulator import (
     DEFAULT_POPULATION,
     TreeParams,
@@ -16,12 +17,11 @@ from phylogenie.backend.treesimulator import (
 from phylogenie.core.factories import (
     int_factory,
     scalar_factory,
-    skyline_matrix_like_factory,
+    skyline_matrix_coercible_factory,
     skyline_parameter_like_factory,
-    skyline_vector_like_factory,
+    skyline_vector_coercible_factory,
 )
 from phylogenie.core.trees.base import BackendType, TreesGenerator
-from phylogenie.core.typings import Data
 
 
 class ParameterizationType(str, Enum):
@@ -35,15 +35,15 @@ class TreeSimulatorGenerator(TreesGenerator):
     min_tips: cfg.IntConfig
     max_tips: cfg.IntConfig
     T: cfg.ScalarConfig = np.inf
+    root_state: str | None = None
     state_frequencies: list[float] | None = None
     notification_probability: cfg.SkylineParameterLikeConfig = 0
     notification_sampling_rate: cfg.SkylineParameterLikeConfig = np.inf
     allow_irremovable_states: bool = False
     max_notified_contacts: cfg.IntConfig = 1
-    root_state: str | None = None
 
     def _generate_one_from_params(
-        self, filename: str, rng: Generator, data: Data, params: TreeParams
+        self, filename: str, rng: Generator, data: pgt.Data, params: TreeParams
     ) -> None:
         root_state = (
             self.root_state
@@ -75,26 +75,28 @@ class CanonicalTreeSimulatorGenerator(TreeSimulatorGenerator):
         ParameterizationType.CANONICAL
     )
     populations: str | list[str] = DEFAULT_POPULATION
-    transition_rates: cfg.SkylineMatrixLikeConfig = 0
-    transmission_rates: cfg.SkylineMatrixLikeConfig = 0
-    removal_rates: cfg.SkylineVectorLikeConfig = 0
-    sampling_proportions: cfg.SkylineVectorLikeConfig = 0
+    transition_rates: cfg.SkylineMatrixCoercibleConfig = 0
+    transmission_rates: cfg.SkylineMatrixCoercibleConfig = 0
+    removal_rates: cfg.SkylineVectorCoercibleConfig = 0
+    sampling_proportions: cfg.SkylineVectorCoercibleConfig = 0
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         self._generate_one_from_params(
             filename,
             rng,
             data,
             TreeParams(
                 populations=self.populations,
-                transition_rates=skyline_matrix_like_factory(
+                transition_rates=skyline_matrix_coercible_factory(
                     self.transition_rates, data
                 ),
-                transmission_rates=skyline_matrix_like_factory(
+                transmission_rates=skyline_matrix_coercible_factory(
                     self.transmission_rates, data
                 ),
-                removal_rates=skyline_vector_like_factory(self.removal_rates, data),
-                sampling_proportions=skyline_vector_like_factory(
+                removal_rates=skyline_vector_coercible_factory(
+                    self.removal_rates, data
+                ),
+                sampling_proportions=skyline_vector_coercible_factory(
                     self.sampling_proportions, data
                 ),
             ),
@@ -107,7 +109,7 @@ class BDTreeSimulatorGenerator(TreeSimulatorGenerator):
     infectious_period: cfg.SkylineParameterLikeConfig = 0
     sampling_proportion: cfg.SkylineParameterLikeConfig = 0
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         self._generate_one_from_params(
             filename,
             rng,
@@ -133,7 +135,7 @@ class BDEITreeSimulatorGenerator(TreeSimulatorGenerator):
     incubation_period: cfg.SkylineParameterLikeConfig = 0
     sampling_proportion: cfg.SkylineParameterLikeConfig = 0
 
-    def _generate_one(self, filename: str, rng: Generator, data: Data) -> None:
+    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
         self._generate_one_from_params(
             filename,
             rng,

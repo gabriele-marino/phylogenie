@@ -13,10 +13,10 @@ parameterization: BDEI
 reproduction_number: R_0
 infectious_period:
   value: infection_time*(1-incubation_fraction)
-  change_times: 0.5
+  change_times: [0.5]
 incubation_period:
   value: infection_time*incubation_fraction
-  change_times: incubation_period_change_time
+  change_times: [incubation_period_change_time]
 sampling_proportion: s
 
 min_tips: 50
@@ -25,8 +25,8 @@ max_tips: 250
 context:
   s:
     type: uniform
-    low: 0
-    high: 0.75
+    low: 0.25
+    high: 0.7
   R_0:
     type: lognormal
     mean: 1
@@ -41,8 +41,8 @@ context:
   incubation_fraction:
     type: uniform
     low: 0
-    high: 0.75
+    high: 0.7
   incubation_period_change_time:
     type: uniform
     low: 0
-    high: 0.75
+    high: 0.7

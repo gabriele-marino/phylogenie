@@ -6,9 +6,9 @@ from treesimulator.generator import generate
 from treesimulator.mtbd_models import CTModel, Model
 
 from phylogenie.skyline import (
-    SkylineMatrixLike,
+    SkylineMatrixCoercible,
     SkylineParameterLike,
-    SkylineVectorLike,
+    SkylineVectorCoercible,
     skyline_matrix,
     skyline_parameter,
     skyline_vector,
@@ -22,10 +22,10 @@ EXPOSED_POPULATION = "E"
 @dataclass
 class TreeParams:
     populations: str | list[str] = DEFAULT_POPULATION
-    transition_rates: SkylineMatrixLike = 0
-    transmission_rates: SkylineMatrixLike = 0
-    removal_rates: SkylineVectorLike = 0
-    sampling_proportions: SkylineVectorLike = 0
+    transition_rates: SkylineMatrixCoercible = 0
+    transmission_rates: SkylineMatrixCoercible = 0
+    removal_rates: SkylineVectorCoercible = 0
+    sampling_proportions: SkylineVectorCoercible = 0
 
 
 def generate_tree(

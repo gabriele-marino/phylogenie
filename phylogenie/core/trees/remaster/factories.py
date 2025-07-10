@@ -1,17 +1,14 @@
 import phylogenie.core.trees.remaster.configs as cfg
+import phylogenie.typings as pgt
 from phylogenie.backend.remaster import PunctualReaction, Reaction
 from phylogenie.core.factories import (
-    one_or_many_ints_factory,
-    one_or_many_scalars_factory,
+    many_ints_factory,
+    many_scalars_factory,
     skyline_parameter_like_factory,
 )
-from phylogenie.core.typings import Data
 
 
-def reaction_factory(
-    x: cfg.ReactionConfig,
-    data: Data,
-) -> Reaction:
+def reaction_factory(x: cfg.ReactionConfig, data: pgt.Data) -> Reaction:
     return Reaction(
         rate=skyline_parameter_like_factory(x.rate, data),
         value=x.value,
@@ -19,12 +16,11 @@ def reaction_factory(
 
 
 def punctual_reaction_factory(
-    x: cfg.PunctualReactionConfig,
-    data: Data,
+    x: cfg.PunctualReactionConfig, data: pgt.Data
 ) -> PunctualReaction:
     return PunctualReaction(
-        times=one_or_many_scalars_factory(x.times, data),
+        times=many_scalars_factory(x.times, data),
         value=x.value,
-        p=None if x.p is None else one_or_many_scalars_factory(x.p, data),
-        n=None if x.n is None else one_or_many_ints_factory(x.n, data),
+        p=None if x.p is None else many_scalars_factory(x.p, data),
+        n=None if x.n is None else many_ints_factory(x.n, data),
     )

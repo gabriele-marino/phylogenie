@@ -11,12 +11,13 @@ OneOrMany2D = _T | Many2D[_T]
 Scalar = int | float
 OneOrManyScalars = OneOrMany[Scalar]
 ManyScalars = Many[Scalar]
-Many2DScalars = Many2D[Scalar]
 OneOrMany2DScalars = OneOrMany2D[Scalar]
+Many2DScalars = Many2D[Scalar]
+Many3DScalars = Many3D[Scalar]
 
-Vector1D = tuple[Scalar, ...]
-IntVector1D = tuple[int, ...]
-Vector1DLike = Scalar | Vector1D
-IntVector1DLike = int | IntVector1D
-Vector2D = tuple[Vector1D, ...]
-Vector3D = tuple[Vector2D, ...]
+Vector1D = list[Scalar]
+IntVector1D = list[int]
+Vector2D = list[Vector1D]
+Vector3D = list[Vector2D]
+
+Data = dict[str, str | Scalar | Vector1D | Vector2D | Vector3D]
