@@ -80,7 +80,7 @@ class SkylineMatrix:
     def get_value_at_time(self, time: pgt.Scalar) -> pgt.Vector2D:
         return [param.get_value_at_time(time) for param in self.params]
 
-    def operate(
+    def _operate(
         self,
         other: SkylineMatrixOperand,
         func: Callable[
@@ -97,28 +97,28 @@ class SkylineMatrix:
         )
 
     def __add__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: x + y)
+        return self._operate(operand, lambda x, y: x + y)
 
     def __radd__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: y + x)
+        return self._operate(operand, lambda x, y: y + x)
 
     def __sub__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: x - y)
+        return self._operate(operand, lambda x, y: x - y)
 
     def __rsub__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: y - x)
+        return self._operate(operand, lambda x, y: y - x)
 
     def __mul__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: x * y)
+        return self._operate(operand, lambda x, y: x * y)
 
     def __rmul__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: y * x)
+        return self._operate(operand, lambda x, y: y * x)
 
     def __truediv__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: x / y)
+        return self._operate(operand, lambda x, y: x / y)
 
     def __rtruediv__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self.operate(operand, lambda x, y: y / x)
+        return self._operate(operand, lambda x, y: y / x)
 
     @property
     def T(self) -> "SkylineMatrix":

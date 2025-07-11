@@ -34,7 +34,7 @@ class SkylineVector:
         params: pgt.Many[SkylineParameterLike] | None = None,
         value: pgt.Many2DScalars | None = None,
         change_times: pgt.ManyScalars | None = None,
-    ) -> None:
+    ):
         if params is not None and value is None and change_times is None:
             if is_many_skyline_parameters_like(params):
                 self.params = [skyline_parameter(param) for param in params]
@@ -77,7 +77,7 @@ class SkylineVector:
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Vector1D:
         return [param.get_value_at_time(t) for param in self.params]
 
-    def operate(
+    def _operate(
         self,
         other: SkylineVectorOperand,
         func: Callable[[SkylineParameter, SkylineParameter], SkylineParameter],
@@ -90,28 +90,28 @@ class SkylineVector:
         )
 
     def __add__(self, operand: SkylineVectorOperand) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: x + y)
+        return self._operate(operand, lambda x, y: x + y)
 
     def __radd__(self, operand: SkylineParameterLike) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: y + x)
+        return self._operate(operand, lambda x, y: y + x)
 
     def __sub__(self, operand: SkylineVectorOperand) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: x - y)
+        return self._operate(operand, lambda x, y: x - y)
 
     def __rsub__(self, operand: SkylineParameterLike) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: y - x)
+        return self._operate(operand, lambda x, y: y - x)
 
     def __mul__(self, operand: SkylineVectorOperand) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: x * y)
+        return self._operate(operand, lambda x, y: x * y)
 
     def __rmul__(self, operand: SkylineParameterLike) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: y * x)
+        return self._operate(operand, lambda x, y: y * x)
 
     def __truediv__(self, operand: SkylineVectorOperand) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: x / y)
+        return self._operate(operand, lambda x, y: x / y)
 
     def __rtruediv__(self, operand: SkylineParameterLike) -> "SkylineVector":
-        return self.operate(operand, lambda x, y: y / x)
+        return self._operate(operand, lambda x, y: y / x)
 
     def __len__(self) -> int:
         return self.N

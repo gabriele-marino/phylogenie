@@ -23,7 +23,7 @@ class SkylineParameter:
         self,
         value: pgt.OneOrManyScalars,
         change_times: pgt.ManyScalars | None = None,
-    ) -> None:
+    ):
         if isinstance(value, pgt.Scalar):
             value = [value]
         elif not tg.is_many_scalars(value):
@@ -42,18 +42,29 @@ class SkylineParameter:
             raise ValueError(
                 f"`value` must have exactly one more element than `change_times` (got value={value} of length {len(value)} and change_times={change_times} of length {len(change_times)})."
             )
+        if any(t1 >= t2 for t1, t2 in zip(change_times, change_times[1:])):
+            raise ValueError(
+                f"`change_times` must be sorted in strictly increasing order "
+                f"(got change_times={change_times})."
+            )
+        if any(t < 0 for t in change_times):
+            raise ValueError(
+                f"`change_times` must be non-negative (got change_times={change_times})."
+            )
 
         self.value = [value[0]]
         self.change_times: list[pgt.Scalar] = []
         for i in range(1, len(value)):
             if value[i] != value[i - 1]:
                 self.value.append(value[i])
-                self.value.append(change_times[i - 1])
+                self.change_times.append(change_times[i - 1])
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Scalar:
+        if t < 0:
+            raise ValueError(f"Time cannot be negative (got t={t}).")
         return self.value[bisect_right(self.change_times, t)]
 
-    def operate(
+    def _operate(
         self,
         other: SkylineParameterLike,
         f: Callable[[pgt.Scalar, pgt.Scalar], pgt.Scalar],
@@ -67,28 +78,28 @@ class SkylineParameter:
         return SkylineParameter(value, change_times)
 
     def __add__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: x + y)
+        return self._operate(other, lambda x, y: x + y)
 
     def __radd__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: y + x)
+        return self._operate(other, lambda x, y: y + x)
 
     def __sub__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: x - y)
+        return self._operate(other, lambda x, y: x - y)
 
     def __rsub__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: y - x)
+        return self._operate(other, lambda x, y: y - x)
 
     def __mul__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: x * y)
+        return self._operate(other, lambda x, y: x * y)
 
     def __rmul__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: y * x)
+        return self._operate(other, lambda x, y: y * x)
 
     def __truediv__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: x / y)
+        return self._operate(other, lambda x, y: x / y)
 
     def __rtruediv__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self.operate(other, lambda x, y: y / x)
+        return self._operate(other, lambda x, y: y / x)
 
     def __bool__(self) -> bool:
         return any(self.value)
