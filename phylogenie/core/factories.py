@@ -26,7 +26,6 @@ def _eval_expression(expression: str, data: pgt.Data) -> Any:
                 "np": np,
                 **{k: np.array(v) for k, v in data.items()},
             },
-            {k: np.array(v) for k, v in data.items()},
         )
     ).tolist()
 
@@ -104,14 +103,14 @@ def skyline_parameter_like_factory(
 @overload
 def _parse_skyline_vector_value_model(
     x: cfg.SkylineVectorValueModel, data: pgt.Data, coercible: Literal[True]
-) -> SkylineVector | SkylineParameter: ...
+) -> SkylineVectorCoercible: ...
 @overload
 def _parse_skyline_vector_value_model(
     x: cfg.SkylineVectorValueModel, data: pgt.Data, coercible: Literal[False]
-) -> SkylineVector: ...
+) -> SkylineVectorLike: ...
 def _parse_skyline_vector_value_model(
     x: cfg.SkylineVectorValueModel, data: pgt.Data, coercible: bool
-) -> SkylineVector | SkylineParameter:
+) -> SkylineVectorCoercible:
     change_times = many_scalars_factory(x.change_times, data)
     if isinstance(x.value, str):
         e = _eval_expression(x.value, data)
@@ -129,13 +128,13 @@ def _parse_skyline_vector_value_model(
             return SkylineParameter(value=value, change_times=change_times)
         else:
             raise ValueError(
-                f"Parsing SkylineVector value {x.value} yielded a sequence of scalars ({value}) when a nested (2D) sequence of scalars was expected."
+                f"Parsing SkylineVector config {x.value} yielded a sequence of scalars {value} when a nested (2D) sequence of scalars was expected."
             )
 
     Ns = {len(elem) for elem in value if tg.is_many(elem)}
     if len(Ns) > 1:
         raise ValueError(
-            f"All elements in the value of a SkylineVector config must be scalars or have the same length (got value={value} with inconsistent lengths {Ns})."
+            f"All elements in the value of a SkylineVector config must be scalars or have the same length (config {x.value} yielded value={value} with inconsistent lengths {Ns})."
         )
     (N,) = Ns
     value = [[p] * N if isinstance(p, pgt.Scalar) else p for p in value]
@@ -235,13 +234,13 @@ def skyline_matrix_coercible_factory(
             n_rows = len(elem)
             if any(len(row) != n_rows for row in elem):
                 raise ValueError(
-                    f"All elements in the value of a SkylineMatrix config must be scalars or square matrices (got non-square matrix: {elem})."
+                    f"All elements in the value of a SkylineMatrix config must be scalars or square matrices (config {x.value} yeilded a non-square matrix: {elem})."
                 )
             Ns.add(n_rows)
 
     if len(Ns) > 1:
         raise ValueError(
-            f"All elements in the value of a SkylineMatrix config must be scalars or have the same square shape (got value={value} with inconsistent lengths {Ns})."
+            f"All elements in the value of a SkylineMatrix config must be scalars or have the same square shape (config {x.value} yielded value={value} with inconsistent lengths {Ns})."
         )
     (N,) = Ns
     value = [[[p] * N] * N if isinstance(p, pgt.Scalar) else p for p in value]
