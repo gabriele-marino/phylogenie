@@ -49,7 +49,7 @@ context:
 # 4.3 Trees config
 # ----------------
 
-# The trees section defines the parameters for the model used to generate the trees. In this case, we will use the TreeSimulator backend to generate trees from a BD model.
+# The trees argument defines the configuration used to generate the trees. In this case, we will use the TreeSimulator backend to generate trees from a BD model with a constant reproduction number, a skyline sampling proportion, and a fixed infectious period.
 
 trees:
   backend: treesimulator
