@@ -69,7 +69,10 @@ class SkylineParameter:
         other: SkylineParameterLike,
         f: Callable[[pgt.Scalar, pgt.Scalar], pgt.Scalar],
     ) -> "SkylineParameter":
-        other = skyline_parameter(other)
+        if is_skyline_parameter_like(other):
+            other = skyline_parameter(other)
+        else:
+            return NotImplemented
         change_times = sorted(set(self.change_times + other.change_times))
         value = [
             f(self.get_value_at_time(t), other.get_value_at_time(t))

@@ -67,9 +67,6 @@ class ReMASTERGenerator(TreesGenerator):
             beast_path=self.beast_path,
         )
 
-    def _generate_one(self, filename: str, rng: Generator, data: pgt.Data) -> None:
-        self._generate_one_from_extra_reactions(filename, rng, data, reactions=[])
-
 
 class CanonicalReMASTERGenerator(ReMASTERGenerator):
     parameterization: Literal[ParameterizationType.CANONICAL] = (

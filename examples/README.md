@@ -1,17 +1,19 @@
-# Examples
+# 📚 Examples 
 
 This folder contains a collection of well-documented configuration files for Phylogenie, organized as a step-by-step tutorial to help you become a proficient Phylogenie user.
 These examples demonstrate different settings and use cases to help you get started or adapt them to your own workflows.
 
+## 📂 Available configuration files
 
-## Available Configuration Files
+| File  | Read if: |
+|-------|---------------|
+| `1-TreeSimulatorBD.yaml` | You’re new to Phylogenie! |
+| `2-TreeSimulatorBDEI.yaml` | • You want to simulate trees under a birth–death with exposed–infectious (BDEI) model;<br>• You want to sample 1-dimensional vectors;<br>• You want to run computations using your context variables. |
+| `3-TreeSimulatorMTBD.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model;<br>• You want to learn about SkylineVectors and SkylineMatrices in Phylogenie;<br>• You want to sample multi-dimensional vectors;<br>• You want to run computations using your context variables. |
+| `4-AliSimBD.yaml` | You want to simulate multiple sequence alignments (MSAs) using the AliSim backend. |
 
-- `1-TreeSimulatorBD.yaml` \
-   Learn the basics of Phylogenie, and use is it to generate a dataset of trees with a lognormally distributed reproduction number and infectious period.
-- 
 
-
-## How to Use
+## ▶️ How to use
 
 To run Phylogenie for a given configuration file, use:
 

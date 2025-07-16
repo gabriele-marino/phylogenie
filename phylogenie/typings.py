@@ -21,3 +21,4 @@ Vector2D = list[Vector1D]
 Vector3D = list[Vector2D]
 
 Data = dict[str, str | Scalar | Vector1D | Vector2D | Vector3D]
+Size = int | tuple[int, int] | tuple[int, int, int]

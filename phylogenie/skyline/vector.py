@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterator
-from typing import TypeGuard, Union
+from typing import TypeGuard, Union, overload
 
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
@@ -24,8 +24,20 @@ def is_skyline_vector_like(x: object) -> TypeGuard[SkylineVectorLike]:
     return isinstance(x, SkylineVector) or is_many_skyline_parameters_like(x)
 
 
+def is_skyline_vector_coercible(
+    x: object,
+) -> TypeGuard[SkylineVectorCoercible]:
+    return is_skyline_parameter_like(x) or is_skyline_vector_like(x)
+
+
 def is_many_skyline_vectors_like(x: object) -> TypeGuard[pgt.Many[SkylineVectorLike]]:
     return tg.is_many(x) and all(is_skyline_vector_like(v) for v in x)
+
+
+def is_many_skyline_vectors_coercible(
+    x: object,
+) -> TypeGuard[pgt.Many[SkylineVectorCoercible]]:
+    return tg.is_many(x) and all(is_skyline_vector_coercible(v) for v in x)
 
 
 class SkylineVector:
@@ -42,7 +54,7 @@ class SkylineVector:
                 raise TypeError(
                     f"It is impossible to create a SkylineVector from `params` {params} of type {type(params)}. Please provide a sequence of SkylineParameterLike objects (a SkylineParameterLike object can either be a SkylineParameter or a scalar)."
                 )
-        elif value is not None and change_times is not None:
+        elif params is None and value is not None and change_times is not None:
             if tg.is_many_2D_scalars(value):
                 vector_lengths = {len(vector) for vector in value}
                 if any(vl != len(value[0]) for vl in vector_lengths):
@@ -128,7 +140,13 @@ class SkylineVector:
     def __iter__(self) -> Iterator[SkylineParameter]:
         return iter(self.params)
 
-    def __getitem__(self, item: int) -> "SkylineParameter":
+    @overload
+    def __getitem__(self, item: int) -> SkylineParameter: ...
+    @overload
+    def __getitem__(self, item: slice) -> list[SkylineParameter]: ...
+    def __getitem__(
+        self, item: int | slice
+    ) -> Union[SkylineParameter, list[SkylineParameter]]:
         return self.params[item]
 
     def __setitem__(self, item: int, value: SkylineParameterLike) -> None:
@@ -140,6 +158,10 @@ class SkylineVector:
 
 
 def skyline_vector(x: SkylineVectorCoercible, N: int) -> SkylineVector:
+    if N <= 0:
+        raise ValueError(
+            f"N must be a positive integer for SkylineVector construction (got N={N})."
+        )
     if is_skyline_parameter_like(x):
         return SkylineVector([skyline_parameter(x)] * N)
     elif is_many_skyline_parameters_like(x):

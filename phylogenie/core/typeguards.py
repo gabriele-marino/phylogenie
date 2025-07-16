@@ -1,6 +1,7 @@
 from typing import TypeGuard
 
 import phylogenie.core.configs as cfg
+import phylogenie.typings as pgt
 
 
 def is_list(x: object) -> TypeGuard[list[object]]:
@@ -17,11 +18,15 @@ def is_list_of_skyline_parameter_like_configs(
     return is_list(x) and all(isinstance(v, cfg.SkylineParameterLikeConfig) for v in x)
 
 
-def is_list_of_skyline_vector_like_configs(
+def is_skyline_vector_coercible_config(
     x: object,
-) -> TypeGuard[list[cfg.SkylineVectorLikeConfig]]:
-    return is_list(x) and all(
-        isinstance(v, str | cfg.SkylineVectorValueModel)
-        or is_list_of_skyline_parameter_like_configs(v)
-        for v in x
-    )
+) -> TypeGuard[cfg.SkylineVectorCoercibleConfig]:
+    return isinstance(
+        x, str | pgt.Scalar | cfg.SkylineVectorValueModel
+    ) or is_list_of_skyline_parameter_like_configs(x)
+
+
+def is_list_of_skyline_vector_coercible_configs(
+    x: object,
+) -> TypeGuard[list[cfg.SkylineVectorCoercibleConfig]]:
+    return is_list(x) and all(is_skyline_vector_coercible_config(v) for v in x)

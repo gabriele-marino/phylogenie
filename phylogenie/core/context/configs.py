@@ -1,7 +1,3 @@
-from typing import Annotated, Literal
-
-from pydantic import Field
-
 from phylogenie.configs import StrictBaseModel
 from phylogenie.core.context.distributions import (
     DistributionConfig,
@@ -11,28 +7,22 @@ from phylogenie.core.context.distributions import (
 
 class VectorModel(StrictBaseModel):
     x: ScalarDistributionConfig
-    N: int
 
 
 class Vector1DModel(VectorModel):
-    n_dim: Literal[1] = 1
+    size: int
 
 
 class Vector2DModel(VectorModel):
-    n_dim: Literal[2] = 2
+    size: tuple[int, int]
     zero_diagonal: bool = False
 
 
 class Vector3DModel(VectorModel):
-    n_dim: Literal[3] = 3
-    T: int
+    size: tuple[int, int, int]
     zero_diagonal: bool = False
 
 
 ContextConfig = dict[
-    str,
-    DistributionConfig
-    | Annotated[
-        Vector1DModel | Vector2DModel | Vector3DModel, Field(discriminator="n_dim")
-    ],
+    str, DistributionConfig | Vector1DModel | Vector2DModel | Vector3DModel
 ]

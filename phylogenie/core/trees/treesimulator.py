@@ -25,7 +25,7 @@ from phylogenie.core.trees.base import BackendType, TreesGenerator
 
 
 class ParameterizationType(str, Enum):
-    CANONICAL = "canonical"
+    MTBD = "MTBD"
     BD = "BD"
     BDEI = "BDEI"
 
@@ -70,10 +70,8 @@ class TreeSimulatorGenerator(TreesGenerator):
         )
 
 
-class CanonicalTreeSimulatorGenerator(TreeSimulatorGenerator):
-    parameterization: Literal[ParameterizationType.CANONICAL] = (
-        ParameterizationType.CANONICAL
-    )
+class MTBDTreeSimulatorGenerator(TreeSimulatorGenerator):
+    parameterization: Literal[ParameterizationType.MTBD] = ParameterizationType.MTBD
     populations: str | list[str] = DEFAULT_POPULATION
     transition_rates: cfg.SkylineMatrixCoercibleConfig = 0
     transmission_rates: cfg.SkylineMatrixCoercibleConfig = 0
@@ -158,8 +156,6 @@ class BDEITreeSimulatorGenerator(TreeSimulatorGenerator):
 
 
 TreeSimulatorGeneratorConfig = Annotated[
-    CanonicalTreeSimulatorGenerator
-    | BDTreeSimulatorGenerator
-    | BDEITreeSimulatorGenerator,
+    MTBDTreeSimulatorGenerator | BDTreeSimulatorGenerator | BDEITreeSimulatorGenerator,
     Field(discriminator="parameterization"),
 ]

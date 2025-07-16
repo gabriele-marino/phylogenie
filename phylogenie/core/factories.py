@@ -1,4 +1,4 @@
-from typing import Any, Literal, overload
+from typing import Any
 
 import numpy as np
 
@@ -13,7 +13,6 @@ from phylogenie.skyline import (
     SkylineParameterLike,
     SkylineVector,
     SkylineVectorCoercible,
-    SkylineVectorLike,
 )
 
 
@@ -100,51 +99,6 @@ def skyline_parameter_like_factory(
     )
 
 
-@overload
-def _parse_skyline_vector_value_model(
-    x: cfg.SkylineVectorValueModel, data: pgt.Data, coercible: Literal[True]
-) -> SkylineVectorCoercible: ...
-@overload
-def _parse_skyline_vector_value_model(
-    x: cfg.SkylineVectorValueModel, data: pgt.Data, coercible: Literal[False]
-) -> SkylineVectorLike: ...
-def _parse_skyline_vector_value_model(
-    x: cfg.SkylineVectorValueModel, data: pgt.Data, coercible: bool
-) -> SkylineVectorCoercible:
-    change_times = many_scalars_factory(x.change_times, data)
-    if isinstance(x.value, str):
-        e = _eval_expression(x.value, data)
-        if tg.is_many_one_or_many_scalars(e):
-            value = e
-        else:
-            raise ValueError(
-                f"Expression '{x.value}' evaluated to {e} of type {type(e)}, which cannot be coerced to a valid value for a SkylineVector (expected a sequence composed of scalars and/or sequences of scalars)."
-            )
-    else:
-        value = [one_or_many_scalars_factory(v, data) for v in x.value]
-
-    if tg.is_many_scalars(value):
-        if coercible:
-            return SkylineParameter(value=value, change_times=change_times)
-        else:
-            raise ValueError(
-                f"Parsing SkylineVector config {x.value} yielded a sequence of scalars {value} when a nested (2D) sequence of scalars was expected."
-            )
-
-    Ns = {len(elem) for elem in value if tg.is_many(elem)}
-    if len(Ns) > 1:
-        raise ValueError(
-            f"All elements in the value of a SkylineVector config must be scalars or have the same length (config {x.value} yielded value={value} with inconsistent lengths {Ns})."
-        )
-    (N,) = Ns
-    value = [[p] * N if isinstance(p, pgt.Scalar) else p for p in value]
-
-    return SkylineVector(
-        value=value,
-        change_times=change_times,
-    )
-
-
 def skyline_vector_coercible_factory(
     x: cfg.SkylineVectorCoercibleConfig, data: pgt.Data
 ) -> SkylineVectorCoercible:
@@ -161,24 +115,31 @@ def skyline_vector_coercible_factory(
         return [skyline_parameter_like_factory(p, data) for p in x]
 
     assert isinstance(x, cfg.SkylineVectorValueModel)
-    return _parse_skyline_vector_value_model(x, data, coercible=True)
 
+    change_times = many_scalars_factory(x.change_times, data)
+    if isinstance(x.value, str):
+        e = _eval_expression(x.value, data)
+        if tg.is_many_one_or_many_scalars(e):
+            value = e
+        else:
+            raise ValueError(
+                f"Expression '{x.value}' evaluated to {e} of type {type(e)}, which cannot be coerced to a valid value for a SkylineVector (expected a sequence composed of scalars and/or sequences of scalars)."
+            )
+    else:
+        value = [one_or_many_scalars_factory(v, data) for v in x.value]
 
-def skyline_vector_like_factory(
-    x: cfg.SkylineVectorLikeConfig, data: pgt.Data
-) -> SkylineVectorLike:
-    if isinstance(x, str):
-        e = _eval_expression(x, data)
-        if tg.is_many_scalars(e):
-            return e
+    if tg.is_many_scalars(value):
+        return SkylineParameter(value=value, change_times=change_times)
+
+    Ns = {len(elem) for elem in value if tg.is_many(elem)}
+    if len(Ns) > 1:
         raise ValueError(
-            f"Expression '{x}' evaluated to {e} of type {type(e)}, expected a SkylineVectorLike object (e.g., a sequence of scalars)."
+            f"All elements in the value of a SkylineVector config must be scalars or have the same length (config {x.value} yielded value={value} with inconsistent lengths {Ns})."
         )
-    if ctg.is_list_of_skyline_parameter_like_configs(x):
-        return [skyline_parameter_like_factory(p, data) for p in x]
+    (N,) = Ns
+    value = [[p] * N if isinstance(p, pgt.Scalar) else p for p in value]
 
-    assert isinstance(x, cfg.SkylineVectorValueModel)
-    return _parse_skyline_vector_value_model(x, data, coercible=False)
+    return SkylineVector(value=value, change_times=change_times)
 
 
 def one_or_many_2D_scalars_factory(
@@ -208,8 +169,8 @@ def skyline_matrix_coercible_factory(
         )
     if isinstance(x, pgt.Scalar):
         return x
-    if ctg.is_list_of_skyline_vector_like_configs(x):
-        return [skyline_vector_like_factory(v, data) for v in x]
+    if ctg.is_list_of_skyline_vector_coercible_configs(x):
+        return [skyline_vector_coercible_factory(v, data) for v in x]
 
     assert isinstance(x, cfg.SkylineMatrixValueModel)
 
@@ -245,7 +206,4 @@ def skyline_matrix_coercible_factory(
     (N,) = Ns
     value = [[[p] * N] * N if isinstance(p, pgt.Scalar) else p for p in value]
 
-    return SkylineMatrix(
-        value=value,
-        change_times=change_times,
-    )
+    return SkylineMatrix(value=value, change_times=change_times)

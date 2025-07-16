@@ -30,3 +30,8 @@ def test_get_value_constant_parameter():
     sp = SkylineParameter(7)
     assert sp.get_value_at_time(0) == 7
     assert sp.get_value_at_time(10) == 7
+
+
+def test_with_invalid_time(param: SkylineParameter):
+    with pytest.raises(ValueError):
+        param.get_value_at_time(-1)

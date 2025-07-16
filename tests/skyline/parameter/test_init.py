@@ -1,6 +1,6 @@
 import pytest
 
-from phylogenie.skyline import SkylineParameter, skyline_parameter
+from phylogenie.skyline import SkylineParameter
 
 
 def test_init_with_scalar_value():
@@ -40,7 +40,7 @@ def test_init_with_mismatched_lengths():
     with pytest.raises(ValueError):
         SkylineParameter([5, 2, 3], [1.0])
     with pytest.raises(ValueError):
-        SkylineParameter([5, 2], [])
+        SkylineParameter([5, 2])
 
 
 def test_with_negative_change_times():
@@ -51,8 +51,3 @@ def test_with_negative_change_times():
 def test_init_with_unsorted_change_times():
     with pytest.raises(ValueError):
         SkylineParameter([5, 2, 3], [2.0, 1.0])
-
-
-def test_constructor():
-    assert skyline_parameter(5) == SkylineParameter(5)
-    assert skyline_parameter(SkylineParameter(5)) == SkylineParameter(5)

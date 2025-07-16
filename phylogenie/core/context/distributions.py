@@ -77,7 +77,7 @@ class Exponential(Scalar):
     scale: float
 
     def _sample(self, rng: Generator) -> float:
-        return rng.exponential(scale=self.scale)
+        return rng.exponential(self.scale)
 
 
 class Gamma(Scalar):
@@ -86,7 +86,7 @@ class Gamma(Scalar):
     shape: float
 
     def _sample(self, rng: Generator) -> float:
-        return rng.gamma(shape=self.shape, scale=self.scale)
+        return rng.gamma(self.shape, self.scale)
 
 
 class Beta(Scalar):
@@ -95,7 +95,7 @@ class Beta(Scalar):
     beta: float
 
     def _sample(self, rng: Generator) -> float:
-        return rng.beta(a=self.alpha, b=self.beta)
+        return rng.beta(self.alpha, self.beta)
 
 
 class IntUniform(Scalar):

@@ -25,9 +25,6 @@ class SkylineVectorValueModel(StrictBaseModel):
 SkylineVectorCoercibleConfig = (
     str | pgt.Scalar | list[SkylineParameterLikeConfig] | SkylineVectorValueModel
 )
-SkylineVectorLikeConfig = (
-    str | list[SkylineParameterLikeConfig] | SkylineVectorValueModel
-)
 
 
 class SkylineMatrixValueModel(StrictBaseModel):
@@ -36,5 +33,5 @@ class SkylineMatrixValueModel(StrictBaseModel):
 
 
 SkylineMatrixCoercibleConfig = (
-    str | pgt.Scalar | list[SkylineVectorLikeConfig] | SkylineMatrixValueModel
+    str | pgt.Scalar | list[SkylineVectorCoercibleConfig] | SkylineMatrixValueModel
 )
