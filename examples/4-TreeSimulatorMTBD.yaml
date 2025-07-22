@@ -1,5 +1,5 @@
 # --------------------------------
-# 3. MTBD trees with TreeSimulator
+# 4. MTBD trees with TreeSimulator
 # --------------------------------
 
 # This tutorial walks you through setting up a configuration file to simulate phylogenetic trees using the TreeSimulator backend with a generic multi-type birth-death (MTBD) model.
@@ -43,7 +43,7 @@
 # The number of tips in the simulated trees is allowed to range from 50 to 250.
 
 # -------------------
-# 3.1 General configs
+# 4.1 General configs
 # -------------------
 
 output_dir: outputs/TreeSimulatorMTBD
@@ -60,7 +60,7 @@ n_jobs: -1
 seed: 42
 
 # -----------
-# 3.2 Context
+# 4.2 Context
 # -----------
 
 # In this example, we need several context variables to parameterize the MTBD model:
@@ -103,14 +103,14 @@ context:
       high: 1
 
 # ----------------------------------------
-# 3.3 Parameterization-specific parameters
+# 4.3 Parameterization-specific parameters
 # ----------------------------------------
 
 # The MTBD model uses two SkylineVectors:
 # - removal_rates;
-# - sampling_proportions;
+# - sampling_proportion (equal to 1 by default);
 # and two SkylineMatrices:
-# - transition_rates;
+# - transition_rates (equal to 0 by default);
 # - transmission_rates.
 # It also needs you to specify the populations involved in the simulation, as a list of strings.
 
@@ -150,7 +150,7 @@ sampling_proportions:
   change_times: [0.1]
 
 # -------------------------------
-# 3.4 Backend-specific parameters
+# 4.4 Backend-specific parameters
 # -------------------------------
 
 min_tips: 50

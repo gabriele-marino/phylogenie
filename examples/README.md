@@ -9,8 +9,9 @@ These examples demonstrate different settings and use cases to help you get star
 |-------|---------------|
 | `1-TreeSimulatorBD.yaml` | You’re new to Phylogenie! |
 | `2-TreeSimulatorBDEI.yaml` | • You want to simulate trees under a birth–death with exposed–infectious (BDEI) model;<br>• You want to sample 1-dimensional vectors;<br>• You want to run computations using your context variables. |
-| `3-TreeSimulatorMTBD.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model;<br>• You want to learn about SkylineVectors and SkylineMatrices in Phylogenie;<br>• You want to sample multi-dimensional vectors;<br>• You want to run computations using your context variables. |
-| `4-AliSimBD.yaml` | You want to simulate multiple sequence alignments (MSAs) using the AliSim backend. |
+| `3-TreeSimulatorBDSS.yaml` | You want to simulate trees under a birth–death with superspreading (BDSS) model. |
+| `4-TreeSimulatorMTBD.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model;<br>• You want to learn about SkylineVectors and SkylineMatrices in Phylogenie;<br>• You want to sample multi-dimensional vectors;<br>• You want to run computations using your context variables. |
+| `5-AliSimBD.yaml` | You want to simulate multiple sequence alignments (MSAs) using the AliSim backend. |
 
 
 ## ▶️ How to use
