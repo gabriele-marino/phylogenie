@@ -17,15 +17,16 @@ from phylogenie.skyline import (
 DEFAULT_POPULATION = "X"
 INFECTIOUS_POPULATION = "I"
 EXPOSED_POPULATION = "E"
+SUPERSPREADER_POPULATION = "S"
 
 
 @dataclass
 class TreeParams:
-    populations: str | list[str] = DEFAULT_POPULATION
+    populations: str | list[str]
+    transmission_rates: SkylineMatrixCoercible
+    removal_rates: SkylineVectorCoercible
+    sampling_proportions: SkylineVectorCoercible
     transition_rates: SkylineMatrixCoercible = 0
-    transmission_rates: SkylineMatrixCoercible = 0
-    removal_rates: SkylineVectorCoercible = 0
-    sampling_proportions: SkylineVectorCoercible = 0
 
 
 def generate_tree(
@@ -136,4 +137,26 @@ def get_BDEI_params(
         transmission_rates=transmission_rates,
         removal_rates=removal_rates,
         sampling_proportions=sampling_proportions,
+    )
+
+
+def get_BDSS_params(
+    reproduction_number: SkylineParameterLike,
+    infectious_period: SkylineParameterLike,
+    superspreading_ratio: SkylineParameterLike,
+    superspreaders_proportion: SkylineParameterLike,
+    sampling_proportion: SkylineParameterLike,
+) -> TreeParams:
+    gamma = 1 / infectious_period
+    f_SS = superspreaders_proportion
+    r_SS = superspreading_ratio
+    lambda_IS = reproduction_number * gamma * f_SS / (1 + r_SS * f_SS - f_SS)
+    lambda_SI = (reproduction_number * gamma - r_SS * lambda_IS) * r_SS
+    lambda_SS = r_SS * lambda_IS
+    lambda_II = lambda_SI / r_SS
+    return TreeParams(
+        populations=[INFECTIOUS_POPULATION, SUPERSPREADER_POPULATION],
+        transmission_rates=[[lambda_II, lambda_IS], [lambda_SI, lambda_SS]],
+        removal_rates=gamma,
+        sampling_proportions=sampling_proportion,
     )

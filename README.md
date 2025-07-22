@@ -27,7 +27,7 @@ Phylogenie comes packed with useful features, including:
   Simply specify the number of cores to use, and Phylogenie handles multiprocessing automatically.
 
 - **Pre-implemented parameterizations** 🎯  
-  Include canonical, fossilized birth-death, epidemiological, birth-death with exposed-infectious (BDEI), contact-tracing (CT), and more.
+  Include canonical, fossilized birth-death, epidemiological, birth-death with exposed-infectious (BDEI), birth-death with superspreading (BDSS), contact-tracing (CT), and more.
 
 - **Skyline parameter support** 🪜  
   Support for piece-wise constant parameters.
