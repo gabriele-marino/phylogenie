@@ -101,6 +101,7 @@ def generate_tree(
     )
     for i, leaf in enumerate(tree.iter_leaves()):
         state: str = getattr(leaf, STATE)
+        delattr(leaf, STATE)
         date = tree.get_distance(leaf)
         leaf.name = f"{i}|{state}|{date}"
     save_forest([tree], output_file)

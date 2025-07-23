@@ -64,6 +64,8 @@ trees:
   min_tips: 50
   max_tips: 250
 
+keep_trees: false # Whether to keep the generated tree files
+
 # ---------------------------
 # 5.4 Backend-specific config
 # ---------------------------
