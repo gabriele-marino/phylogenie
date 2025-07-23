@@ -24,7 +24,7 @@ def _beautify_xml(xml: bytes) -> str:
 
 def _generate_config_file(
     output_xml_file: str,
-    tree_file_name: str,
+    tree_filename: str,
     populations: list[str],
     init_values: list[int],
     sample_population: str,
@@ -85,7 +85,7 @@ def _generate_config_file(
     simulate.append(trajectory)
 
     logger = Element(
-        "logger", {"spec": "Logger", "mode": "tree", "fileName": tree_file_name}
+        "logger", {"spec": "Logger", "mode": "tree", "fileName": tree_filename}
     )
     logger.append(
         Element(
@@ -140,7 +140,7 @@ def _postprocess_tree(input_file: str, output_file: str, attributes: list[str]) 
 
 
 def generate_trees(
-    tree_file_name: str,
+    tree_filename: str,
     populations: str | list[str] = DEFAULT_POPULATION,
     init_population: str = DEFAULT_POPULATION,
     sample_population: str = SAMPLE_POPULATION,
@@ -158,14 +158,14 @@ def generate_trees(
     init_values[populations.index(init_population)] = 1
 
     if output_xml_file is None:
-        xml_file = f"{tree_file_name}-temp.xml"
+        xml_file = f"{tree_filename}-temp.xml"
     else:
         xml_file = output_xml_file
 
-    temp_tree_file = f"{tree_file_name}-temp.nex"
+    temp_tree_filename = f"{tree_filename}-temp.nex"
     _generate_config_file(
         output_xml_file=xml_file,
-        tree_file_name=temp_tree_file,
+        tree_filename=temp_tree_filename,
         populations=populations,
         init_values=init_values,
         sample_population=sample_population,
@@ -181,7 +181,7 @@ def generate_trees(
     cmd.append(xml_file)
     subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    _postprocess_tree(temp_tree_file, tree_file_name, ["type", "time"])
+    _postprocess_tree(temp_tree_filename, tree_filename, ["type", "time"])
     if output_xml_file is None:
         subprocess.run(["rm", xml_file], check=True)
-    subprocess.run(["rm", temp_tree_file], check=True)
+    subprocess.run(["rm", temp_tree_filename], check=True)

@@ -51,7 +51,7 @@ class ReMASTERGenerator(TreesGenerator):
         self, filename: str, rng: Generator, data: pgt.Data, reactions: list[Reaction]
     ) -> None:
         generate_trees(
-            tree_file_name=f"{filename}.nwk",
+            tree_filename=f"{filename}.nwk",
             populations=self.populations,
             init_population=self.init_population.format(**data),
             sample_population=self.sample_population,
