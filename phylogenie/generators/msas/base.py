@@ -7,8 +7,8 @@ from typing import Literal
 from numpy.random import Generator
 
 import phylogenie.typings as pgt
-from phylogenie.core.dataset import DatasetGenerator, DataType
-from phylogenie.core.trees import TreesGeneratorConfig
+from phylogenie.generators.dataset import DatasetGenerator, DataType
+from phylogenie.generators.trees import TreesGeneratorConfig
 
 
 class BackendType(str, Enum):

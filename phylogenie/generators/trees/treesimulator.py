@@ -5,7 +5,7 @@ import numpy as np
 from numpy.random import Generator
 from pydantic import Field
 
-import phylogenie.core.configs as cfg
+import phylogenie.generators.configs as cfg
 import phylogenie.typings as pgt
 from phylogenie.backend.treesimulator import (
     DEFAULT_POPULATION,
@@ -15,14 +15,14 @@ from phylogenie.backend.treesimulator import (
     get_BDEI_params,
     get_BDSS_params,
 )
-from phylogenie.core.factories import (
+from phylogenie.generators.factories import (
     int_factory,
     scalar_factory,
     skyline_matrix_coercible_factory,
     skyline_parameter_like_factory,
     skyline_vector_coercible_factory,
 )
-from phylogenie.core.trees.base import BackendType, TreesGenerator
+from phylogenie.generators.trees.base import BackendType, TreesGenerator
 
 
 class ParameterizationType(str, Enum):

@@ -1,8 +1,8 @@
 from numpy.random import Generator
 
-import phylogenie.core.context.configs as cfg
+import phylogenie.generators.context.configs as cfg
 import phylogenie.typings as pgt
-from phylogenie.core.context import distributions
+from phylogenie.generators.context import distributions
 
 
 def _sample_vector1D(x: distributions.Scalar, N: int, rng: Generator) -> pgt.Vector1D:

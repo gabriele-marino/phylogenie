@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from phylogenie.core.msas.alisim import AliSimGenerator
+from phylogenie.generators.msas.alisim import AliSimGenerator
 
 MSAsGeneratorConfig = Annotated[
     AliSimGenerator,

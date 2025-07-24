@@ -25,7 +25,7 @@
 # 3.1 General configs
 # -------------------
 
-output_dir: outputs/TreeSimulatorBDEI
+output_dir: outputs/TreeSimulatorBDSS
 
 data_type: trees
 backend: treesimulator

@@ -1,5 +1,5 @@
-from phylogenie.configs import StrictBaseModel
-from phylogenie.core.context.distributions import (
+from phylogenie.generators.configs import StrictBaseModel
+from phylogenie.generators.context.distributions import (
     DistributionConfig,
     ScalarDistributionConfig,
 )

@@ -1,5 +1,5 @@
-import phylogenie.core.configs as cfg
-from phylogenie.configs import StrictBaseModel
+import phylogenie.generators.configs as cfg
+from phylogenie.generators.configs import StrictBaseModel
 
 
 class ReactionConfig(StrictBaseModel):

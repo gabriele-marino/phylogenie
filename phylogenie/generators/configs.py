@@ -1,5 +1,6 @@
+from pydantic import BaseModel, ConfigDict
+
 import phylogenie.typings as pgt
-from phylogenie.configs import StrictBaseModel
 
 IntConfig = str | int
 ScalarConfig = str | pgt.Scalar
@@ -7,6 +8,10 @@ ManyIntsConfig = str | list[IntConfig]
 ManyScalarsConfig = str | list[ScalarConfig]
 OneOrManyScalarsConfig = ScalarConfig | list[ScalarConfig]
 OneOrMany2DScalarsConfig = ScalarConfig | list[list[ScalarConfig]]
+
+
+class StrictBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
 
 class SkylineParameterValueModel(StrictBaseModel):

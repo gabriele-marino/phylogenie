@@ -2,9 +2,9 @@ from typing import Annotated
 
 from pydantic import Field
 
-from phylogenie.core.dataset import DatasetGenerator
-from phylogenie.core.msas import MSAsGeneratorConfig
-from phylogenie.core.trees import TreesGeneratorConfig
+from phylogenie.generators.dataset import DatasetGenerator
+from phylogenie.generators.msas import MSAsGeneratorConfig
+from phylogenie.generators.trees import TreesGeneratorConfig
 
 DatasetGeneratorConfig = Annotated[
     TreesGeneratorConfig | MSAsGeneratorConfig,

@@ -1,7 +1,7 @@
-import phylogenie.core.trees.remaster.configs as cfg
+import phylogenie.generators.trees.remaster.configs as cfg
 import phylogenie.typings as pgt
 from phylogenie.backend.remaster import PunctualReaction, Reaction
-from phylogenie.core.factories import (
+from phylogenie.generators.factories import (
     many_ints_factory,
     many_scalars_factory,
     skyline_parameter_like_factory,

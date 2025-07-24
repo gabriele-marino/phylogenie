@@ -4,7 +4,7 @@ from typing import Literal
 from numpy.random import Generator
 
 import phylogenie.typings as pgt
-from phylogenie.core.msas.base import BackendType, MSAsGenerator
+from phylogenie.generators.msas.base import BackendType, MSAsGenerator
 
 
 class AliSimGenerator(MSAsGenerator):

@@ -5,8 +5,8 @@ from glob import glob
 from pydantic import TypeAdapter
 from yaml import safe_load
 
-from phylogenie.core import DatasetGeneratorConfig
-from phylogenie.core.dataset import DatasetGenerator
+from phylogenie.generators import DatasetGeneratorConfig
+from phylogenie.generators.dataset import DatasetGenerator
 
 
 def run(config_path: str) -> None:

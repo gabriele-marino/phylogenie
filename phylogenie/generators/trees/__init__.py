@@ -2,8 +2,8 @@ from typing import Annotated
 
 from pydantic import Field
 
-from phylogenie.core.trees.remaster import ReMASTERGeneratorConfig
-from phylogenie.core.trees.treesimulator import TreeSimulatorGeneratorConfig
+from phylogenie.generators.trees.remaster import ReMASTERGeneratorConfig
+from phylogenie.generators.trees.treesimulator import TreeSimulatorGeneratorConfig
 
 TreesGeneratorConfig = Annotated[
     ReMASTERGeneratorConfig | TreeSimulatorGeneratorConfig,

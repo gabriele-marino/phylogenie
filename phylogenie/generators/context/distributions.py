@@ -6,7 +6,7 @@ from numpy.random import Generator, default_rng
 from pydantic import Field
 
 import phylogenie.typings as pgt
-from phylogenie.configs import StrictBaseModel
+from phylogenie.generators.configs import StrictBaseModel
 
 _T = TypeVar("_T")
 

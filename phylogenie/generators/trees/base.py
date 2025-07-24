@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Literal
 
-from phylogenie.core.dataset import DatasetGenerator, DataType
+from phylogenie.generators.dataset import DatasetGenerator, DataType
 
 
 class BackendType(str, Enum):

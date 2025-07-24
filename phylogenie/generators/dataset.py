@@ -8,8 +8,8 @@ from numpy.random import Generator, default_rng
 from tqdm import tqdm
 
 import phylogenie.typings as pgt
-from phylogenie.configs import StrictBaseModel
-from phylogenie.core.context import ContextConfig, context_factory
+from phylogenie.generators.configs import StrictBaseModel
+from phylogenie.generators.context import ContextConfig, context_factory
 
 
 class DataType(str, Enum):

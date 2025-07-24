@@ -1,6 +1,6 @@
 from typing import TypeGuard
 
-import phylogenie.core.configs as cfg
+import phylogenie.generators.configs as cfg
 import phylogenie.typings as pgt
 
 

@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 from numpy.random import Generator
 from pydantic import Field
 
-import phylogenie.core.configs as cfg
+import phylogenie.generators.configs as cfg
 import phylogenie.typings as pgt
 from phylogenie.backend.remaster import (
     DEFAULT_POPULATION,
@@ -16,16 +16,16 @@ from phylogenie.backend.remaster import (
     get_epidemiological_reactions,
     get_FBD_reactions,
 )
-from phylogenie.core.factories import (
+from phylogenie.generators.factories import (
     skyline_matrix_coercible_factory,
     skyline_vector_coercible_factory,
 )
-from phylogenie.core.trees.base import BackendType, TreesGenerator
-from phylogenie.core.trees.remaster.configs import (
+from phylogenie.generators.trees.base import BackendType, TreesGenerator
+from phylogenie.generators.trees.remaster.configs import (
     PunctualReactionConfig,
     ReactionConfig,
 )
-from phylogenie.core.trees.remaster.factories import (
+from phylogenie.generators.trees.remaster.factories import (
     punctual_reaction_factory,
     reaction_factory,
 )

@@ -2,8 +2,8 @@ from typing import Any
 
 import numpy as np
 
-import phylogenie.core.configs as cfg
-import phylogenie.core.typeguards as ctg
+import phylogenie.generators.configs as cfg
+import phylogenie.generators.typeguards as ctg
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
 from phylogenie.skyline import (
