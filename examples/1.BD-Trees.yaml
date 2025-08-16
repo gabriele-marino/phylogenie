@@ -1,0 +1,123 @@
+# -----------
+# 1. BD trees
+# -----------
+
+# This tutorial walks you through setting up a configuration file to simulate phylogenetic trees with a birth-death (BD) model.
+
+# In BD settings there is a single infectious (I) state/population, whose behaviour is parameterized by three values:
+# - R_0: reproduction number;
+# - T_I: infectious period;
+# - s: sampling proportion.
+
+# In this example, we generate a dataset with 100 training samples, 10 validation samples, and 10 test samples. For each sample:
+# - The reproduction number is drawn from a lognormal distribution (mean=1, sigma=0.2);
+# - The sampling proportion is a skyline (piece-wise) parameter defined as follows with respect to the simulation time t:
+#   - 0 for 0<t<1;
+#   - randomly drawn at uniform from 0 to 0.1 for 1<t<2;
+#   - randomly drawn at uniform from 0.1 to 0.3 for 2<t.
+# - The infectious period is fixed at 2.5.
+
+# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+
+# ---------------
+# General configs
+# ---------------
+
+# This section defines general configurations for the simulation, including output directory, number of samples, number of parallel jobs, and random seed.
+
+output_dir: outputs/BD-Trees # Root directory where the simulated data and metadata will be saved
+
+data_type: trees # Specify the type of data to simulate: "trees" or "msas"
+
+# The number of samples can be an integer as well as a dictionary specifying different numbers for each dataset splits. Dataset splits can have any name; here we use train, val, and test.
+n_samples:
+  train: 100
+  val: 10
+  test: 10
+# For a single dataset split with 100 samples, use:
+# n_samples: 100
+
+n_jobs: -1 # Number of parallel jobs to use; -1 means use all available cores (-1 by default)
+seed: 42 # Random seed to ensure reproducibility (None by default)
+
+# -------
+# Context
+# -------
+
+# The context section is what makes Phylogenie flexible and powerful.
+# This section defines the parameters that will be sampled for each dataset item.
+# The context is a dictionary of key-value pairs, where each key is a parameter name and the value is a distribution from which the parameter will be sampled.
+# Phylogenie supports all the distributions provided by NumPy's random generator. These include, and are not limited to:
+# - uniform(low: float, high: float);
+# - normal(loc: float, scale: float);
+# - lognormal(mean: float, sigma: float);
+# - weibull(a: float);
+# - exponential(scale: float);
+# - gamma(shape: float, scale: float);
+# - beta(a: float, b: float);
+# - integers(low: int, high: int).
+# For a full list of distributions, refer to the NumPy documentation: https://numpy.org/devdocs/reference/random/generator.html#distributions.
+# In this case, we sample the reproduction number R_0 from a lognormal distribution and the values of s at different simulation times from uniform distributions.
+# If specified as strings, the arguments of the distribution are evaluated in the context of the current sample, and can refer to other (previously defined) context variables (cf. 3.BDSS-Trees.yaml).
+
+context:
+  R_0:
+    type: lognormal
+    mean: 1
+    sigma: 0.2
+  s_t1:
+    type: uniform
+    low: 0
+    high: 0.1
+  s_t2:
+    type: uniform
+    low: 0.1
+    high: 0.3
+
+# ------------------------------------
+# Parameterization-specific parameters
+# ------------------------------------
+
+# This section defines the parameters specific to the BD parameterization.
+# The BD model uses three parameters:
+# - reproduction_number;
+# - infectious_period;
+# - sampling_proportion (equal to 1 by default).
+
+# All of these arguments are skyline (piece-wise constant) parameters. In Phylogenie, a scalar skyline parameter is simply denoted as SkylineParameter, and can be defined in one of the following ways:
+# 1) A (unique) scalar value, meaning the parameter stays constant for the entire simulation;
+# 2) As a pair of attributes:
+#   - value: a list of values the parameter will take over time;
+#   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
+# In this last case, the value list must have exactly one more element than change_times.
+
+# Phylogenie also supports writing scalar values (or lists of them) as strings instead of literal numbers.
+# When you do this, Phylogenie will automatically parse and evaluate the string eventually using context variables.
+# During evaluation, context variables are converted into NumPy arrays so you can easily apply complex calculations or operations (cf. 2.BDEI-Trees.yaml). 
+# In this example, we don’t need to apply complex operations; we just refer directly to the context variables when defining the parameters.
+
+parameterization: BD
+
+reproduction_number: R_0
+sampling_proportion:
+  value: [0, s_t1, s_t2]
+  change_times: [1, 2]
+infectious_period: 2.5
+
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+# This section defines the parameters for the tree simulation.
+# In this case we specify a minimum and a maximum number of tips in the simulated trees. At each simulation, a target number of tips is randomly drawn between the minimum and maximum values, and the simulation stops when the number of tips reaches the target.
+
+min_tips: 50 # Minimum number of tips in the simulated trees, 1 by default
+max_tips: 250 # Maximum number of tips in the simulated trees, ~infinity by default
+
+# Other optional arguments are:
+# - max_time: float (infinity by default)
+#   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value, eventually repeating the simulation until getting a valid number of tips.
+# - sampling_probability_at_present: float (0 by default)
+#   The probability of sampling a tip at the end of the simulation. Can be specified for a finite value of max_time.
+# - init_state: str (None by default)
+#   The state of the first (seed) individual of the simulation. This is necessary for multiple-state models.

@@ -1,0 +1,143 @@
+# ------------------
+# 4. Canonical trees
+# ------------------
+
+# This tutorial walks you through setting up a configuration file to simulate phylogenetic trees with a generic multi-type birth-death (MTBD) model using a canonical parameterization.
+
+# The canonical parameterization of an MTBD model with m states/populations is characterized by the following parameters:
+# - An m-dimensional vector of birth rates;
+# - An m-dimensional vector of death rates;
+# - An m-dimensional vector of sampling rates.
+# - An mx(m-1)-dimensional matrix of migration (transition) rates;
+# - An mx(m-1)-dimensional matrix of transmission rates among states;
+
+# In this example, we will generate a dataset consisting of 100 training samples using an MTBD model with m=3 states: A, B, and C.
+
+# The simulated scenario models an epidemic with two distinct phases, separated by a time split at t=1:
+# - Phase 1 (before t=1):
+#   Migration occurs between the three states.
+#   Transmissions occur within each state.
+#   No sampling is performed.
+# - Phase 2 (after t=1):
+#   Populations become isolated (no further migration and transmission between states).
+#   Sampling begins within each state.
+
+# For each sample in the dataset:
+# - Migration rates:
+#   In phase 1, migration rates are randomly drawn from a uniform distribution between 0.1 and 0.3.
+#   In phase 2, they are set to zero, to reflect isolation.
+# - Birth rates among states:
+#   In phase 1, birth rates among states are drawn from a lognormal distribution (mean=0.7, sigma=0.3).
+#   In phase 2, they are set to zero, to reflect isolation.
+# - Birth rates within states:
+#   In phase 1, birth rates within states are drawn from a lognormal distribution (mean=1, sigma=0.3).
+#   In phase 2, they are drawn from a lognormal distribution (mean=0.5, sigma=0.3).
+# - Sampling rates:
+#   In phase 1, the sampling rates are fixed at zero.
+#   In phase 2, they are drawn from a uniform distribution between 0.1 and 0.4.
+# - Death rates:
+#   Assumed to be constant over time and across states.
+#   Death rates are drawn from a uniform distribution between 0.1 and 0.5.
+
+# This setup captures the dynamics of an epidemic that initially spreads freely among interconnected states and then transitions to isolated states with active sampling.
+
+# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+
+# ---------------
+# General configs
+# ---------------
+
+output_dir: outputs/Canonical-Trees
+data_type: trees
+n_samples: 100
+n_jobs: -1
+seed: 42
+
+# -------
+# Context
+# -------
+
+context:
+  mu:
+    type: uniform
+    low: 0.1
+    high: 0.3
+    size: [3, 2]
+  la_among_states:
+    type: lognormal
+    mean: 0.7
+    sigma: 0.3
+    size: [3,2]
+  la_t1:
+    type: lognormal
+    mean: 1
+    sigma: 0.3
+    size: 3
+  la_t2:
+    type: lognormal
+    mean: 0.5
+    sigma: 0.3
+    size: 3
+  psi:
+    type: uniform
+    low: 0.1
+    high: 0.5
+  s:
+    type: uniform
+    low: 0.1
+    high: 0.4
+    size: 3
+
+# ------------------------------------
+# Parameterization-specific parameters
+# ------------------------------------
+
+# The canonical parameterization uses three SkylineVectors:
+# - sampling_rates;
+# - birth_rates; (equal to 0 by default);
+# - death_rates; (equal to 0 by default);
+# and two SkylineMatrices, that can be provided when the model involves more than one state:
+# - birth_rates_among_states (None by default);
+# - migration_rates (None by default).
+# It also needs you to specify the states involved in the simulation, as a list of strings, and whether the model involves removal after sampling or not. Here, we set remove_after_sampling to True, which is usually the case for epidemiological simulations.
+
+# In Phylogenie, a SkylineVector can be defined in one of the following ways:
+# 1) A (unique) scalar value, meaning the parameter stays constant across states and time;
+# 2) As a list of SkylineParameters, where each element represent the skyline value of the vector for a specific state;
+# 3) As a pair of attributes:
+#   - value: a list of values the vector will take over time. Each value can be a scalar (if the vector is constant across states) or a list of scalars (if the vector varies across states);
+#   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
+# In this last case, the value list must have exactly one more element than change_times.
+
+# A SkylineMatrix can be defined in one of the following ways:
+# 1) A (unique) scalar value, meaning the parameter stays constant across state pairs and time;
+# 2) As a list of SkylineVectors, where each element represent the skyline value of the matrix for a specific state;
+# 3) As a pair of attributes:
+#   - value: a list of values the matrix will take over time. Each value can be a scalar (if the matrix is constant across state pairs) or a nested (2D) list of scalars;
+#   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
+# In this last case, the value list must have exactly one more element than change_times.
+
+parameterization: canonical
+states: [A, B, C]
+migration_rates:
+  value: [mu, 0]
+  change_times: [1]
+birth_rates:
+  value: [la_t1, la_t2]
+  change_times: [1]
+birth_rates_among_states:
+  value: [la_among_states, 0]
+  change_times: [1]
+death_rates: psi
+sampling_rates:
+  value: [0, s]
+  change_times: [1]
+remove_after_sampling: True
+
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+init_state: A
+min_tips: 50
+max_tips: 250

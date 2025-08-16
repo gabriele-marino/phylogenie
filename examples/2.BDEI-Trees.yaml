@@ -1,0 +1,92 @@
+# -------------
+# 2. BDEI trees
+# -------------
+
+# This tutorial walks you through setting up a configuration file to simulate phylogenetic trees with a birth-death with exposed-infectious (BDEI) model.
+
+# In BDEI settings there are two different states/populations: an exposed state (E) and an infectious state (I).
+# Their behaviour is parameterized by four values:
+# - R_0: reproduction number;
+# - T_I: infectious period;
+# - T_E: incubation period;
+# - s: sampling_proportion.
+
+# In this example, we generate a dataset with 100 training samples, 10 validation samples, and 10 test samples. For each sample:
+# - The reproduction number is drawn from a lognormal distribution (mean=1, sigma=0.2);
+# - The sampling proportion is a skyline (piece-wise) parameter, with change times at t=1 and t=2. For each time interval, its value is randomly drawn at uniform from 0.2 to 0.4;
+# The infectious period (T_I) and incubation period (T_E) are computed based on two auxiliary parameters:
+# - Infection time (T), where T = T_I + T_E
+# - Incubation fraction (f), where f = T_E / T
+# For each sample:
+# - The infection time (T) is drawn from a lognormal distribution (mean=1, sigma=0.3).
+# - The incubation fraction (f) is drawn from a uniform distribution between 0 and 0.75.
+
+# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+
+# ---------------
+# General configs
+# ---------------
+
+output_dir: outputs/BDEI-Trees
+data_type: trees
+n_samples:
+  train: 100
+  val: 10
+  test: 10
+n_jobs: -1
+seed: 42
+
+# -------
+# Context
+# -------
+
+# In this example, we want the sampling proportion to follow a skyline model with two change points at times t=1 and t=2. This creates three distinct time intervals, and for each interval, we want to draw a separate value for the sampling proportion from the same distribution.
+# Phylogenie makes this straightforward: you can define such random vectors by using the size argument to specify the number of values you need (in this case, three), as shown below.
+
+context:
+  R_0:
+    type: lognormal
+    mean: 1
+    sigma: 0.2
+  T:
+    type: lognormal
+    mean: 1
+    sigma: 0.3
+  f:
+    type: uniform
+    low: 0
+    high: 0.75
+  s:
+    type: uniform
+    low: 0.2
+    high: 0.4
+    size: 3
+
+# ------------------------------------
+# Parameterization-specific parameters
+# ------------------------------------
+
+# The BDEI model uses four SkylineParameters:
+# - reproduction_number;
+# - infectious_period;
+# - incubation_period;
+# - sampling_proportion (equal to 1 by default).
+
+# In this example, the infectious and incubation periods are defined as functions of two context variables: the infection time T and the incubation fraction f.
+# Phylogenie makes it easy to work with context variables: you simply write any Python-evaluable expression wherever you need them. During evaluation, context variables are converted to NumPy arrays, which means you can easily apply complex transformatinos or operations. In this case, we compute the infectious period as (1-f)*T and the incubation period as f*T.
+
+parameterization: BDEI
+reproduction_number: R_0
+infectious_period: (1-f)*T
+incubation_period: f*T
+sampling_proportion:
+  value: s
+  change_times: [1.0, 2.0]
+
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+init_state: E # State of the first individual in the simulation (E - exposed)
+min_tips: 50
+max_tips: 250

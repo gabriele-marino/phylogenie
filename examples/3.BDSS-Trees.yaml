@@ -1,0 +1,87 @@
+# -------------
+# 3. BDSS trees
+# -------------
+
+# This tutorial walks you through setting up a configuration file to simulate phylogenetic trees with a birth-death with superspreading (BDSS) model.
+
+# In BDSS settings there are two different states/populations: a (normal) infectious state (I) and superspreader state (S).
+# Their behaviour is parameterized by five values:
+# - R_0: reproduction number;
+# - T_I: infectious period;
+# - r_SS: superspreading ratio;
+# - f_SS: superspreaders proportion;
+# - s: sampling_proportion.
+
+# In this example, we generate a dataset with 100 training samples, 10 validation samples, and 10 test samples. For each sample:
+# - The reproduction number is drawn from a lognormal distribution (mean=1, sigma=0.2);
+# - The sampling proportion is fixed to 0.25;
+# - The infectious period is fixed to 2.5;
+# - The superspreading ratio is randomly drawn at uniform between 2 and 10;
+# - The superspreaders proportion is randomly drawn at uniform between 0.1 and 0.3;
+
+# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+
+# ---------------
+# General configs
+# ---------------
+
+output_dir: outputs/BDSS-Trees
+data_type: trees
+n_samples:
+  train: 100
+  val: 10
+  test: 10
+n_jobs: -1
+seed: 42
+
+# -------
+# Context
+# -------
+
+# In this example, we want to draw the initial state of the simulation from a discrete distribution, where the probability of being in the superspreader state is defined by the superspreaders proportion (f_SS). This can be done using the choice distribution, which allows you to specify a list of possible values and their corresponding probabilities. Importantly, we define the p argument of the choice distribution as a string. This string will be evaluated in the context of the current sample, allowing us to use the value of f_SS directly.
+
+context:
+  R_0:
+    type: lognormal
+    mean: 1
+    sigma: 0.2
+  r_SS:
+    type: uniform
+    low: 2
+    high: 10
+  f_SS:
+    type: uniform
+    low: 0.1
+    high: 0.3
+  init_state:
+    type: choice
+    a: [I, S]
+    p: "[1 - f_SS, f_SS]"
+
+# ------------------------------------
+# Parameterization-specific parameters
+# ------------------------------------
+
+# The BDSS model uses four SkylineParameters:
+# - reproduction_number;
+# - infectious_period;
+# - superspreading_ratio;
+# - superspreaders_proportion;
+# - sampling_proportion (equal to 1 by default).
+
+parameterization: BDSS
+reproduction_number: R_0
+infectious_period: 2.5
+superspreading_ratio: r_SS
+superspreaders_proportion: f_SS
+sampling_proportion: 0.25
+
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+# In this example, we want the set the initial state of the simulation based on the value of a string context variable (init_state). This is done by including init_state inside curly braces. Phylogenie will automatically replace this with the value of the init_state variable at runtime.
+
+init_state: "{init_state}"
+min_tips: 50
+max_tips: 250
