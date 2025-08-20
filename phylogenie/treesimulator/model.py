@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
@@ -122,7 +121,7 @@ class Model:
         return self._population[id].state
 
     def get_sampled_tree(self) -> Tree:
-        tree = deepcopy(self._tree)
+        tree = self._tree.copy()
         for node in list(tree.postorder_traversal()):
             if node.id not in self._sampled and not node.children:
                 if node.parent is None:
@@ -142,7 +141,7 @@ class Model:
         return tree
 
     def get_full_tree(self) -> Tree:
-        return deepcopy(self._tree)
+        return self._tree.copy()
 
     def get_population(self, states: str | None = None) -> list[int]:
         if states is None:

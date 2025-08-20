@@ -73,6 +73,14 @@ class Tree:
     def delete(self, key: str) -> None:
         del self._features[key]
 
+    def copy(self):
+        new_tree = Tree(self.id, self.branch_length)
+        for key, value in self._features.items():
+            new_tree.set(key, value)
+        for child in self.children:
+            new_tree.add_child(child.copy())
+        return new_tree
+
     def __iter__(self) -> Iterator["Tree"]:
         return self.preorder_traversal()
 
