@@ -61,7 +61,11 @@ class Tree:
     def get_time(self) -> float:
         parent_time = 0 if self.parent is None else self.parent.get_time()
         if self.branch_length is None:
-            raise ValueError(f"Branch length of node {self.id} is not set.")
+            if self.parent is not None:
+                raise ValueError(
+                    f"Branch length of non-root node {self.id} is not set."
+                )
+            return 0.0
         return self.branch_length + parent_time
 
     def set(self, key: str, value: Any) -> None:
