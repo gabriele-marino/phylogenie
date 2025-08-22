@@ -1,4 +1,5 @@
 import os
+import time
 from collections.abc import Sequence
 
 import joblib
@@ -21,7 +22,8 @@ def simulate_tree(
     init_state: str | None = None,
     sampling_probability_at_present: float = 0.0,
     seed: int | None = None,
-) -> Tree | None:
+    timeout: float = np.inf,
+) -> Tree:
     if max_time == np.inf and max_tips == MAX_TIPS:
         raise ValueError("Either max_time or max_tips must be specified.")
 
@@ -41,14 +43,18 @@ def simulate_tree(
         raise ValueError(f"Init state {init_state} not found in event states: {states}")
 
     rng = default_rng(seed)
+    start_clock = time.perf_counter()
     while True:
         model = Model(init_state, events)
         current_time = 0.0
         change_times = sorted(set(t for e in events for t in e.rate.change_times))
         next_change_time = change_times.pop(0) if change_times else np.inf
-
         target_n_tips = rng.integers(min_tips, max_tips) if max_time == np.inf else None
+
         while current_time < max_time:
+            if time.perf_counter() - start_clock > timeout:
+                raise TimeoutError("Simulation timed out.")
+
             events = model.events
             rates = [e.get_propensity(model, current_time) for e in events]
 
@@ -98,26 +104,35 @@ def generate_trees(
     sampling_probability_at_present: float = 0.0,
     seed: int | None = None,
     n_jobs: int = -1,
+    timeout: float = np.inf,
 ) -> None:
+    def _simulate_tree(seed: int) -> Tree:
+        while True:
+            try:
+                return simulate_tree(
+                    events=events,
+                    min_tips=min_tips,
+                    max_tips=max_tips,
+                    max_time=max_time,
+                    init_state=init_state,
+                    sampling_probability_at_present=sampling_probability_at_present,
+                    seed=seed,
+                    timeout=timeout,
+                )
+            except TimeoutError:
+                print("Simulation timed out, retrying with a different seed...")
+            seed += 1
+
     if os.path.exists(output_dir):
         raise FileExistsError(f"Output directory {output_dir} already exists")
     os.mkdir(output_dir)
 
     rng = default_rng(seed)
     jobs = joblib.Parallel(n_jobs=n_jobs, return_as="generator_unordered")(
-        joblib.delayed(simulate_tree)(
-            events=events,
-            min_tips=min_tips,
-            max_tips=max_tips,
-            max_time=max_time,
-            init_state=init_state,
-            sampling_probability_at_present=sampling_probability_at_present,
-            seed=int(rng.integers(2**32)),
-        )
+        joblib.delayed(_simulate_tree)(seed=int(rng.integers(2**32)))
         for _ in range(n_trees)
     )
     for i, tree in tqdm(
         enumerate(jobs), total=n_trees, desc=f"Generating trees in {output_dir}..."
     ):
-        if tree is not None:
-            dump_newick(tree, os.path.join(output_dir, f"{i}.nwk"))
+        dump_newick(tree, os.path.join(output_dir, f"{i}.nwk"))

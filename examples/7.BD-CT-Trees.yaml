@@ -78,3 +78,4 @@ max_notified_contacts: C
 init_state: I
 min_tips: 50
 max_tips: 250
+timeout: 5

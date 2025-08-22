@@ -121,3 +121,5 @@ max_tips: 250 # Maximum number of tips in the simulated trees, ~infinity by defa
 #   The probability of sampling a tip at the end of the simulation. Can be specified for a finite value of max_time.
 # - init_state: str (None by default)
 #   The state of the first (seed) individual of the simulation. This is necessary for multiple-state models.
+# - timeout: float (infinity by default)
+#   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.

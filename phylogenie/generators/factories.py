@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+from numpy.random import Generator
 
 import phylogenie.generators.configs as cfg
 import phylogenie.generators.typeguards as ctg
@@ -28,14 +29,6 @@ def _eval_expression(expression: str, data: dict[str, Any]) -> Any:
             },
         )
     ).tolist()
-
-
-def distribution(x: Distribution, data: dict[str, Any]) -> Distribution:
-    args = x.args
-    for arg_name, arg_value in args.items():
-        if isinstance(arg_value, str):
-            args[arg_name] = _eval_expression(arg_value, data)
-    return Distribution(type=x.type, **args)
 
 
 def integer(x: cfg.Integer, data: dict[str, Any]) -> int:
@@ -209,3 +202,21 @@ def skyline_matrix(
     value = [[[e] * N] * M if isinstance(e, pgt.Scalar) else e for e in value]
 
     return SkylineMatrix(value=value, change_times=change_times)
+
+
+def distribution(x: Distribution, data: dict[str, Any]) -> Distribution:
+    args = x.args
+    for arg_name, arg_value in args.items():
+        if isinstance(arg_value, str):
+            args[arg_name] = _eval_expression(arg_value, data)
+    return Distribution(type=x.type, **args)
+
+
+def data(context: dict[str, Distribution] | None, rng: Generator) -> dict[str, Any]:
+    if context is None:
+        return {}
+    data: dict[str, Any] = {}
+    for k, v in context.items():
+        dist = distribution(v, data)
+        data[k] = np.array(getattr(rng, dist.type)(**dist.args)).tolist()
+    return data

@@ -3,9 +3,10 @@ import subprocess
 from pathlib import Path
 from typing import Any, Literal
 
-from numpy.random import Generator
+from numpy.random import Generator, default_rng
 
 from phylogenie.generators.dataset import DatasetGenerator, DataType
+from phylogenie.generators.factories import data
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
 from phylogenie.io import dump_newick
 
@@ -42,9 +43,12 @@ class AliSimDatasetGenerator(DatasetGenerator):
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["rm", f"{tree_file}.log"], check=True)
 
-    def _generate_one(
-        self, filename: str, rng: Generator, data: dict[str, Any]
-    ) -> None:
+    def generate_one(
+        self,
+        filename: str,
+        context: dict[str, Any] | None = None,
+        seed: int | None = None,
+    ) -> dict[str, Any]:
         if self.keep_trees:
             base_dir, file_id = Path(filename).parent, Path(filename).stem
             trees_dir = os.path.join(base_dir, TREES_DIRNAME)
@@ -57,16 +61,24 @@ class AliSimDatasetGenerator(DatasetGenerator):
             tree_filename = f"{filename}.temp-tree"
             msa_filename = filename
 
-        tree = self.trees.simulate_one(rng, data)
-        if tree is None:
-            return
+        d: dict[str, Any] = {"file_id": Path(msa_filename).stem}
+        rng = default_rng(seed)
+        while True:
+            d.update(data(context, rng))
+            try:
+                tree = self.trees.simulate_one(d, seed)
+                break
+            except TimeoutError:
+                print(
+                    "Tree simulation timed out, retrying with different parameters..."
+                )
 
         for leaf in tree.get_leaves():
             leaf.id += f"|{leaf.get_time()}"
         dump_newick(tree, f"{tree_filename}.nwk")
 
-        self._generate_one_from_tree(
-            filename=msa_filename, tree_file=f"{tree_filename}.nwk", rng=rng, data=data
-        )
+        self._generate_one_from_tree(msa_filename, f"{tree_filename}.nwk", rng, d)
         if not self.keep_trees:
             os.remove(f"{tree_filename}.nwk")
+
+        return d

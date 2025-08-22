@@ -1,14 +1,16 @@
 from abc import abstractmethod
 from enum import Enum
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import numpy as np
-from numpy.random import Generator
+from numpy.random import default_rng
 from pydantic import Field
 
 import phylogenie.generators.configs as cfg
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import (
+    data,
     distribution,
     integer,
     scalar,
@@ -48,19 +50,19 @@ class TreeDatasetGenerator(DatasetGenerator):
     max_time: cfg.Scalar = np.inf
     init_state: str | None = None
     sampling_probability_at_present: cfg.Scalar = 0.0
+    timeout: float = np.inf
 
     @abstractmethod
     def _get_events(self, data: dict[str, Any]) -> list[Event]: ...
 
-    def simulate_one(self, rng: Generator, data: dict[str, Any]) -> Tree | None:
-        events = self._get_events(data)
+    def simulate_one(self, data: dict[str, Any], seed: int | None = None) -> Tree:
         init_state = (
             self.init_state
             if self.init_state is None
             else self.init_state.format(**data)
         )
         return simulate_tree(
-            events=events,
+            events=self._get_events(data),
             min_tips=integer(self.min_tips, data),
             max_tips=integer(self.max_tips, data),
             max_time=scalar(self.max_time, data),
@@ -68,15 +70,27 @@ class TreeDatasetGenerator(DatasetGenerator):
             sampling_probability_at_present=scalar(
                 self.sampling_probability_at_present, data
             ),
-            seed=int(rng.integers(2**32)),
+            seed=seed,
+            timeout=self.timeout,
         )
 
-    def _generate_one(
-        self, filename: str, rng: Generator, data: dict[str, Any]
-    ) -> None:
-        tree = self.simulate_one(rng, data)
-        if tree is not None:
-            dump_newick(tree, f"{filename}.nwk")
+    def generate_one(
+        self,
+        filename: str,
+        context: dict[str, Any] | None = None,
+        seed: int | None = None,
+    ) -> dict[str, Any]:
+        d = {"file_id": Path(filename).stem}
+        rng = default_rng(seed)
+        while True:
+            try:
+                d.update(data(context, rng))
+                tree = self.simulate_one(d, seed)
+                dump_newick(tree, f"{filename}.nwk")
+                break
+            except TimeoutError:
+                print("Simulation timed out, retrying with different parameters...")
+        return d
 
 
 class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):

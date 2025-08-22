@@ -1,16 +1,13 @@
 import os
 from abc import ABC, abstractmethod
 from enum import Enum
-from itertools import product
 from typing import Any
 
 import joblib
-import numpy as np
 import pandas as pd
 from numpy.random import Generator, default_rng
 from tqdm import tqdm
 
-from phylogenie.generators.factories import distribution
 from phylogenie.utils import Distribution, StrictBaseModel
 
 
@@ -31,15 +28,12 @@ class DatasetGenerator(ABC, StrictBaseModel):
     context: dict[str, Distribution] | None = None
 
     @abstractmethod
-    def _generate_one(
-        self, filename: str, rng: Generator, data: dict[str, Any]
-    ) -> None: ...
-
     def generate_one(
-        self, filename: str, data: dict[str, Any] | None = None, seed: int | None = None
-    ) -> None:
-        data = {} if data is None else data
-        self._generate_one(filename=filename, rng=default_rng(seed), data=data)
+        self,
+        filename: str,
+        context: dict[str, Any] | None = None,
+        seed: int | None = None,
+    ) -> dict[str, Any]: ...
 
     def _generate(self, rng: Generator, n_samples: int, output_dir: str) -> None:
         if os.path.exists(output_dir):
@@ -53,24 +47,18 @@ class DatasetGenerator(ABC, StrictBaseModel):
         )
         os.makedirs(data_dir)
 
-        data: list[dict[str, Any]] = [{} for _ in range(n_samples)]
-        if self.context is not None:
-            for d, (k, v) in product(data, self.context.items()):
-                dist = distribution(v, d)
-                d[k] = np.array(getattr(rng, dist.type)(**dist.args)).tolist()
-            df = pd.DataFrame([{"file_id": str(i), **d} for i, d in enumerate(data)])
-            df.to_csv(os.path.join(output_dir, METADATA_FILENAME), index=False)
-
         jobs = joblib.Parallel(n_jobs=self.n_jobs, return_as="generator_unordered")(
             joblib.delayed(self.generate_one)(
-                filename=os.path.join(data_dir, str(i)),
-                data=data[i],
                 seed=int(rng.integers(2**32)),
+                filename=os.path.join(data_dir, str(i)),
+                context=self.context,
             )
             for i in range(n_samples)
         )
-        for _ in tqdm(jobs, total=n_samples, desc=f"Generating {data_dir}..."):
-            pass
+        df = pd.DataFrame(
+            [r for r in tqdm(jobs, total=n_samples, desc=f"Generating {data_dir}...")]
+        )
+        df.to_csv(os.path.join(output_dir, METADATA_FILENAME), index=False)
 
     def generate(self) -> None:
         rng = default_rng(self.seed)
