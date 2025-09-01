@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import numpy as np
@@ -51,6 +52,14 @@ def scalar(x: cfg.Scalar, data: dict[str, Any]) -> pgt.Scalar:
             f"Expression '{x}' evaluated to {e} of type {type(e)}, expected a scalar."
         )
     return x
+
+
+def string(s: Any, data: dict[str, Any]) -> str:
+    if not isinstance(s, str):
+        return str(s)
+    return re.sub(
+        r"\{([^{}]+)\}", lambda match: str(_eval_expression(match.group(1), data)), s
+    )  # Match content inside curly braces
 
 
 def many_scalars(x: cfg.ManyScalars, data: dict[str, Any]) -> pgt.ManyScalars:

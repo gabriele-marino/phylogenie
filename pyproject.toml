@@ -24,9 +24,6 @@ pytest = "^8.3.5"
 phylogenie = "phylogenie.main:main"
 
 [tool.pyright]
-include = [
-    "phylogenie",
-]
 typeCheckingMode = "strict"
 
 [build-system]

@@ -49,7 +49,9 @@ def simulate_tree(
         current_time = 0.0
         change_times = sorted(set(t for e in events for t in e.rate.change_times))
         next_change_time = change_times.pop(0) if change_times else np.inf
-        target_n_tips = rng.integers(min_tips, max_tips) if max_time == np.inf else None
+        target_n_tips = (
+            rng.integers(min_tips, max_tips + 1) if max_time == np.inf else None
+        )
 
         while current_time < max_time:
             if time.perf_counter() - start_clock > timeout:
@@ -125,7 +127,7 @@ def generate_trees(
 
     if os.path.exists(output_dir):
         raise FileExistsError(f"Output directory {output_dir} already exists")
-    os.mkdir(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     rng = default_rng(seed)
     jobs = joblib.Parallel(n_jobs=n_jobs, return_as="generator_unordered")(

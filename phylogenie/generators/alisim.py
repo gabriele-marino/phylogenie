@@ -6,7 +6,7 @@ from typing import Any, Literal
 from numpy.random import Generator, default_rng
 
 from phylogenie.generators.dataset import DatasetGenerator, DataType
-from phylogenie.generators.factories import data
+from phylogenie.generators.factories import data, string
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
 from phylogenie.io import dump_newick
 
@@ -19,7 +19,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
     trees: TreeDatasetGeneratorConfig
     keep_trees: bool = False
     iqtree_path: str = "iqtree2"
-    args: dict[str, str | int | float]
+    args: dict[str, Any]
 
     def _generate_one_from_tree(
         self, filename: str, tree_file: str, rng: Generator, data: dict[str, Any]
@@ -35,9 +35,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
         ]
 
         for key, value in self.args.items():
-            command.extend(
-                [key, value.format(**data) if isinstance(value, str) else str(value)]
-            )
+            command.extend([key, string(value, data)])
 
         command.extend(["-af", "fasta"])
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
