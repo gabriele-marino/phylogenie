@@ -46,7 +46,7 @@ class ParameterizationType(str, Enum):
 class TreeDatasetGenerator(DatasetGenerator):
     data_type: Literal[DataType.TREES] = DataType.TREES
     min_tips: cfg.Integer = 1
-    max_tips: cfg.Integer = 2**32
+    max_tips: cfg.Integer | None = None
     max_time: cfg.Scalar = np.inf
     init_state: str | None = None
     sampling_probability_at_present: cfg.Scalar = 0.0
@@ -64,7 +64,7 @@ class TreeDatasetGenerator(DatasetGenerator):
         return simulate_tree(
             events=self._get_events(data),
             min_tips=integer(self.min_tips, data),
-            max_tips=integer(self.max_tips, data),
+            max_tips=None if self.max_tips is None else integer(self.max_tips, data),
             max_time=scalar(self.max_time, data),
             init_state=init_state,
             sampling_probability_at_present=scalar(
@@ -98,8 +98,8 @@ class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
         ParameterizationType.CANONICAL
     )
     states: list[str]
-    sampling_rates: cfg.SkylineVector
-    remove_after_sampling: bool
+    sampling_rates: cfg.SkylineVector = 0
+    remove_after_sampling: bool = False
     birth_rates: cfg.SkylineVector = 0
     death_rates: cfg.SkylineVector = 0
     migration_rates: cfg.SkylineMatrix = None
@@ -122,7 +122,7 @@ class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
 class FBDTreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.FBD] = ParameterizationType.FBD
     states: list[str]
-    sampling_proportions: cfg.SkylineVector
+    sampling_proportions: cfg.SkylineVector = 0
     diversification: cfg.SkylineVector = 0
     turnover: cfg.SkylineVector = 0
     migration_rates: cfg.SkylineMatrix = None
@@ -218,7 +218,7 @@ class BDTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
     parameterization: Literal[ParameterizationType.BD] = ParameterizationType.BD
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
-    sampling_proportion: cfg.SkylineParameter = 1
+    sampling_proportion: cfg.SkylineParameter
 
     def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
         return get_BD_events(
@@ -233,7 +233,7 @@ class BDEITreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     incubation_period: cfg.SkylineParameter
-    sampling_proportion: cfg.SkylineParameter = 1
+    sampling_proportion: cfg.SkylineParameter
 
     def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
         return get_BDEI_events(
@@ -250,7 +250,7 @@ class BDSSTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
     infectious_period: cfg.SkylineParameter
     superspreading_ratio: cfg.SkylineParameter
     superspreaders_proportion: cfg.SkylineParameter
-    sampling_proportion: cfg.SkylineParameter = 1
+    sampling_proportion: cfg.SkylineParameter
 
     def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
         return get_BDSS_events(

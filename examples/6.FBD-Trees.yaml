@@ -50,9 +50,9 @@ context:
 # ------------------------------------
 
 # The FBD parameterization uses three SkylineVectors:
-# - sampling_proportions;
+# - sampling_proportions  (equal to 0 by default);
 # - diversification (equal to 0 by default);
-# - turnover; (equal to 0 by default);
+# - turnover (equal to 0 by default);
 # and two SkylineMatrices, that can be provided when the model involves more than one state:
 # - diversification_between_states (None by default);
 # - migration_rates (None by default).

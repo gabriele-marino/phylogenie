@@ -64,8 +64,8 @@ class Sampling(Event):
 
 def get_canonical_events(
     states: list[str],
-    sampling_rates: SkylineVectorCoercible,
-    remove_after_sampling: bool,
+    sampling_rates: SkylineVectorCoercible = 0,
+    remove_after_sampling: bool = False,
     birth_rates: SkylineVectorCoercible = 0,
     death_rates: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
@@ -100,7 +100,7 @@ def get_canonical_events(
 
 def get_FBD_events(
     states: list[str],
-    sampling_proportions: SkylineVectorCoercible = 1,
+    sampling_proportions: SkylineVectorCoercible = 0,
     diversification: SkylineVectorCoercible = 0,
     turnover: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
@@ -134,7 +134,7 @@ def get_FBD_events(
 
 def get_epidemiological_events(
     states: list[str],
-    sampling_proportions: SkylineVectorCoercible = 1,
+    sampling_proportions: SkylineVectorCoercible,
     reproduction_numbers: SkylineVectorCoercible = 0,
     become_uninfectious_rates: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
@@ -172,7 +172,7 @@ def get_epidemiological_events(
 def get_BD_events(
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
-    sampling_proportion: SkylineParameterLike = 1,
+    sampling_proportion: SkylineParameterLike,
 ) -> list[Event]:
     return get_epidemiological_events(
         states=[INFECTIOUS_STATE],
@@ -186,7 +186,7 @@ def get_BDEI_events(
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
     incubation_period: SkylineParameterLike,
-    sampling_proportion: SkylineParameterLike = 1,
+    sampling_proportion: SkylineParameterLike,
 ) -> list[Event]:
     return get_epidemiological_events(
         states=[EXPOSED_STATE, INFECTIOUS_STATE],
@@ -202,7 +202,7 @@ def get_BDSS_events(
     infectious_period: SkylineParameterLike,
     superspreading_ratio: SkylineParameterLike,
     superspreaders_proportion: SkylineParameterLike,
-    sampling_proportion: SkylineParameterLike = 1,
+    sampling_proportion: SkylineParameterLike,
 ) -> list[Event]:
     f_SS = superspreaders_proportion
     r_SS = superspreading_ratio

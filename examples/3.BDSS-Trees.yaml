@@ -67,7 +67,7 @@ context:
 # - infectious_period;
 # - superspreading_ratio;
 # - superspreaders_proportion;
-# - sampling_proportion (equal to 1 by default).
+# - sampling_proportion.
 
 parameterization: BDSS
 reproduction_number: R_0

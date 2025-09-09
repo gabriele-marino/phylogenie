@@ -82,7 +82,7 @@ context:
 # The BD model uses three parameters:
 # - reproduction_number;
 # - infectious_period;
-# - sampling_proportion (equal to 1 by default).
+# - sampling_proportion.
 
 # All of these arguments are skyline (piece-wise constant) parameters. In Phylogenie, a scalar skyline parameter is simply denoted as SkylineParameter, and can be defined in one of the following ways:
 # 1) A (unique) scalar value, meaning the parameter stays constant for the entire simulation;

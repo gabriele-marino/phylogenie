@@ -11,20 +11,18 @@ from phylogenie.io import dump_newick
 from phylogenie.tree import Tree
 from phylogenie.treesimulator.model import Event, Model
 
-MAX_TIPS = 2**32
-
 
 def simulate_tree(
     events: Sequence[Event],
     min_tips: int = 1,
-    max_tips: int = MAX_TIPS,
+    max_tips: int | None = None,
     max_time: float = np.inf,
     init_state: str | None = None,
     sampling_probability_at_present: float = 0.0,
     seed: int | None = None,
     timeout: float = np.inf,
 ) -> Tree:
-    if max_time == np.inf and max_tips == MAX_TIPS:
+    if max_time == np.inf and max_tips is None:
         raise ValueError("Either max_time or max_tips must be specified.")
 
     if max_time == np.inf and sampling_probability_at_present:
@@ -49,9 +47,11 @@ def simulate_tree(
         current_time = 0.0
         change_times = sorted(set(t for e in events for t in e.rate.change_times))
         next_change_time = change_times.pop(0) if change_times else np.inf
-        target_n_tips = (
-            rng.integers(min_tips, max_tips + 1) if max_time == np.inf else None
-        )
+        if max_time == np.inf:
+            assert max_tips is not None
+            target_n_tips = rng.integers(min_tips, max_tips + 1)
+        else:
+            target_n_tips = None
 
         while current_time < max_time:
             if time.perf_counter() - start_clock > timeout:
@@ -68,7 +68,8 @@ def simulate_tree(
 
             if (
                 not any(rates)
-                or model.n_sampled > max_tips
+                or max_tips is not None
+                and model.n_sampled > max_tips
                 or target_n_tips is not None
                 and model.n_sampled >= target_n_tips
             ):
@@ -91,7 +92,9 @@ def simulate_tree(
             if rng.random() < sampling_probability_at_present:
                 model.sample(individual, current_time, True)
 
-        if min_tips <= model.n_sampled <= max_tips:
+        if min_tips <= model.n_sampled and (
+            max_tips is None or model.n_sampled <= max_tips
+        ):
             return model.get_sampled_tree()
 
 
@@ -127,7 +130,7 @@ def generate_trees(
 
     if os.path.exists(output_dir):
         raise FileExistsError(f"Output directory {output_dir} already exists")
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir)
 
     rng = default_rng(seed)
     jobs = joblib.Parallel(n_jobs=n_jobs, return_as="generator_unordered")(
