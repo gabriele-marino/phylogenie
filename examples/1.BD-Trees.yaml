@@ -112,7 +112,13 @@ infectious_period: 2.5
 # In this case we specify a minimum and a maximum number of tips in the simulated trees. At each simulation, a target number of tips is randomly drawn between the minimum and maximum values, and the simulation stops when the number of tips reaches the target.
 
 min_tips: 50 # Minimum number of tips in the simulated trees, 1 by default
-max_tips: 250 # Maximum number of tips in the simulated trees, ~infinity by default
+max_tips: 50 # Maximum number of tips in the simulated trees, ~infinity by default
+node_features:  # List of features to compute and attach to each node of the simulated trees
+  - n_tips
+  - time
+  # - state # State of each node (useful for multi-state models)
+  # - mutation # Number of mutations on each branch (useful for mutation models, cf. 8.BD-Mutation-Trees.yaml)
+  # - height # Height of each node (0 for the tips, 1 for their parents, etc.)
 
 # Other optional arguments are:
 # - max_time: float (infinity by default)

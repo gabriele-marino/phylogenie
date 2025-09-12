@@ -3,8 +3,8 @@ from typing import Any
 
 
 class Tree:
-    def __init__(self, id: str = "", branch_length: float | None = None):
-        self.id = id
+    def __init__(self, name: str = "", branch_length: float | None = None):
+        self.name = name
         self.branch_length = branch_length
         self._parent: Tree | None = None
         self._children: list[Tree] = []
@@ -20,7 +20,7 @@ class Tree:
 
     @property
     def features(self) -> dict[str, Any]:
-        return self._features
+        return self._features.copy()
 
     def add_child(self, child: "Tree") -> "Tree":
         child._parent = self
@@ -37,13 +37,15 @@ class Tree:
             node._children.append(self)
 
     def inorder_traversal(self) -> Iterator["Tree"]:
-        if self.children and len(self.children) != 2:
+        if self.is_leaf():
+            yield self
+            return
+        if len(self.children) != 2:
             raise ValueError("Inorder traversal is only defined for binary trees.")
-        if self.children:
-            yield from self.children[0].inorder_traversal()
+        left, right = self.children
+        yield from left.inorder_traversal()
         yield self
-        if self.children:
-            yield from self.children[1].inorder_traversal()
+        yield from right.inorder_traversal()
 
     def preorder_traversal(self) -> Iterator["Tree"]:
         yield self
@@ -55,41 +57,42 @@ class Tree:
             yield from child.postorder_traversal()
         yield self
 
-    def get_node(self, id: str) -> "Tree":
+    def get_node(self, name: str) -> "Tree":
         for node in self:
-            if node.id == id:
+            if node.name == name:
                 return node
-        raise ValueError(f"Node with id {id} not found.")
+        raise ValueError(f"Node with name {name} not found.")
 
     def is_leaf(self) -> bool:
         return not self.children
 
-    def get_leaves(self) -> list["Tree"]:
-        return [node for node in self if not node.children]
+    def get_leaves(self) -> tuple["Tree", ...]:
+        return tuple(node for node in self if not node.children)
+
+    def parse_branch_length(self) -> float:
+        if self.branch_length is None:
+            raise ValueError(f"Branch length of node {self.name} is not set.")
+        return self.branch_length
 
     def get_time(self) -> float:
         parent_time = 0 if self.parent is None else self.parent.get_time()
-        if self.branch_length is None:
-            if self.parent is not None:
-                raise ValueError(
-                    f"Branch length of non-root node {self.id} is not set."
-                )
-            return 0.0
-        return self.branch_length + parent_time
+        return self.parse_branch_length() + parent_time
 
     def set(self, key: str, value: Any) -> None:
         self._features[key] = value
 
+    def update_features(self, features: dict[str, Any]) -> None:
+        self._features.update(features)
+
     def get(self, key: str) -> Any:
-        return self._features.get(key)
+        return self._features[key]
 
     def delete(self, key: str) -> None:
         del self._features[key]
 
     def copy(self):
-        new_tree = Tree(self.id, self.branch_length)
-        for key, value in self._features.items():
-            new_tree.set(key, value)
+        new_tree = Tree(self.name, self.branch_length)
+        new_tree.update_features(self._features)
         for child in self.children:
             new_tree.add_child(child.copy())
         return new_tree
@@ -98,4 +101,4 @@ class Tree:
         return self.preorder_traversal()
 
     def __repr__(self) -> str:
-        return f"TreeNode(id='{self.id}', branch_length={self.branch_length}, features={self.features})"
+        return f"TreeNode(name='{self.name}', branch_length={self.branch_length}, features={self.features})"

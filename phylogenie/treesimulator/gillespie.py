@@ -1,6 +1,6 @@
 import os
 import time
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 import joblib
 import numpy as np
@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from phylogenie.io import dump_newick
 from phylogenie.tree import Tree
+from phylogenie.treesimulator.features import Feature, set_features
 from phylogenie.treesimulator.model import Event, Model
 
 
@@ -69,7 +70,7 @@ def simulate_tree(
             if (
                 not any(rates)
                 or max_tips is not None
-                and model.n_sampled > max_tips
+                and model.n_sampled >= max_tips
                 or target_n_tips is not None
                 and model.n_sampled >= target_n_tips
             ):
@@ -101,12 +102,13 @@ def simulate_tree(
 def generate_trees(
     output_dir: str,
     n_trees: int,
-    events: list[Event],
+    events: Sequence[Event],
     min_tips: int = 1,
-    max_tips: int = 2**32,
+    max_tips: int | None = None,
     max_time: float = np.inf,
     init_state: str | None = None,
     sampling_probability_at_present: float = 0.0,
+    node_features: Iterable[Feature] | None = None,
     seed: int | None = None,
     n_jobs: int = -1,
     timeout: float = np.inf,
@@ -114,7 +116,7 @@ def generate_trees(
     def _simulate_tree(seed: int) -> Tree:
         while True:
             try:
-                return simulate_tree(
+                tree = simulate_tree(
                     events=events,
                     min_tips=min_tips,
                     max_tips=max_tips,
@@ -124,6 +126,9 @@ def generate_trees(
                     seed=seed,
                     timeout=timeout,
                 )
+                if node_features is not None:
+                    set_features(tree, node_features)
+                return tree
             except TimeoutError:
                 print("Simulation timed out, retrying with a different seed...")
             seed += 1

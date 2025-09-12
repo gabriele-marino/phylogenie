@@ -1,6 +1,6 @@
 import phylogenie.typings as pgt
+from phylogenie.models import Distribution, StrictBaseModel
 from phylogenie.treesimulator import MutationTargetType
-from phylogenie.utils import Distribution, StrictBaseModel
 
 Integer = str | int
 Scalar = str | pgt.Scalar

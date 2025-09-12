@@ -44,7 +44,12 @@ def _parse_newick(newick: str) -> Tree:
                     raise ValueError(f"Expected '&&NHX' for node features.")
                 for feature in features[1:]:
                     key, value = feature.split("=", 1)
-                    current_node.set(key, eval(value))
+                    try:
+                        current_node.set(key, eval(value))
+                    except Exception as e:
+                        raise ValueError(
+                            f"Error setting node feature `{key}` to `{value}`: {e}"
+                        )
 
             if newick[i] == ")":
                 current_children = current_nodes
@@ -65,13 +70,18 @@ def load_newick(filepath: str) -> Tree | list[Tree]:
 
 def _to_newick(tree: Tree) -> str:
     children_newick = ",".join([_to_newick(child) for child in tree.children])
-    newick = tree.id
+    newick = tree.name
     if children_newick:
         newick = f"({children_newick}){newick}"
     if tree.branch_length is not None:
         newick += f":{tree.branch_length}"
     if tree.features:
         reprs = {k: repr(v).replace("'", '"') for k, v in tree.features.items()}
+        for k, r in reprs.items():
+            if ":" in r or "=" in r or "]" in r:
+                raise ValueError(
+                    f"Cannot serialize feature `{k}` with value `{r}`: contains reserved characters."
+                )
         features = [f"{k}={repr}" for k, repr in reprs.items()]
         newick += f"[&&NHX:{':'.join(features)}]"
     return newick

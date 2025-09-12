@@ -11,6 +11,13 @@ from phylogenie.skyline import SkylineParameterLike, skyline_parameter
 from phylogenie.tree import Tree
 
 
+@dataclass
+class Individual:
+    id: int
+    node: Tree
+    state: str
+
+
 class Event(ABC):
     def __init__(self, state: str, rate: SkylineParameterLike):
         self.state = state
@@ -30,11 +37,17 @@ class Event(ABC):
     def apply(self, model: "Model", time: float, rng: Generator) -> None: ...
 
 
-@dataclass
-class Individual:
-    id: int
-    node: Tree
-    state: str
+def _get_node_name(node_id: int, state: str) -> str:
+    return f"{node_id}|{state}"
+
+
+def get_node_state(node_name: str) -> str:
+    try:
+        return node_name.split("|")[1]
+    except IndexError:
+        raise ValueError(
+            f"Invalid node name: {node_name} (expected format 'id|state')."
+        )
 
 
 class Model:
@@ -61,7 +74,8 @@ class Model:
 
     def _get_new_node(self, state: str) -> Tree:
         self._next_node_id += 1
-        return Tree(f"{self._next_node_id}|{state}")
+        node = Tree(_get_node_name(self._next_node_id, state))
+        return node
 
     def _get_new_individual(self, state: str) -> Individual:
         self._next_individual_id += 1
@@ -74,7 +88,7 @@ class Model:
 
     def _set_branch_length(self, node: Tree, time: float) -> None:
         if node.branch_length is not None:
-            raise ValueError(f"Branch length of node {node.id} is already set.")
+            raise ValueError(f"Branch length of node {node.name} is already set.")
         node.branch_length = (
             time if node.parent is None else time - node.parent.get_time()
         )
@@ -108,12 +122,12 @@ class Model:
     def sample(self, id: int, time: float, removal: bool) -> None:
         individual = self._population[id]
         if removal:
-            self._sampled.add(individual.node.id)
+            self._sampled.add(individual.node.name)
             self.remove(id, time)
         else:
             sample_node = self._get_new_node(individual.state)
             sample_node.branch_length = 0.0
-            self._sampled.add(sample_node.id)
+            self._sampled.add(sample_node.name)
             individual.node.add_child(sample_node)
             self._stem(individual, time)
 
@@ -123,7 +137,7 @@ class Model:
     def get_sampled_tree(self) -> Tree:
         tree = self._tree.copy()
         for node in list(tree.postorder_traversal()):
-            if node.id not in self._sampled and not node.children:
+            if node.name not in self._sampled and not node.children:
                 if node.parent is None:
                     raise ValueError("No samples in the tree.")
                 else:

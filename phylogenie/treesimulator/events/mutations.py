@@ -1,9 +1,11 @@
+import re
 from copy import deepcopy
 from enum import Enum
 from typing import Type
 
 from numpy.random import Generator
 
+from phylogenie.models import Distribution
 from phylogenie.skyline import SkylineParameterLike
 from phylogenie.treesimulator.events.contact_tracing import (
     BirthWithContactTracing,
@@ -17,7 +19,6 @@ from phylogenie.treesimulator.events.core import (
     Sampling,
 )
 from phylogenie.treesimulator.model import Model
-from phylogenie.utils import Distribution
 
 MUTATION_PREFIX = "MUT-"
 MUTATIONS_KEY = "MUTATIONS"
@@ -29,8 +30,15 @@ def _get_mutation(state: str) -> str | None:
 
 def _get_mutated_state(mutation_id: int, state: str) -> str:
     if state.startswith(MUTATION_PREFIX):
-        state = state.split(".")[1]
+        _, state = state.split(".")
     return f"{MUTATION_PREFIX}{mutation_id}.{state}"
+
+
+def get_mutation_id(node_name: str) -> int:
+    match = re.search(rf"{MUTATION_PREFIX}(\d+)\.", node_name)
+    if match:
+        return int(match.group(1))
+    return 0
 
 
 class TargetType(str, Enum):
@@ -93,7 +101,7 @@ class Mutation(Event):
             model.add_event(event)
 
     def __repr__(self) -> str:
-        return f"Mutation(state={self.state}, rate={self.rate}, rate_scalers={self.rate_scalers})"
+        return f"Mutation(state={self.state}, rate={self.rate})"
 
 
 TARGETS: dict[TargetType, tuple[Type[Event], ...]] = {

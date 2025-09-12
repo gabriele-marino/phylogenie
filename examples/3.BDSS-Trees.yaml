@@ -85,3 +85,5 @@ sampling_proportion: 0.25
 init_state: "{init_state}"
 min_tips: 50
 max_tips: 250
+node_features:
+  - state

@@ -99,3 +99,8 @@ mutations:
 min_tips: 50
 max_tips: 250
 timeout: 5
+node_features:
+  - n_tips
+  - time
+  - mutation
+  - height

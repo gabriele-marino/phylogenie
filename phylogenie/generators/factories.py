@@ -8,6 +8,7 @@ import phylogenie.generators.configs as cfg
 import phylogenie.generators.typeguards as ctg
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
+from phylogenie.models import Distribution
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -16,7 +17,6 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
-from phylogenie.utils import Distribution
 
 
 def _eval_expression(expression: str, data: dict[str, Any]) -> Any:

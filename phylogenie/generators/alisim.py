@@ -72,7 +72,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
                 )
 
         for leaf in tree.get_leaves():
-            leaf.id += f"|{leaf.get_time()}"
+            leaf.name += f"|{leaf.get_time()}"
         dump_newick(tree, f"{tree_filename}.nwk")
 
         self._generate_one_from_tree(msa_filename, f"{tree_filename}.nwk", rng, d)

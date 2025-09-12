@@ -19,9 +19,11 @@ from phylogenie.generators.factories import (
     skyline_vector,
 )
 from phylogenie.io import dump_newick
+from phylogenie.models import Distribution
 from phylogenie.tree import Tree
 from phylogenie.treesimulator import (
     Event,
+    Feature,
     Mutation,
     get_BD_events,
     get_BDEI_events,
@@ -30,6 +32,7 @@ from phylogenie.treesimulator import (
     get_contact_tracing_events,
     get_epidemiological_events,
     get_FBD_events,
+    set_features,
     simulate_tree,
 )
 
@@ -51,6 +54,7 @@ class TreeDatasetGenerator(DatasetGenerator):
     init_state: str | None = None
     sampling_probability_at_present: cfg.Scalar = 0.0
     timeout: float = np.inf
+    node_features: list[Feature] | None = None
 
     @abstractmethod
     def _get_events(self, data: dict[str, Any]) -> list[Event]: ...
@@ -77,7 +81,7 @@ class TreeDatasetGenerator(DatasetGenerator):
     def generate_one(
         self,
         filename: str,
-        context: dict[str, Any] | None = None,
+        context: dict[str, Distribution] | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]:
         d = {"file_id": Path(filename).stem}
@@ -86,6 +90,8 @@ class TreeDatasetGenerator(DatasetGenerator):
             try:
                 d.update(data(context, rng))
                 tree = self.simulate_one(d, seed)
+                if self.node_features is not None:
+                    set_features(tree, self.node_features)
                 dump_newick(tree, f"{filename}.nwk")
                 break
             except TimeoutError:

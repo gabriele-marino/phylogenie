@@ -15,8 +15,11 @@ from phylogenie.treesimulator.events import (
     get_contact_tracing_events,
     get_epidemiological_events,
     get_FBD_events,
+    get_mutation_id,
 )
+from phylogenie.treesimulator.features import Feature, set_features
 from phylogenie.treesimulator.gillespie import generate_trees, simulate_tree
+from phylogenie.treesimulator.model import get_node_state
 
 __all__ = [
     "Birth",
@@ -37,4 +40,8 @@ __all__ = [
     "get_FBD_events",
     "generate_trees",
     "simulate_tree",
+    "get_mutation_id",
+    "get_node_state",
+    "Feature",
+    "set_features",
 ]

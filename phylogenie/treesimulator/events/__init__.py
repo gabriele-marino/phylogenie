@@ -18,6 +18,7 @@ from phylogenie.treesimulator.events.core import (
 )
 from phylogenie.treesimulator.events.mutations import Mutation
 from phylogenie.treesimulator.events.mutations import TargetType as MutationTargetType
+from phylogenie.treesimulator.events.mutations import get_mutation_id
 
 __all__ = [
     "Birth",
@@ -36,4 +37,5 @@ __all__ = [
     "get_contact_tracing_events",
     "get_epidemiological_events",
     "get_FBD_events",
+    "get_mutation_id",
 ]

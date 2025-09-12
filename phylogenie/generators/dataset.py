@@ -8,7 +8,7 @@ import pandas as pd
 from numpy.random import Generator, default_rng
 from tqdm import tqdm
 
-from phylogenie.utils import Distribution, StrictBaseModel
+from phylogenie.models import Distribution, StrictBaseModel
 
 
 class DataType(str, Enum):
@@ -31,7 +31,7 @@ class DatasetGenerator(ABC, StrictBaseModel):
     def generate_one(
         self,
         filename: str,
-        context: dict[str, Any] | None = None,
+        context: dict[str, Distribution] | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]: ...
 
