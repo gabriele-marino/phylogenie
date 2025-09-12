@@ -6,6 +6,8 @@
 
 [![AliSim](https://img.shields.io/badge/Powered%20by-AliSim-orange?style=flat-square)](https://iqtree.github.io/doc/AliSim)
 [![PyPI version](https://img.shields.io/pypi/v/phylogenie)](https://pypi.org/project/phylogenie/)
+![Downloads](https://img.shields.io/pypi/dm/phylogenie)
+
 
 Phylogenie is a [Python](https://www.python.org/) package designed to easily simulate phylogenetic datasets—such as trees and multiple sequence alignments (MSAs)—with minimal setup effort. Simply specify the distributions from which your parameters should be sampled, and Phylogenie will handle the rest!
 

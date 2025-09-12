@@ -36,6 +36,15 @@ class Tree:
         if node is not None:
             node._children.append(self)
 
+    def inorder_traversal(self) -> Iterator["Tree"]:
+        if self.children and len(self.children) != 2:
+            raise ValueError("Inorder traversal is only defined for binary trees.")
+        if self.children:
+            yield from self.children[0].inorder_traversal()
+        yield self
+        if self.children:
+            yield from self.children[1].inorder_traversal()
+
     def preorder_traversal(self) -> Iterator["Tree"]:
         yield self
         for child in self.children:
