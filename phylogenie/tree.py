@@ -22,6 +22,14 @@ class Tree:
     def features(self) -> dict[str, Any]:
         return self._features.copy()
 
+    @property
+    def time_to_parent(self) -> float:
+        if self.parent is None and self.branch_length is None:
+            return 0.0
+        if self.branch_length is None:
+            raise ValueError(f"Branch length of node {self.name} is not set.")
+        return self.branch_length
+
     def add_child(self, child: "Tree") -> "Tree":
         child._parent = self
         self._children.append(child)
@@ -69,14 +77,9 @@ class Tree:
     def get_leaves(self) -> tuple["Tree", ...]:
         return tuple(node for node in self if not node.children)
 
-    def parse_branch_length(self) -> float:
-        if self.branch_length is None:
-            raise ValueError(f"Branch length of node {self.name} is not set.")
-        return self.branch_length
-
     def get_time(self) -> float:
         parent_time = 0 if self.parent is None else self.parent.get_time()
-        return self.parse_branch_length() + parent_time
+        return self.time_to_parent + parent_time
 
     def set(self, key: str, value: Any) -> None:
         self._features[key] = value

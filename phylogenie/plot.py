@@ -3,6 +3,7 @@ from enum import Enum
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 from phylogenie import Tree
 from phylogenie.tree import Tree
@@ -16,13 +17,13 @@ class Coloring(str, Enum):
 
 def plot_tree(
     tree: Tree,
-    ax: plt.Axes | None = None,  # pyright: ignore
+    ax: Axes | None = None,
     color_by: str | None = None,
     default_color: str = "black",
     coloring: str | Coloring | None = None,
     cmap: str | None = None,
     show_legend: bool = True,
-) -> plt.Axes:  # pyright: ignore
+) -> Axes:
     if ax is None:
         ax = plt.gca()
 

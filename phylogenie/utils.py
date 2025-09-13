@@ -14,7 +14,7 @@ def get_times(tree: Tree) -> dict[str, float]:
     times: dict[str, float] = {}
     for node in tree:
         parent_time = 0 if node.parent is None else times[node.parent.name]
-        times[node.name] = node.parse_branch_length() + parent_time
+        times[node.name] = node.time_to_parent + parent_time
     return times
 
 
