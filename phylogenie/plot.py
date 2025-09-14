@@ -58,6 +58,10 @@ def plot_tree(
             norm = mcolors.Normalize(vmin=min(values), vmax=max(values))
             colormap = plt.get_cmap(cmap)
             colors = {node: colormap(norm(float(node.get(color_by)))) for node in tree}
+
+            sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
+            fig = ax.get_figure()
+            fig.colorbar(sm, ax=ax, label=color_by)  # pyright: ignore
         else:
             raise ValueError(
                 f"Unknown coloring method: {coloring}. Choices are {list(Coloring)}."

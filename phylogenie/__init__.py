@@ -12,6 +12,7 @@ from phylogenie.generators import (
 )
 from phylogenie.io import dump_newick, load_fasta, load_newick
 from phylogenie.msa import MSA
+from phylogenie.plot import Coloring, plot_tree
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -90,4 +91,6 @@ __all__ = [
     "load_fasta",
     "load_newick",
     "MSA",
+    "Coloring",
+    "plot_tree",
 ]
