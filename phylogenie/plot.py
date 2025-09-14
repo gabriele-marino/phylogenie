@@ -5,7 +5,6 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
-from phylogenie import Tree
 from phylogenie.tree import Tree
 from phylogenie.utils import get_times
 
