@@ -114,11 +114,13 @@ infectious_period: 2.5
 min_tips: 50 # Minimum number of tips in the simulated trees, 1 by default
 max_tips: 50 # Maximum number of tips in the simulated trees, ~infinity by default
 node_features:  # List of features to compute and attach to each node of the simulated trees
-  - n_tips
-  - time
+  - n_leaves
+  - depth
+  # - depth_level # Depth level of each node
+  # - height # Height of each node
+  # - height_level # Height level of each node
+  # - mutation # Mutation id of each node (useful for mutation models, cf. 8.BD-Mutation-Trees.yaml)
   # - state # State of each node (useful for multi-state models)
-  # - mutation # Number of mutations on each branch (useful for mutation models, cf. 8.BD-Mutation-Trees.yaml)
-  # - height # Height of each node (0 for the tips, 1 for their parents, etc.)
 
 # Other optional arguments are:
 # - max_time: float (infinity by default)
