@@ -9,6 +9,7 @@ from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import data, string
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
 from phylogenie.io import dump_newick
+from phylogenie.utils import get_node_depths
 
 MSAS_DIRNAME = "MSAs"
 TREES_DIRNAME = "trees"
@@ -71,8 +72,9 @@ class AliSimDatasetGenerator(DatasetGenerator):
                     "Tree simulation timed out, retrying with different parameters..."
                 )
 
+        times = get_node_depths(tree)
         for leaf in tree.get_leaves():
-            leaf.name += f"|{leaf.get_time()}"
+            leaf.name += f"|{times[leaf]}"
         dump_newick(tree, f"{tree_filename}.nwk")
 
         self._generate_one_from_tree(msa_filename, f"{tree_filename}.nwk", rng, d)

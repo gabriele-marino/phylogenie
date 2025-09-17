@@ -23,12 +23,49 @@ class Tree:
         return self._features.copy()
 
     @property
-    def time_to_parent(self) -> float:
-        if self.parent is None and self.branch_length is None:
+    def depth(self) -> float:
+        if self.parent is None:
             return 0.0
         if self.branch_length is None:
             raise ValueError(f"Branch length of node {self.name} is not set.")
-        return self.branch_length
+        return self.parent.depth + self.branch_length
+
+    @property
+    def depth_level(self) -> int:
+        if self.parent is None:
+            return 0
+        return self.parent.depth_level + 1
+
+    @property
+    def height(self) -> float:
+        if self.is_leaf():
+            return 0.0
+        if any(child.branch_length is None for child in self.children):
+            raise ValueError(
+                f"Branch length of one or more children of node {self.name} is not set."
+            )
+        return max(
+            child.branch_length + child.height  # pyright: ignore
+            for child in self.children
+        )
+
+    @property
+    def height_level(self) -> int:
+        if self.is_leaf():
+            return 0
+        return 1 + max(child.height_level for child in self.children)
+
+    def set(self, key: str, value: Any) -> None:
+        self._features[key] = value
+
+    def update_features(self, features: dict[str, Any]) -> None:
+        self._features.update(features)
+
+    def get(self, key: str) -> Any:
+        return self._features[key]
+
+    def delete(self, key: str) -> None:
+        del self._features[key]
 
     def add_child(self, child: "Tree") -> "Tree":
         child._parent = self
@@ -75,23 +112,12 @@ class Tree:
         return not self.children
 
     def get_leaves(self) -> tuple["Tree", ...]:
-        return tuple(node for node in self if not node.children)
+        return tuple(node for node in self if node.is_leaf())
 
-    def get_time(self) -> float:
-        parent_time = 0 if self.parent is None else self.parent.get_time()
-        return self.time_to_parent + parent_time
-
-    def set(self, key: str, value: Any) -> None:
-        self._features[key] = value
-
-    def update_features(self, features: dict[str, Any]) -> None:
-        self._features.update(features)
-
-    def get(self, key: str) -> Any:
-        return self._features[key]
-
-    def delete(self, key: str) -> None:
-        del self._features[key]
+    def ladderize(self, feature: str) -> None:
+        self._children.sort(key=lambda x: x.get(feature))
+        for child in self.children:
+            child.ladderize(feature)
 
     def copy(self):
         new_tree = Tree(self.name, self.branch_length)
@@ -102,6 +128,9 @@ class Tree:
 
     def __iter__(self) -> Iterator["Tree"]:
         return self.preorder_traversal()
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
 
     def __repr__(self) -> str:
         return f"TreeNode(name='{self.name}', branch_length={self.branch_length}, features={self.features})"

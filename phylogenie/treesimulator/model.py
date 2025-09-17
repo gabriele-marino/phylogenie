@@ -89,9 +89,7 @@ class Model:
     def _set_branch_length(self, node: Tree, time: float) -> None:
         if node.branch_length is not None:
             raise ValueError(f"Branch length of node {node.name} is already set.")
-        node.branch_length = (
-            time if node.parent is None else time - node.parent.get_time()
-        )
+        node.branch_length = time if node.parent is None else time - node.parent.depth
 
     def _stem(self, individual: Individual, time: float) -> None:
         self._set_branch_length(individual.node, time)
