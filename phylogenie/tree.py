@@ -1,3 +1,4 @@
+from collections import deque
 from collections.abc import Iterator
 from typing import Any
 
@@ -101,6 +102,13 @@ class Tree:
         for child in self.children:
             yield from child.postorder_traversal()
         yield self
+
+    def breadth_first_traversal(self) -> Iterator["Tree"]:
+        queue: deque["Tree"] = deque([self])
+        while queue:
+            node = queue.popleft()
+            yield node
+            queue.extend(node.children)
 
     def get_node(self, name: str) -> "Tree":
         for node in self:
