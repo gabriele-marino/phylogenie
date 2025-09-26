@@ -71,7 +71,7 @@ def plot_tree(
                 ]
                 if any(color_by not in node.features for node in tree):
                     legend_handles.append(
-                        mpatches.Patch(color=default_color, label="None")
+                        mpatches.Patch(color=default_color, label="NA")
                     )
                 ax.legend(handles=legend_handles, title=color_by)  # pyright: ignore
 
@@ -88,12 +88,7 @@ def plot_tree(
             }
 
             if show_hist:
-                default_hist_axes_kwargs = {
-                    "width": "25%",
-                    "height": "25%",
-                    "loc": "lower left",
-                    "borderpad": 3,
-                }
+                default_hist_axes_kwargs = {"width": "25%", "height": "25%"}
                 if hist_axes_kwargs is not None:
                     default_hist_axes_kwargs.update(hist_axes_kwargs)
                 hist_ax = inset_axes(ax, **default_hist_axes_kwargs)  # pyright: ignore
@@ -108,10 +103,6 @@ def plot_tree(
                 ):
                     midpoint = (b0 + b1) / 2  # pyright: ignore
                     patch.set_facecolor(colormap(norm(midpoint)))  # pyright: ignore
-
-                hist_ax.set_xlabel(color_by.capitalize(), fontsize=8)  # pyright: ignore
-                hist_ax.set_ylabel("Count", fontsize=8)  # pyright: ignore
-                hist_ax.tick_params(axis="both", labelsize=6)  # pyright: ignore
             else:
                 sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
                 ax.get_figure().colorbar(sm, ax=ax)  # pyright: ignore
