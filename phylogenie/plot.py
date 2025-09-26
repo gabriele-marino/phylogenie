@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 from phylogenie.tree import Tree
-from phylogenie.utils import get_node_depths
+from phylogenie.utils import get_node_depth_levels, get_node_depths
 
 
 class Coloring(str, Enum):
@@ -22,15 +22,14 @@ def plot_tree(
     coloring: str | Coloring | None = None,
     cmap: str | None = None,
     show_legend: bool = True,
-    x_feature: str | None = None,
 ) -> Axes:
     if ax is None:
         ax = plt.gca()
 
     xs = (
-        get_node_depths(tree)
-        if x_feature is None
-        else {node: node.get(x_feature) for node in tree}
+        get_node_depth_levels(tree)
+        if any(node.branch_length is None for node in tree)
+        else get_node_depths(tree)
     )
     ys = {node: i for i, node in enumerate(tree.inorder_traversal())}
 

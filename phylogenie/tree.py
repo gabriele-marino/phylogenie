@@ -1,5 +1,5 @@
 from collections import deque
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any
 
 
@@ -55,6 +55,10 @@ class Tree:
         if self.is_leaf():
             return 0
         return 1 + max(child.height_level for child in self.children)
+
+    @property
+    def n_leaves(self) -> int:
+        return len(self.get_leaves())
 
     def set(self, key: str, value: Any) -> None:
         self._features[key] = value
@@ -122,10 +126,10 @@ class Tree:
     def get_leaves(self) -> tuple["Tree", ...]:
         return tuple(node for node in self if node.is_leaf())
 
-    def ladderize(self, feature: str) -> None:
-        self._children.sort(key=lambda x: x.get(feature))
+    def ladderize(self, criterion: Callable[["Tree"], Any]) -> None:
+        self._children.sort(key=criterion)
         for child in self.children:
-            child.ladderize(feature)
+            child.ladderize(criterion)
 
     def copy(self):
         new_tree = Tree(self.name, self.branch_length)
