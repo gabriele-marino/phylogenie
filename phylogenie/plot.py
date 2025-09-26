@@ -1,9 +1,11 @@
 from enum import Enum
+from typing import Any
 
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # pyright: ignore
 
 from phylogenie.tree import Tree
 from phylogenie.utils import get_node_depth_levels, get_node_depths
@@ -22,7 +24,10 @@ def plot_tree(
     coloring: str | Coloring | None = None,
     cmap: str | None = None,
     show_legend: bool = True,
-) -> Axes:
+    show_hist: bool = True,
+    hist_kwargs: dict[str, Any] | None = None,
+    hist_axes_kwargs: dict[str, Any] | None = None,
+) -> Axes | tuple[Axes, Axes]:
     if ax is None:
         ax = plt.gca()
 
@@ -34,7 +39,8 @@ def plot_tree(
     ys = {node: i for i, node in enumerate(tree.inorder_traversal())}
 
     if color_by is not None:
-        features = set(node.get(color_by) for node in tree if color_by in node.features)
+        features = [node.get(color_by) for node in tree if color_by in node.features]
+
         if coloring is None and any(isinstance(f, float) for f in features):
             coloring = Coloring.CONTINUOUS
         elif coloring is None:
@@ -47,7 +53,7 @@ def plot_tree(
                 )
             colormap = plt.get_cmap("tab20" if cmap is None else cmap)
             feature_colors = {
-                f: mcolors.to_hex(colormap(i)) for i, f in enumerate(features)
+                f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(features))
             }
             colors = {
                 node: (
@@ -61,7 +67,7 @@ def plot_tree(
             if show_legend:
                 legend_handles = [
                     mpatches.Patch(color=feature_colors[f], label=str(f))
-                    for f in features
+                    for f in feature_colors
                 ]
                 if any(color_by not in node.features for node in tree):
                     legend_handles.append(
@@ -81,8 +87,34 @@ def plot_tree(
                 for node in tree
             }
 
-            sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
-            ax.get_figure().colorbar(sm, ax=ax)  # pyright: ignore
+            if show_hist:
+                default_hist_axes_kwargs = {
+                    "width": "25%",
+                    "height": "25%",
+                    "loc": "lower left",
+                    "borderpad": 3,
+                }
+                if hist_axes_kwargs is not None:
+                    default_hist_axes_kwargs.update(hist_axes_kwargs)
+                hist_ax = inset_axes(ax, **default_hist_axes_kwargs)  # pyright: ignore
+
+                hist_kwargs = {} if hist_kwargs is None else hist_kwargs
+                _, bins, patches = hist_ax.hist(  # pyright: ignore
+                    features, **hist_kwargs
+                )
+
+                for patch, b0, b1 in zip(  # pyright: ignore
+                    patches, bins[:-1], bins[1:]  # pyright: ignore
+                ):
+                    midpoint = (b0 + b1) / 2  # pyright: ignore
+                    patch.set_facecolor(colormap(norm(midpoint)))  # pyright: ignore
+
+                hist_ax.set_xlabel(color_by.capitalize(), fontsize=8)  # pyright: ignore
+                hist_ax.set_ylabel("Count", fontsize=8)  # pyright: ignore
+                hist_ax.tick_params(axis="both", labelsize=6)  # pyright: ignore
+            else:
+                sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
+                ax.get_figure().colorbar(sm, ax=ax)  # pyright: ignore
 
         else:
             raise ValueError(
@@ -90,6 +122,15 @@ def plot_tree(
             )
     else:
         colors = {node: default_color for node in tree}
+
+    for node in tree:
+        x1, y1 = xs[node], ys[node]
+        if node.parent is None:
+            ax.hlines(y=y1, xmin=0, xmax=x1, color=colors[node])  # pyright: ignore
+            continue
+        x0, y0 = xs[node.parent], ys[node.parent]
+        ax.vlines(x=x0, ymin=y0, ymax=y1, color=colors[node])  # pyright: ignore
+        ax.hlines(y=y1, xmin=x0, xmax=x1, color=colors[node])  # pyright: ignore
 
     for node in tree:
         x1, y1 = xs[node], ys[node]
