@@ -22,7 +22,7 @@ def get_node_depths(tree: Tree) -> dict[Tree, float]:
     depths: dict[Tree, float] = {}
     for node in tree:
         if node.parent is None:
-            depths[node] = 0
+            depths[node] = 0 if node.branch_length is None else node.branch_length
         else:
             if node.branch_length is None:
                 raise ValueError(f"Branch length of node {node.name} is not set.")

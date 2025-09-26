@@ -26,7 +26,7 @@ class Tree:
     @property
     def depth(self) -> float:
         if self.parent is None:
-            return 0.0
+            return 0 if self.branch_length is None else self.branch_length
         if self.branch_length is None:
             raise ValueError(f"Branch length of node {self.name} is not set.")
         return self.parent.depth + self.branch_length
