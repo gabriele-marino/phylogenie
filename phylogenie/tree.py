@@ -73,6 +73,8 @@ class Tree:
         del self._features[key]
 
     def add_child(self, child: "Tree") -> "Tree":
+        if child.parent is not None:
+            raise ValueError(f"Node {child.name} already has a parent.")
         child._parent = self
         self._children.append(child)
         return self
@@ -81,10 +83,12 @@ class Tree:
         self._children.remove(child)
         child._parent = None
 
-    def set_parent(self, node: "Tree | None"):
-        self._parent = node
-        if node is not None:
-            node._children.append(self)
+    def set_parent(self, parent: "Tree | None"):
+        if self.parent is not None:
+            self.parent.remove_child(self)
+        self._parent = parent
+        if parent is not None:
+            parent._children.append(self)
 
     def inorder_traversal(self) -> Iterator["Tree"]:
         if self.is_leaf():
@@ -107,6 +111,12 @@ class Tree:
             yield from child.postorder_traversal()
         yield self
 
+    def iter_ancestors(self, stop: "Tree | None" = None) -> Iterator["Tree"]:
+        node = self
+        while node is not None and node is not stop:
+            yield node
+            node = node.parent
+
     def breadth_first_traversal(self) -> Iterator["Tree"]:
         queue: deque["Tree"] = deque([self])
         while queue:
@@ -125,6 +135,12 @@ class Tree:
 
     def get_leaves(self) -> tuple["Tree", ...]:
         return tuple(node for node in self if node.is_leaf())
+
+    def get_internal_nodes(self) -> tuple["Tree", ...]:
+        return tuple(node for node in self if not node.is_leaf())
+
+    def is_binary(self) -> bool:
+        return all(len(node.children) in (0, 2) for node in self)
 
     def ladderize(self, criterion: Callable[["Tree"], Any]) -> None:
         self._children.sort(key=criterion)

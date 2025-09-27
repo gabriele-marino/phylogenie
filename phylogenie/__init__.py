@@ -1,3 +1,4 @@
+from phylogenie.draw import Coloring, draw_tree
 from phylogenie.generators import (
     AliSimDatasetGenerator,
     BDEITreeDatasetGenerator,
@@ -12,7 +13,6 @@ from phylogenie.generators import (
 )
 from phylogenie.io import dump_newick, load_fasta, load_newick
 from phylogenie.msa import MSA
-from phylogenie.plot import Coloring, plot_tree
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -45,6 +45,18 @@ from phylogenie.treesimulator import (
     get_epidemiological_events,
     get_FBD_events,
     simulate_tree,
+)
+from phylogenie.utils import (
+    compute_colless_index,
+    compute_mean_pairwise_distance,
+    compute_sackin_index,
+    get_distance,
+    get_mrca,
+    get_node_depth_levels,
+    get_node_depths,
+    get_node_height_levels,
+    get_node_heights,
+    get_node_leaf_counts,
 )
 
 __all__ = [
@@ -92,5 +104,15 @@ __all__ = [
     "load_newick",
     "MSA",
     "Coloring",
-    "plot_tree",
+    "draw_tree",
+    "compute_colless_index",
+    "compute_mean_pairwise_distance",
+    "compute_sackin_index",
+    "get_distance",
+    "get_mrca",
+    "get_node_depths",
+    "get_node_depth_levels",
+    "get_node_heights",
+    "get_node_height_levels",
+    "get_node_leaf_counts",
 ]
