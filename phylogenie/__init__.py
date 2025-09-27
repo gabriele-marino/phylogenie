@@ -48,7 +48,7 @@ from phylogenie.treesimulator import (
 )
 from phylogenie.utils import (
     compute_colless_index,
-    compute_mean_pairwise_distance,
+    compute_mean_leaf_pairwise_distance,
     compute_sackin_index,
     get_distance,
     get_mrca,
@@ -106,7 +106,7 @@ __all__ = [
     "Coloring",
     "draw_tree",
     "compute_colless_index",
-    "compute_mean_pairwise_distance",
+    "compute_mean_leaf_pairwise_distance",
     "compute_sackin_index",
     "get_distance",
     "get_mrca",

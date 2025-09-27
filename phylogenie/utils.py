@@ -149,7 +149,7 @@ def compute_colless_index(tree: Tree, normalize: bool = False) -> float:
     return colless_index
 
 
-def compute_mean_pairwise_distance(tree: Tree) -> float:
+def compute_mean_leaf_pairwise_distance(tree: Tree) -> float:
     """
     Compute the mean pairwise distance between all pairs of leaves in the tree.
 
