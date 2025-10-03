@@ -1,3 +1,4 @@
+import re
 from typing import Callable
 
 from phylogenie.msa import MSA, Sequence
@@ -12,54 +13,56 @@ def _parse_newick(newick: str) -> Tree:
     i = 0
     while i < len(newick):
 
-        def _parse_chars(stoppers: list[str]) -> str:
+        def _read_chars(stoppers: list[str]) -> str:
             nonlocal i
             chars = ""
-            while newick[i] not in stoppers:
+            while i < len(newick) and newick[i] not in stoppers:
                 chars += newick[i]
                 i += 1
+            if i == len(newick):
+                raise ValueError(f"Expected one of {stoppers}, got end of string")
             return chars
 
         if newick[i] == "(":
             stack.append(current_nodes)
             current_nodes = []
-        else:
-            id = _parse_chars([":", ",", ")", ";", "["])
-            branch_length = None
-            if newick[i] == ":":
-                i += 1
-                branch_length = float(_parse_chars([",", ")", ";", "["]))
+            i += 1
+            continue
 
-            current_node = Tree(id, branch_length)
-            for node in current_children:
-                current_node.add_child(node)
-                current_children = []
-            current_nodes.append(current_node)
+        current_node = Tree(_read_chars(["[", ":", ",", ")", ";"]))
 
-            if newick[i] == "[":
-                i += 1
-                features = _parse_chars(["]"]).split(":")
-                i += 1
-                if features[0] != "&&NHX":
-                    raise ValueError(f"Expected '&&NHX' for node features.")
-                for feature in features[1:]:
-                    key, value = feature.split("=", 1)
-                    try:
-                        current_node.set(key, eval(value))
-                    except Exception as e:
-                        raise ValueError(
-                            f"Error setting node feature `{key}` to `{value}`: {e}"
-                        )
+        if newick[i] == "[":
+            i += 1
+            if newick[i] != "&":
+                raise ValueError("Expected '[&' at the start of node features")
+            i += 1
+            features = re.split(r",(?=[^,]+=)", _read_chars(["]"]))
+            i += 1
+            for feature in features:
+                key, value = feature.split("=")
+                try:
+                    current_node.set(key, eval(value))
+                except Exception:
+                    current_node.set(key, value)
 
-            if newick[i] == ")":
-                current_children = current_nodes
-                current_nodes = stack.pop()
-            elif newick[i] == ";":
-                return current_node
+        if newick[i] == ":":
+            i += 1
+            current_node.branch_length = float(_read_chars([",", ")", ";"]))
+
+        for node in current_children:
+            current_node.add_child(node)
+            current_children = []
+        current_nodes.append(current_node)
+
+        if newick[i] == ")":
+            current_children = current_nodes
+            current_nodes = stack.pop()
+        elif newick[i] == ";":
+            return current_node
 
         i += 1
 
-    raise ValueError("Newick string is invalid.")
+    raise ValueError("Newick string should end with ';'")
 
 
 def load_newick(filepath: str) -> Tree | list[Tree]:
@@ -71,19 +74,23 @@ def load_newick(filepath: str) -> Tree | list[Tree]:
 def _to_newick(tree: Tree) -> str:
     children_newick = ",".join([_to_newick(child) for child in tree.children])
     newick = tree.name
+    if tree.features:
+        reprs = {k: repr(v).replace("'", '"') for k, v in tree.features.items()}
+        for k, r in reprs.items():
+            if "," in k or "=" in k or "]" in k:
+                raise ValueError(
+                    f"Invalid feature key `{k}`: keys must not contain ',', '=', or ']'"
+                )
+            if "=" in r or "]" in r:
+                raise ValueError(
+                    f"Invalid value  `{r}` for feature `{k}`: values must not contain '=' or ']'"
+                )
+        features = [f"{k}={repr}" for k, repr in reprs.items()]
+        newick += f"[&{','.join(features)}]"
     if children_newick:
         newick = f"({children_newick}){newick}"
     if tree.branch_length is not None:
         newick += f":{tree.branch_length}"
-    if tree.features:
-        reprs = {k: repr(v).replace("'", '"') for k, v in tree.features.items()}
-        for k, r in reprs.items():
-            if ":" in r or "=" in r or "]" in r:
-                raise ValueError(
-                    f"Cannot serialize feature `{k}` with value `{r}`: contains reserved characters."
-                )
-        features = [f"{k}={repr}" for k, repr in reprs.items()]
-        newick += f"[&&NHX:{':'.join(features)}]"
     return newick
 
 

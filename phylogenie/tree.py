@@ -136,16 +136,19 @@ class Tree:
     def get_leaves(self) -> tuple["Tree", ...]:
         return tuple(node for node in self if node.is_leaf())
 
+    def is_internal(self) -> bool:
+        return not self.is_leaf()
+
     def get_internal_nodes(self) -> tuple["Tree", ...]:
-        return tuple(node for node in self if not node.is_leaf())
+        return tuple(node for node in self if node.is_internal())
 
     def is_binary(self) -> bool:
         return all(len(node.children) in (0, 2) for node in self)
 
-    def ladderize(self, criterion: Callable[["Tree"], Any]) -> None:
-        self._children.sort(key=criterion)
+    def ladderize(self, key: Callable[["Tree"], Any]) -> None:
+        self._children.sort(key=key)
         for child in self.children:
-            child.ladderize(criterion)
+            child.ladderize(key)
 
     def copy(self):
         new_tree = Tree(self.name, self.branch_length)

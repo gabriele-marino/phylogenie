@@ -28,7 +28,10 @@ def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) 
         if any(node.branch_length is None for node in tree)
         else get_node_depths(tree)
     )
-    ys = {node: i for i, node in enumerate(tree.inorder_traversal())}
+    ys: dict[Tree, float] = {node: i for i, node in enumerate(tree.get_leaves())}
+    for node in tree.postorder_traversal():
+        if node.is_internal():
+            ys[node] = sum(ys[child] for child in node.children) / len(node.children)
 
     for node in tree:
         x1, y1 = xs[node], ys[node]
