@@ -53,9 +53,10 @@ def draw_tree(
     coloring: str | Coloring | None = None,
     default_color: Color = "black",
     cmap: str | None = None,
-    show_legend: bool = True,
     vmin: float | None = None,
     vmax: float | None = None,
+    show_legend: bool = True,
+    legend_kwargs: dict[str, Any] | None = None,
     show_hist: bool = True,
     hist_kwargs: dict[str, Any] | None = None,
     hist_axes_kwargs: dict[str, Any] | None = None,
@@ -101,7 +102,9 @@ def draw_tree(
             ]
             if any(color_by not in node.features for node in tree):
                 legend_handles.append(mpatches.Patch(color=default_color, label="NA"))
-            ax.legend(handles=legend_handles)  # pyright: ignore
+            if legend_kwargs is None:
+                legend_kwargs = {}
+            ax.legend(handles=legend_handles, **legend_kwargs)  # pyright: ignore
 
         return _draw_colored_tree(tree, ax, colors)
 
