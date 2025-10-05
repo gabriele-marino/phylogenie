@@ -1,4 +1,5 @@
 from enum import Enum
+from itertools import islice
 from typing import Any
 
 import matplotlib.colors as mcolors
@@ -25,7 +26,7 @@ def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) 
 
     xs = (
         get_node_depth_levels(tree)
-        if any(node.branch_length is None for node in tree)
+        if any(node.branch_length is None for node in islice(tree, 1, None))
         else get_node_depths(tree)
     )
     ys: dict[Tree, float] = {node: i for i, node in enumerate(tree.get_leaves())}

@@ -11,7 +11,7 @@ from phylogenie.generators import (
     FBDTreeDatasetGenerator,
     TreeDatasetGeneratorConfig,
 )
-from phylogenie.io import dump_newick, load_fasta, load_newick
+from phylogenie.io import dump_newick, load_fasta, load_newick, load_nexus
 from phylogenie.msa import MSA
 from phylogenie.skyline import (
     SkylineMatrix,
@@ -100,6 +100,7 @@ __all__ = [
     "generate_trees",
     "simulate_tree",
     "dump_newick",
+    "load_nexus",
     "load_fasta",
     "load_newick",
     "MSA",

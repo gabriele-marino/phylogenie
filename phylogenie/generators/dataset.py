@@ -56,7 +56,7 @@ class DatasetGenerator(ABC, StrictBaseModel):
             for i in range(n_samples)
         )
         df = pd.DataFrame(
-            [r for r in tqdm(jobs, total=n_samples, desc=f"Generating {data_dir}...")]
+            [j for j in tqdm(jobs, f"Generating {data_dir}...", n_samples)]
         )
         df.to_csv(os.path.join(output_dir, METADATA_FILENAME), index=False)
 
