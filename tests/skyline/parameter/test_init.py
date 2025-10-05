@@ -5,24 +5,24 @@ from phylogenie.skyline import SkylineParameter
 
 def test_init_with_scalar_value():
     sp = SkylineParameter(5)
-    assert sp.value == [5]
-    assert sp.change_times == []
+    assert sp.value == (5,)
+    assert sp.change_times == ()
 
 
 def test_init_with_value_and_change_times():
     sp = SkylineParameter([5, 2, 3], [1.0, 2.5])
-    assert sp.value == [5, 2, 3]
-    assert sp.change_times == [1.0, 2.5]
+    assert sp.value == (5, 2, 3)
+    assert sp.change_times == (1.0, 2.5)
 
 
 def test_init_removes_consecutive_duplicate_values():
     sp = SkylineParameter([3, 5, 5], [1.0, 2.0])
-    assert sp.value == [3, 5]
-    assert sp.change_times == [1.0]
+    assert sp.value == (3, 5)
+    assert sp.change_times == (1.0,)
 
     sp = SkylineParameter([5, 5, 5], [1.0, 2.0])
-    assert sp.value == [5]
-    assert sp.change_times == []
+    assert sp.value == (5,)
+    assert sp.change_times == ()
 
 
 def test_init_with_invalid_types():

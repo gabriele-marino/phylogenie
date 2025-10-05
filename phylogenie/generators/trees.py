@@ -11,8 +11,8 @@ import phylogenie.generators.configs as cfg
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import (
     data,
-    distribution,
     integer,
+    mutation,
     scalar,
     skyline_matrix,
     skyline_parameter,
@@ -24,7 +24,6 @@ from phylogenie.tree import Tree
 from phylogenie.treesimulator import (
     Event,
     Feature,
-    Mutation,
     get_BD_events,
     get_BDEI_events,
     get_BDSS_events,
@@ -48,6 +47,7 @@ class ParameterizationType(str, Enum):
 
 class TreeDatasetGenerator(DatasetGenerator):
     data_type: Literal[DataType.TREES] = DataType.TREES
+    mutations: list[cfg.Mutation] | None = None
     min_tips: cfg.Integer = 1
     max_tips: cfg.Integer | None = None
     max_time: cfg.Scalar = np.inf
@@ -59,14 +59,22 @@ class TreeDatasetGenerator(DatasetGenerator):
     @abstractmethod
     def _get_events(self, data: dict[str, Any]) -> list[Event]: ...
 
-    def simulate_one(self, data: dict[str, Any], seed: int | None = None) -> Tree:
+    def simulate_one(
+        self, data: dict[str, Any], seed: int | None = None
+    ) -> tuple[Tree, dict[str, Any]]:
         init_state = (
             self.init_state
             if self.init_state is None
             else self.init_state.format(**data)
         )
+        mutations = (
+            None
+            if self.mutations is None
+            else [mutation(m, data) for m in self.mutations]
+        )
         return simulate_tree(
             events=self._get_events(data),
+            mutations=mutations,
             min_tips=integer(self.min_tips, data),
             max_tips=None if self.max_tips is None else integer(self.max_tips, data),
             max_time=scalar(self.max_time, data),
@@ -89,14 +97,14 @@ class TreeDatasetGenerator(DatasetGenerator):
         while True:
             try:
                 d.update(data(context, rng))
-                tree = self.simulate_one(d, seed)
+                tree, metadata = self.simulate_one(d, seed)
                 if self.node_features is not None:
                     set_features(tree, self.node_features)
                 dump_newick(tree, f"{filename}.nwk")
                 break
             except TimeoutError:
                 print("Simulation timed out, retrying with different parameters...")
-        return d
+        return d | metadata
 
 
 class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
@@ -147,12 +155,11 @@ class FBDTreeDatasetGenerator(TreeDatasetGenerator):
         )
 
 
-class TreeDatasetGeneratorForEpidemiology(TreeDatasetGenerator):
+class ContactTracingTreeDatasetGenerator(TreeDatasetGenerator):
     max_notified_contacts: cfg.Integer = 1
     notification_probability: cfg.SkylineParameter = 0.0
     sampling_rate_after_notification: cfg.SkylineParameter = np.inf
     samplable_states_after_notification: list[str] | None = None
-    mutations: tuple[cfg.Mutation, ...] = Field(default_factory=tuple)
 
     @abstractmethod
     def _get_base_events(self, data: dict[str, Any]) -> list[Event]: ...
@@ -171,30 +178,10 @@ class TreeDatasetGeneratorForEpidemiology(TreeDatasetGenerator):
                 ),
                 samplable_states_after_notification=self.samplable_states_after_notification,
             )
-        all_states = list({e.state for e in events})
-        for mutation in self.mutations:
-            states = mutation.states
-            if isinstance(states, str):
-                states = [states]
-            elif states is None:
-                states = all_states
-            for state in states:
-                if state not in all_states:
-                    raise ValueError(
-                        f"Mutation state '{state}' is not found in states {all_states}."
-                    )
-                rate_scalers = {
-                    t: distribution(r, data) for t, r in mutation.rate_scalers.items()
-                }
-                events.append(
-                    Mutation(
-                        state, skyline_parameter(mutation.rate, data), rate_scalers
-                    )
-                )
         return events
 
 
-class EpidemiologicalTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
+class EpidemiologicalTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.EPIDEMIOLOGICAL] = (
         ParameterizationType.EPIDEMIOLOGICAL
     )
@@ -220,7 +207,7 @@ class EpidemiologicalTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
         )
 
 
-class BDTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
+class BDTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BD] = ParameterizationType.BD
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
@@ -234,7 +221,7 @@ class BDTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
         )
 
 
-class BDEITreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
+class BDEITreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BDEI] = ParameterizationType.BDEI
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
@@ -250,7 +237,7 @@ class BDEITreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
         )
 
 
-class BDSSTreeDatasetGenerator(TreeDatasetGeneratorForEpidemiology):
+class BDSSTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BDSS] = ParameterizationType.BDSS
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter

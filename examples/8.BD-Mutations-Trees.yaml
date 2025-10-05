@@ -62,20 +62,31 @@ reproduction_number: R_0
 infectious_period: T_I
 sampling_proportion: s
 
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+min_tips: 50
+max_tips: 250
+timeout: 5
+node_features:
+  - n_leaves
+  - depth
+  - mutation
+  - height_level
+
 # ---------
 # Mutations
 # ---------
 
-# The mutations section is supported by BD, BDEI, BDSS and epidemiological parameterizations, and defines the mutations in the model.
+# Mutations are defined as a list of mutation objects.
 # Each mutation object includes the following keys:
-# - states: str | list[str] | None (None by default)
-#   Specifies which states are affected by the mutation. If None, all the states are affected.
-# - rate: SkylineParameter
+# - rate: scalar
 #   The rate at which the mutation occurs.
 # - rate_scalers: RateScaler
 #   Maps event types to the probability distribution that rescales their rates when the mutation occurs.
-#   Supported event types are: birth, death, migration, sampling, mutation.
-#   The distribution is defined in the same format as for context variables and supports all distributions available in NumPy’s random generator.
+#   Supported event types are: birth, death, migration and sampling.
+#   The distribution is defined in the same format as in context variables and supports all distributions available in NumPy’s random generator.
 #   For details, see: https://numpy.org/devdocs/reference/random/generator.html#distributions  
 
 mutations:
@@ -91,16 +102,3 @@ mutations:
         type: normal
         loc: 0.5
         scale: 0.1
-
-# --------------------------
-# Tree simulation parameters
-# --------------------------
-
-min_tips: 50
-max_tips: 250
-timeout: 5
-node_features:
-  - n_leaves
-  - depth
-  - mutation
-  - height_level

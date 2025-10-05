@@ -47,7 +47,7 @@ class SkylineVector:
     ):
         if params is not None and value is None and change_times is None:
             if is_many_skyline_parameters_like(params):
-                self.params = [skyline_parameter(param) for param in params]
+                self._params = [skyline_parameter(param) for param in params]
             else:
                 raise TypeError(
                     f"It is impossible to create a SkylineVector from `params` {params} of type {type(params)}. Please provide a sequence of SkylineParameterLike objects (a SkylineParameterLike object can either be a SkylineParameter or a scalar)."
@@ -63,7 +63,7 @@ class SkylineVector:
                 raise TypeError(
                     f"It is impossible to create a SkylineVector from `value` {value} of type {type(value)}. Please provide a nested (2D) sequence of scalar values."
                 )
-            self.params = [
+            self._params = [
                 SkylineParameter([vector[i] for vector in value], change_times)
                 for i in range(len(value[0]))
             ]
@@ -73,19 +73,25 @@ class SkylineVector:
             )
 
     @property
+    def params(self) -> tuple[SkylineParameter, ...]:
+        return tuple(self._params)
+
+    @property
     def change_times(self) -> pgt.Vector1D:
-        return sorted(set(t for param in self.params for t in param.change_times))
+        return tuple(
+            sorted(set(t for param in self.params for t in param.change_times))
+        )
 
     @property
     def value(self) -> pgt.Vector2D:
-        return [self.get_value_at_time(t) for t in (0, *self.change_times)]
+        return tuple(self.get_value_at_time(t) for t in (0, *self.change_times))
 
     @property
     def N(self) -> int:
         return len(self.params)
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Vector1D:
-        return [param.get_value_at_time(t) for param in self.params]
+        return tuple(param.get_value_at_time(t) for param in self.params)
 
     def _operate(
         self,
@@ -154,7 +160,7 @@ class SkylineVector:
             raise TypeError(
                 f"It is impossible to set item {item} of SkylineVector with value {value} of type {type(value)}. Please provide a SkylineParameterLike object (i.e., a scalar or a SkylineParameter)."
             )
-        self.params[item] = skyline_parameter(value)
+        self._params[item] = skyline_parameter(value)
 
 
 def skyline_vector(x: SkylineVectorCoercible, N: int) -> SkylineVector:

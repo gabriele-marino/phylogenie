@@ -33,7 +33,7 @@ class SkylineMatrix:
     ):
         if params is not None and value is None and change_times is None:
             if is_many_skyline_vectors_like(params):
-                self.params = [
+                self._params = [
                     p if isinstance(p, SkylineVector) else SkylineVector(p)
                     for p in params
                 ]
@@ -41,7 +41,7 @@ class SkylineMatrix:
                 raise TypeError(
                     f"It is impossible to create a SkylineMatrix from `params` {params} of type {type(params)}. Please provide a sequence composed of SkylineVectorLike objects (a SkylineVectorLike object can either be a SkylineVector or a sequence of scalars and/or SkylineParameters)."
                 )
-            lengths = {len(p) for p in self.params}
+            lengths = {len(p) for p in self._params}
             if len(lengths) > 1:
                 raise ValueError(
                     f"All `params` must have the same length to create a SkylineMatrix (got params={params} with lengths {lengths})."
@@ -57,7 +57,7 @@ class SkylineMatrix:
                 raise TypeError(
                     f"It is impossible to create a SkylineMatrix from `value` {value} of type {type(value)}. Please provide a nested (3D) sequence of scalar values."
                 )
-            self.params = [
+            self._params = [
                 SkylineVector(
                     value=[matrix[i] for matrix in value], change_times=change_times
                 )
@@ -67,6 +67,10 @@ class SkylineMatrix:
             raise ValueError(
                 "Either `params` or both `value` and `change_times` must be provided to create a SkylineMatrix."
             )
+
+    @property
+    def params(self) -> tuple[SkylineVector, ...]:
+        return tuple(self._params)
 
     @property
     def n_rows(self) -> int:
@@ -82,14 +86,14 @@ class SkylineMatrix:
 
     @property
     def change_times(self) -> pgt.Vector1D:
-        return sorted(set([t for row in self.params for t in row.change_times]))
+        return tuple(sorted(set([t for row in self.params for t in row.change_times])))
 
     @property
     def value(self) -> pgt.Vector3D:
-        return [self.get_value_at_time(t) for t in (0, *self.change_times)]
+        return tuple(self.get_value_at_time(t) for t in (0, *self.change_times))
 
     def get_value_at_time(self, time: pgt.Scalar) -> pgt.Vector2D:
-        return [param.get_value_at_time(time) for param in self.params]
+        return tuple(param.get_value_at_time(time) for param in self.params)
 
     def _operate(
         self,
@@ -185,7 +189,7 @@ class SkylineMatrix:
             raise TypeError(
                 f"It is impossible to set item of SkylineMatrix to value {value} of type {type(value)}. Please provide a SkylineVectorLike object (i.e., a SkylineVector or a sequence of scalars and/or SkylineParameters)."
             )
-        self.params[item] = skyline_vector(value, self.n_cols)
+        self._params[item] = skyline_vector(value, self.n_cols)
 
 
 def skyline_matrix(

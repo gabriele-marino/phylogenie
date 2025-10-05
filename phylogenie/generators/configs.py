@@ -29,10 +29,6 @@ SkylineVector = str | pgt.Scalar | pgt.Many[SkylineParameter] | SkylineVectorMod
 SkylineMatrix = str | pgt.Scalar | pgt.Many[SkylineVector] | SkylineMatrixModel | None
 
 
-class Event(StrictBaseModel):
-    states: str | list[str] | None = None
-    rate: SkylineParameter
-
-
-class Mutation(Event):
+class Mutation(StrictBaseModel):
+    rate: Scalar
     rate_scalers: dict[MutationTargetType, Distribution]

@@ -65,12 +65,13 @@ class AliSimDatasetGenerator(DatasetGenerator):
         while True:
             d.update(data(context, rng))
             try:
-                tree = self.trees.simulate_one(d, seed)
+                tree, metadata = self.trees.simulate_one(d, seed)
                 break
             except TimeoutError:
                 print(
                     "Tree simulation timed out, retrying with different parameters..."
                 )
+        d.update(metadata)
 
         times = get_node_depths(tree)
         for leaf in tree.get_leaves():

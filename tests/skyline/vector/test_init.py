@@ -13,8 +13,8 @@ def test_init_with_params():
     assert sv.params[0] == sp1
     assert sv.params[1] == sp2
     assert sv.params[2] == SkylineParameter(5)
-    assert sv.value == [[5, 3, 5], [5, 4, 5], [2, 4, 5]]
-    assert sv.change_times == [1.0, 4.0]
+    assert sv.value == ((5, 3, 5), (5, 4, 5), (2, 4, 5))
+    assert sv.change_times == (1.0, 4.0)
 
 
 def test_init_with_value_and_change_times():
@@ -22,8 +22,8 @@ def test_init_with_value_and_change_times():
     assert sv.N == 2
     assert sv.params[0] == SkylineParameter([5, 3], [1.0])
     assert sv.params[1] == SkylineParameter([2, 4], [1.0])
-    assert sv.value == [[5, 2], [3, 4]]
-    assert sv.change_times == [1.0]
+    assert sv.value == ((5, 2), (3, 4))
+    assert sv.change_times == (1.0,)
 
 
 def test_init_with_mismatched_lengths():

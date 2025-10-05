@@ -7,7 +7,8 @@ from phylogenie.skyline import (
     skyline_matrix,
     skyline_vector,
 )
-from phylogenie.treesimulator.model import Event, Model
+from phylogenie.treesimulator.events.base import Event
+from phylogenie.treesimulator.model import Model
 
 INFECTIOUS_STATE = "I"
 EXPOSED_STATE = "E"

@@ -1,13 +1,7 @@
-from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-import numpy as np
-from numpy.random import Generator
-
-from phylogenie.skyline import SkylineParameterLike, skyline_parameter
 from phylogenie.tree import Tree
 
 
@@ -16,25 +10,6 @@ class Individual:
     id: int
     node: Tree
     state: str
-
-
-class Event(ABC):
-    def __init__(self, state: str, rate: SkylineParameterLike):
-        self.state = state
-        self.rate = skyline_parameter(rate)
-
-    def draw_individual(self, model: "Model", rng: Generator) -> int:
-        return rng.choice(model.get_population(self.state))
-
-    def get_propensity(self, model: "Model", time: float) -> float:
-        n_individuals = model.count_individuals(self.state)
-        rate = self.rate.get_value_at_time(time)
-        if rate == np.inf and not n_individuals:
-            return 0
-        return rate * n_individuals
-
-    @abstractmethod
-    def apply(self, model: "Model", time: float, rng: Generator) -> None: ...
 
 
 def _get_node_name(node_id: int, state: str) -> str:
@@ -51,26 +26,18 @@ def get_node_state(node_name: str) -> str:
 
 
 class Model:
-    def __init__(self, init_state: str, events: Sequence[Event]):
+    def __init__(self, init_state: str):
         self._next_node_id = 0
         self._next_individual_id = 0
         self._population: dict[int, Individual] = {}
         self._states: dict[str, set[int]] = defaultdict(set)
         self._sampled: set[str] = set()
         self._tree = self._get_new_individual(init_state).node
-        self._events = list(events)
         self.context: dict[str, Any] = {}
 
     @property
     def n_sampled(self) -> int:
         return len(self._sampled)
-
-    @property
-    def events(self) -> tuple[Event, ...]:
-        return tuple(self._events)
-
-    def add_event(self, event: Event) -> None:
-        self._events.append(event)
 
     def _get_new_node(self, state: str) -> Tree:
         self._next_node_id += 1

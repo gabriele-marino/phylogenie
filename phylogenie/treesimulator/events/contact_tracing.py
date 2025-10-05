@@ -5,8 +5,9 @@ import numpy as np
 from numpy.random import Generator
 
 from phylogenie.skyline import SkylineParameterLike, skyline_parameter
+from phylogenie.treesimulator.events.base import Event
 from phylogenie.treesimulator.events.core import Birth, Death, Migration, Sampling
-from phylogenie.treesimulator.model import Event, Model
+from phylogenie.treesimulator.model import Model
 
 CT_POSTFIX = "-CT"
 CONTACTS_KEY = "CONTACTS"

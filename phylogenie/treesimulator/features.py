@@ -2,8 +2,8 @@ from collections.abc import Iterable
 from enum import Enum
 
 from phylogenie.tree import Tree
-from phylogenie.treesimulator.events import get_mutation_id
 from phylogenie.treesimulator.model import get_node_state
+from phylogenie.treesimulator.mutations import get_mutation_id
 from phylogenie.utils import (
     get_node_depth_levels,
     get_node_depths,

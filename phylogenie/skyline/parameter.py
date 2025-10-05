@@ -52,12 +52,20 @@ class SkylineParameter:
                 f"`change_times` must be non-negative (got change_times={change_times})."
             )
 
-        self.value = [value[0]]
-        self.change_times: list[pgt.Scalar] = []
+        self._value = [value[0]]
+        self._change_times: list[pgt.Scalar] = []
         for i in range(1, len(value)):
             if value[i] != value[i - 1]:
-                self.value.append(value[i])
-                self.change_times.append(change_times[i - 1])
+                self._value.append(value[i])
+                self._change_times.append(change_times[i - 1])
+
+    @property
+    def value(self) -> pgt.Vector1D:
+        return tuple(self._value)
+
+    @property
+    def change_times(self) -> pgt.Vector1D:
+        return tuple(self._change_times)
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Scalar:
         if t < 0:

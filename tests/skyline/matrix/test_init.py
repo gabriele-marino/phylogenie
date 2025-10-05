@@ -16,13 +16,13 @@ def test_init_with_params():
     assert sm.params[0] == sv1
     assert sm.params[1] == SkylineVector([sp, 1])
     assert sm.params[2] == SkylineVector([0, 0])
-    assert sm.value == [
-        [[5, 2], [5, 1], [0, 0]],
-        [[6, 7], [5, 1], [0, 0]],
-        [[6, 7], [6, 1], [0, 0]],
-        [[5, 2], [6, 1], [0, 0]],
-    ]
-    assert sm.change_times == [1.0, 2.0, 4.0]
+    assert sm.value == (
+        ((5, 2), (5, 1), (0, 0)),
+        ((6, 7), (5, 1), (0, 0)),
+        ((6, 7), (6, 1), (0, 0)),
+        ((5, 2), (6, 1), (0, 0)),
+    )
+    assert sm.change_times == (1.0, 2.0, 4.0)
 
 
 def test_init_with_value_and_change_times():
@@ -34,8 +34,8 @@ def test_init_with_value_and_change_times():
     assert sv.params[0] == SkylineVector(value=[[5, 2], [6, 7]], change_times=[1.0])
     assert sv.params[1] == SkylineVector(value=[[3, 4], [8, 9]], change_times=[1.0])
     assert sv.params[2] == SkylineVector(value=[[7, 8], [9, 0]], change_times=[1.0])
-    assert sv.value == [[[5, 2], [3, 4], [7, 8]], [[6, 7], [8, 9], [9, 0]]]
-    assert sv.change_times == [1.0]
+    assert sv.value == (((5, 2), (3, 4), (7, 8)), ((6, 7), (8, 9), (9, 0)))
+    assert sv.change_times == (1.0,)
 
 
 def test_init_with_mismatched_lengths():

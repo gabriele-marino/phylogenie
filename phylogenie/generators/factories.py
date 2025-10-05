@@ -17,6 +17,7 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
+from phylogenie.treesimulator import Mutation
 
 
 def _eval_expression(expression: str, data: dict[str, Any]) -> Any:
@@ -219,6 +220,13 @@ def distribution(x: Distribution, data: dict[str, Any]) -> Distribution:
         if isinstance(arg_value, str):
             args[arg_name] = _eval_expression(arg_value, data)
     return Distribution(type=x.type, **args)
+
+
+def mutation(x: cfg.Mutation, data: dict[str, Any]) -> Mutation:
+    return Mutation(
+        scalar(x.rate, data),
+        {k: distribution(v, data) for k, v in x.rate_scalers.items()},
+    )
 
 
 def data(context: dict[str, Distribution] | None, rng: Generator) -> dict[str, Any]:
