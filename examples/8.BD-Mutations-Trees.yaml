@@ -87,7 +87,7 @@ node_features:
 #   Maps event types to the probability distribution that rescales their rates when the mutation occurs.
 #   The distribution is defined in the same format as in context variables and supports all distributions available in NumPy’s random generator.
 #   For details, see: https://numpy.org/devdocs/reference/random/generator.html#distributions  
-# Supported event types are: birth, death, migration, sampling, birth and mutation.
+# Supported event types are: birth, death, migration, sampling, and mutation.
 
 mutations:
   - rate: r / 2
