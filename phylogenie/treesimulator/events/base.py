@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from enum import Enum
+from typing import Any
 
 import numpy as np
 from numpy.random import Generator
@@ -7,10 +9,24 @@ from phylogenie.skyline import SkylineParameterLike, skyline_parameter
 from phylogenie.treesimulator.model import Model
 
 
+class EventType(str, Enum):
+    BIRTH = "birth"
+    DEATH = "death"
+    MIGRATION = "migration"
+    SAMPLING = "sampling"
+    MUTATION = "mutation"
+    BIRTH_WITH_CT = "birth_with_contact_tracing"
+    SAMPLING_WITH_CT = "sampling_with_contact_tracing"
+
+
 class Event(ABC):
+    type: EventType
+
     def __init__(self, state: str, rate: SkylineParameterLike):
         self.state = state
         self.rate = skyline_parameter(rate)
+        if any(v < 0 for v in self.rate.value):
+            raise ValueError("Event rates must be non-negative.")
 
     def draw_individual(self, model: Model, rng: Generator) -> int:
         return rng.choice(model.get_population(self.state))
@@ -23,4 +39,6 @@ class Event(ABC):
         return rate * n_individuals
 
     @abstractmethod
-    def apply(self, model: Model, time: float, rng: Generator) -> None: ...
+    def apply(
+        self, model: Model, events: "list[Event]", time: float, rng: Generator
+    ) -> dict[str, Any] | None: ...

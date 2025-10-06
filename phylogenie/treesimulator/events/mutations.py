@@ -1,22 +1,17 @@
 import re
 from copy import deepcopy
-from enum import Enum
-from typing import Any, Type
+from typing import Any
 
 from numpy.random import Generator
 
 from phylogenie.models import Distribution
+from phylogenie.skyline import SkylineParameterLike
+from phylogenie.treesimulator.events.base import Event, EventType
 from phylogenie.treesimulator.events.contact_tracing import (
     BirthWithContactTracing,
     SamplingWithContactTracing,
 )
-from phylogenie.treesimulator.events.core import (
-    Birth,
-    Death,
-    Event,
-    Migration,
-    Sampling,
-)
+from phylogenie.treesimulator.events.core import Birth, Death, Migration, Sampling
 from phylogenie.treesimulator.model import Model
 
 MUTATION_PREFIX = "MUT-"
@@ -40,26 +35,16 @@ def get_mutation_id(node_name: str) -> int:
     return 0
 
 
-class TargetType(str, Enum):
-    BIRTH = "birth"
-    DEATH = "death"
-    MIGRATION = "migration"
-    SAMPLING = "sampling"
+class Mutation(Event):
+    type = EventType.MUTATION
 
-
-EVENT_TARGET_TYPES: dict[Type[Event], TargetType] = {
-    Birth: TargetType.BIRTH,
-    BirthWithContactTracing: TargetType.BIRTH,
-    Death: TargetType.DEATH,
-    Migration: TargetType.MIGRATION,
-    Sampling: TargetType.SAMPLING,
-    SamplingWithContactTracing: TargetType.SAMPLING,
-}
-
-
-class Mutation:
-    def __init__(self, rate: float, rate_scalers: dict[TargetType, Distribution]):
-        self.rate = rate
+    def __init__(
+        self,
+        state: str,
+        rate: SkylineParameterLike,
+        rate_scalers: dict[EventType, Distribution],
+    ):
+        super().__init__(state, rate)
         self.rate_scalers = rate_scalers
 
     def apply(
@@ -70,11 +55,10 @@ class Mutation:
         model.context[NEXT_MUTATION_ID] += 1
         mutation_id = model.context[NEXT_MUTATION_ID]
 
-        individual = rng.choice(model.get_population())
-        state = model.get_state(individual)
-        model.migrate(individual, _get_mutated_state(mutation_id, state), time)
+        individual = self.draw_individual(model, rng)
+        model.migrate(individual, _get_mutated_state(mutation_id, self.state), time)
 
-        rate_scalers: dict[TargetType, float] = {
+        rate_scalers: dict[EventType, float] = {
             target_type: getattr(rng, rate_scaler.type)(**rate_scaler.args)
             for target_type, rate_scaler in self.rate_scalers.items()
         }
@@ -83,22 +67,24 @@ class Mutation:
         for event in [
             deepcopy(e)
             for e in events
-            if _get_mutation(state) == _get_mutation(e.state)
+            if _get_mutation(self.state) == _get_mutation(e.state)
         ]:
             event.state = _get_mutated_state(mutation_id, event.state)
+
             if isinstance(event, Birth | BirthWithContactTracing):
                 event.child_state = _get_mutated_state(mutation_id, event.child_state)
             elif isinstance(event, Migration):
                 event.target_state = _get_mutated_state(mutation_id, event.target_state)
-            elif not isinstance(event, Death | Sampling | SamplingWithContactTracing):
+            elif not isinstance(
+                event, Mutation | Death | Sampling | SamplingWithContactTracing
+            ):
                 raise ValueError(
                     f"Mutation not implemented for event of type {type(event)}."
                 )
 
-            target_type = EVENT_TARGET_TYPES[type(event)]
-            if target_type in rate_scalers:
-                event.rate *= rate_scalers[target_type]
-                metadata[f"{MUTATION_PREFIX}{mutation_id}.{target_type}.rate.value"] = (
+            if event.type in rate_scalers:
+                event.rate *= rate_scalers[event.type]
+                metadata[f"{MUTATION_PREFIX}{mutation_id}.{event.type}.rate.value"] = (
                     event.rate.value[0]
                     if len(event.rate.value) == 1
                     else list(event.rate.value)
@@ -109,4 +95,4 @@ class Mutation:
         return metadata
 
     def __repr__(self) -> str:
-        return f"Mutation(rate={self.rate}, rate_scalers={self.rate_scalers})"
+        return f"Mutation(state={self.state}, rate={self.rate}, rate_scalers={self.rate_scalers})"

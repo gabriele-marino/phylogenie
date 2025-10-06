@@ -222,11 +222,18 @@ def distribution(x: Distribution, data: dict[str, Any]) -> Distribution:
     return Distribution(type=x.type, **args)
 
 
-def mutation(x: cfg.Mutation, data: dict[str, Any]) -> Mutation:
-    return Mutation(
-        scalar(x.rate, data),
-        {k: distribution(v, data) for k, v in x.rate_scalers.items()},
-    )
+def mutations(
+    x: list[cfg.Mutation], data: dict[str, Any], states: set[str]
+) -> list[Mutation]:
+    mutations: list[Mutation] = []
+    for m in x:
+        rate = skyline_parameter(m.rate, data)
+        rate_scalers = {k: distribution(v, data) for k, v in m.rate_scalers.items()}
+        if m.state is None:
+            mutations.extend(Mutation(s, rate, rate_scalers) for s in states)
+        else:
+            mutations.append(Mutation(m.state, rate, rate_scalers))
+    return mutations
 
 
 def data(context: dict[str, Distribution] | None, rng: Generator) -> dict[str, Any]:

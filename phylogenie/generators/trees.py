@@ -12,7 +12,7 @@ from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import (
     data,
     integer,
-    mutation,
+    mutations,
     scalar,
     skyline_matrix,
     skyline_parameter,
@@ -47,7 +47,7 @@ class ParameterizationType(str, Enum):
 
 class TreeDatasetGenerator(DatasetGenerator):
     data_type: Literal[DataType.TREES] = DataType.TREES
-    mutations: list[cfg.Mutation] | None = None
+    mutations: list[cfg.Mutation] = Field(default_factory=lambda: [])
     min_tips: cfg.Integer = 1
     max_tips: cfg.Integer | None = None
     max_time: cfg.Scalar = np.inf
@@ -67,14 +67,9 @@ class TreeDatasetGenerator(DatasetGenerator):
             if self.init_state is None
             else self.init_state.format(**data)
         )
-        mutations = (
-            None
-            if self.mutations is None
-            else [mutation(m, data) for m in self.mutations]
-        )
+        states = {e.state for e in self._get_events(data)}
         return simulate_tree(
-            events=self._get_events(data),
-            mutations=mutations,
+            events=self._get_events(data) + mutations(self.mutations, data, states),
             min_tips=integer(self.min_tips, data),
             max_tips=None if self.max_tips is None else integer(self.max_tips, data),
             max_time=scalar(self.max_time, data),

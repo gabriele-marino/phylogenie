@@ -14,12 +14,10 @@ from phylogenie.tree import Tree
 from phylogenie.treesimulator.events import Event
 from phylogenie.treesimulator.features import Feature, set_features
 from phylogenie.treesimulator.model import Model
-from phylogenie.treesimulator.mutations import Mutation
 
 
 def simulate_tree(
     events: Sequence[Event],
-    mutations: Sequence[Mutation] | None = None,
     min_tips: int = 1,
     max_tips: int | None = None,
     max_time: float = np.inf,
@@ -42,9 +40,6 @@ def simulate_tree(
         (init_state,) = states
     elif init_state not in states:
         raise ValueError(f"Init state {init_state} not found in event states: {states}")
-
-    if mutations is None:
-        mutations = []
 
     rng = default_rng(seed)
     start_clock = time.perf_counter()
@@ -72,7 +67,7 @@ def simulate_tree(
             instantaneous_events = [e for e, r in zip(run_events, rates) if r == np.inf]
             if instantaneous_events:
                 event = instantaneous_events[rng.integers(len(instantaneous_events))]
-                event.apply(model, current_time, rng)
+                event.apply(model, run_events, current_time, rng)
                 continue
 
             if (
@@ -84,7 +79,6 @@ def simulate_tree(
             ):
                 break
 
-            rates.extend(m.rate for m in mutations)
             time_step = rng.exponential(1 / sum(rates))
             if current_time + time_step >= next_change_time:
                 current_time = next_change_time
@@ -95,13 +89,11 @@ def simulate_tree(
                 break
             current_time += time_step
 
-            targets = run_events + list(mutations)
-            target_idx = np.searchsorted(np.cumsum(rates) / sum(rates), rng.random())
-            target = targets[int(target_idx)]
-            if isinstance(target, Event):
-                target.apply(model, current_time, rng)
-            else:
-                metadata.update(target.apply(model, run_events, current_time, rng))
+            event_idx = np.searchsorted(np.cumsum(rates) / sum(rates), rng.random())
+            event = run_events[int(event_idx)]
+            event_metadata = event.apply(model, run_events, current_time, rng)
+            if event_metadata is not None:
+                metadata.update(event_metadata)
 
         for individual in model.get_population():
             if rng.random() < sampling_probability_at_present:
