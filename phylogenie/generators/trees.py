@@ -23,6 +23,7 @@ from phylogenie.models import Distribution
 from phylogenie.tree import Tree
 from phylogenie.treesimulator import (
     Event,
+    EventType,
     Feature,
     get_BD_events,
     get_BDEI_events,
@@ -48,6 +49,7 @@ class ParameterizationType(str, Enum):
 class TreeDatasetGenerator(DatasetGenerator):
     data_type: Literal[DataType.TREES] = DataType.TREES
     mutations: list[cfg.Mutation] = Field(default_factory=lambda: [])
+    rates_to_log: list[EventType] | None = None
     min_tips: cfg.Integer = 1
     max_tips: cfg.Integer | None = None
     max_time: cfg.Scalar = np.inf
@@ -67,9 +69,11 @@ class TreeDatasetGenerator(DatasetGenerator):
             if self.init_state is None
             else self.init_state.format(**data)
         )
-        states = {e.state for e in self._get_events(data)}
+        events = self._get_events(data)
+        states = {e.state for e in events}
+        events += mutations(self.mutations, data, states, self.rates_to_log)
         return simulate_tree(
-            events=self._get_events(data) + mutations(self.mutations, data, states),
+            events=events,
             min_tips=integer(self.min_tips, data),
             max_tips=None if self.max_tips is None else integer(self.max_tips, data),
             max_time=scalar(self.max_time, data),

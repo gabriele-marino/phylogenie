@@ -126,7 +126,9 @@ node_features:  # List of features to compute and attach to each node of the sim
 # - max_time: float (infinity by default)
 #   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value, eventually repeating the simulation until getting a valid number of tips.
 # - mutations: list[Mutation] (None by default)
-#   List of mutation to apply during the simulation (cf. 8.BD-Mutation-Trees.yaml).
+#   List of mutation to apply during the simulation (cf. 8.BD-Mutations-Trees.yaml).
+# - rates_to_log: list of event types (None by default)
+#   A list of event types for which the rescaled rates should be logged in the metadata when mutations are provided. By default, no rates will be logged. (cf. 8.BD-Mutations-Trees.yaml).
 # - sampling_probability_at_present: float (0 by default)
 #   The probability of sampling a tip at the end of the simulation. Can be specified for a finite value of max_time.
 # - init_state: str (None by default)

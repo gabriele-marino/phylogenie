@@ -43,9 +43,11 @@ class Mutation(Event):
         state: str,
         rate: SkylineParameterLike,
         rate_scalers: dict[EventType, Distribution],
+        rates_to_log: list[EventType] | None = None,
     ):
         super().__init__(state, rate)
         self.rate_scalers = rate_scalers
+        self.rates_to_log = [] if rates_to_log is None else rates_to_log
 
     def apply(
         self, model: Model, events: list[Event], time: float, rng: Generator
@@ -73,18 +75,24 @@ class Mutation(Event):
 
             if isinstance(event, Birth | BirthWithContactTracing):
                 event.child_state = _get_mutated_state(mutation_id, event.child_state)
+                metadata_key = f"birth_rate_from_{event.state}_to_{event.child_state}"
             elif isinstance(event, Migration):
                 event.target_state = _get_mutated_state(mutation_id, event.target_state)
-            elif not isinstance(
+                metadata_key = (
+                    f"migration_rate_from_{event.state}_to_{event.target_state}"
+                )
+            elif isinstance(
                 event, Mutation | Death | Sampling | SamplingWithContactTracing
             ):
+                metadata_key = f"{event.type}_rate_for_{event.state}"
+            else:
                 raise ValueError(
                     f"Mutation not implemented for event of type {type(event)}."
                 )
 
-            if event.type in rate_scalers:
-                event.rate *= rate_scalers[event.type]
-                metadata[f"{MUTATION_PREFIX}{mutation_id}.{event.type}.rate.value"] = (
+            event.rate *= rate_scalers.get(event.type, 1)
+            if event.type in self.rates_to_log:
+                metadata[metadata_key] = (
                     event.rate.value[0]
                     if len(event.rate.value) == 1
                     else list(event.rate.value)

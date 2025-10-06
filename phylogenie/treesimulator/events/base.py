@@ -15,8 +15,6 @@ class EventType(str, Enum):
     MIGRATION = "migration"
     SAMPLING = "sampling"
     MUTATION = "mutation"
-    BIRTH_WITH_CT = "birth_with_contact_tracing"
-    SAMPLING_WITH_CT = "sampling_with_contact_tracing"
 
 
 class Event(ABC):

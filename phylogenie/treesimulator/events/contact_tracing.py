@@ -23,7 +23,7 @@ def is_CT_state(state: str) -> bool:
 
 
 class BirthWithContactTracing(Event):
-    type = EventType.BIRTH_WITH_CT
+    type = EventType.BIRTH
 
     def __init__(self, state: str, rate: SkylineParameterLike, child_state: str):
         super().__init__(state, rate)
@@ -42,7 +42,7 @@ class BirthWithContactTracing(Event):
 
 
 class SamplingWithContactTracing(Event):
-    type = EventType.SAMPLING_WITH_CT
+    type = EventType.SAMPLING
 
     def __init__(
         self,
