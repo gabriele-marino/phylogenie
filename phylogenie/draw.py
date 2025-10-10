@@ -57,6 +57,7 @@ def draw_tree(
     vmin: float | None = None,
     vmax: float | None = None,
     show_legend: bool = True,
+    labels: dict[Any, Any] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
     show_hist: bool = True,
     hist_kwargs: dict[str, Any] | None = None,
@@ -98,7 +99,10 @@ def draw_tree(
 
         if show_legend:
             legend_handles = [
-                mpatches.Patch(color=feature_colors[f], label=str(f))
+                mpatches.Patch(
+                    color=feature_colors[f],
+                    label=str(f) if labels is None else labels[f],
+                )
                 for f in feature_colors
             ]
             if any(color_by not in node.features for node in tree):
