@@ -1,10 +1,11 @@
+from pathlib import Path
 from typing import Callable
 
 from phylogenie.msa import MSA, Sequence
 
 
 def load_fasta(
-    fasta_file: str, extract_time_from_id: Callable[[str], float] | None = None
+    fasta_file: str | Path, extract_time_from_id: Callable[[str], float] | None = None
 ) -> MSA:
     sequences: list[Sequence] = []
     with open(fasta_file, "r") as f:

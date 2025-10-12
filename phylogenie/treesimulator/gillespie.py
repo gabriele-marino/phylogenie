@@ -1,6 +1,6 @@
-import os
 import time
 from collections.abc import Iterable, Sequence
+from pathlib import Path
 from typing import Any
 
 import joblib
@@ -106,7 +106,7 @@ def simulate_tree(
 
 
 def generate_trees(
-    output_dir: str,
+    output_dir: str | Path,
     n_trees: int,
     events: Sequence[Event],
     min_tips: int = 1,
@@ -119,7 +119,13 @@ def generate_trees(
     n_jobs: int = -1,
     timeout: float = np.inf,
 ) -> pd.DataFrame:
-    def _simulate_tree(seed: int) -> tuple[Tree, dict[str, Any]]:
+    if isinstance(output_dir, str):
+        output_dir = Path(output_dir)
+    if output_dir.exists():
+        raise FileExistsError(f"Output directory {output_dir} already exists")
+    output_dir.mkdir(parents=True)
+
+    def _simulate_tree(i: int, seed: int) -> dict[str, Any]:
         while True:
             try:
                 tree, metadata = simulate_tree(
@@ -132,27 +138,21 @@ def generate_trees(
                     seed=seed,
                     timeout=timeout,
                 )
+                metadata["file_id"] = i
                 if node_features is not None:
                     set_features(tree, node_features)
-                return (tree, metadata)
+                dump_newick(tree, output_dir / f"{i}.nwk")
+                return metadata
             except TimeoutError:
                 print("Simulation timed out, retrying with a different seed...")
             seed += 1
 
-    if os.path.exists(output_dir):
-        raise FileExistsError(f"Output directory {output_dir} already exists")
-    os.makedirs(output_dir)
-
     rng = default_rng(seed)
     jobs = joblib.Parallel(n_jobs=n_jobs, return_as="generator_unordered")(
-        joblib.delayed(_simulate_tree)(seed=int(rng.integers(2**32)))
-        for _ in range(n_trees)
+        joblib.delayed(_simulate_tree)(i=i, seed=int(rng.integers(2**32)))
+        for i in range(n_trees)
     )
 
-    df: list[dict[str, Any]] = []
-    for i, (tree, metadata) in tqdm(
-        enumerate(jobs), total=n_trees, desc=f"Generating trees in {output_dir}..."
-    ):
-        df.append({"file_id": i} | metadata)
-        dump_newick(tree, os.path.join(output_dir, f"{i}.nwk"))
-    return pd.DataFrame(df)
+    return pd.DataFrame(
+        [md for md in tqdm(jobs, f"Generating trees in {output_dir}...", n_trees)]
+    )

@@ -1,5 +1,6 @@
 import re
 from collections.abc import Iterator
+from pathlib import Path
 
 from phylogenie.io.newick import parse_newick
 from phylogenie.tree import Tree
@@ -35,7 +36,7 @@ def _parse_trees_block(lines: Iterator[str]) -> dict[str, Tree]:
     return trees
 
 
-def load_nexus(nexus_file: str) -> dict[str, Tree]:
+def load_nexus(nexus_file: str | Path) -> dict[str, Tree]:
     with open(nexus_file, "r") as f:
         for line in f:
             if line.strip().upper() == "BEGIN TREES;":

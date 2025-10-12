@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 from phylogenie.tree import Tree
 
@@ -66,7 +67,7 @@ def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tre
         i += 1
 
 
-def load_newick(filepath: str) -> Tree | list[Tree]:
+def load_newick(filepath: str | Path) -> Tree | list[Tree]:
     with open(filepath, "r") as file:
         trees = [parse_newick(newick) for newick in file]
     return trees[0] if len(trees) == 1 else trees
@@ -95,7 +96,7 @@ def to_newick(tree: Tree) -> str:
     return newick
 
 
-def dump_newick(trees: Tree | list[Tree], filepath: str) -> None:
+def dump_newick(trees: Tree | list[Tree], filepath: str | Path) -> None:
     if isinstance(trees, Tree):
         trees = [trees]
     with open(filepath, "w") as file:
