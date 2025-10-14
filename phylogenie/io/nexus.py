@@ -9,12 +9,13 @@ from phylogenie.tree import Tree
 def _parse_translate_block(lines: Iterator[str]) -> dict[str, str]:
     translations: dict[str, str] = {}
     for line in lines:
-        match = re.match(r"\s*(\d+)\s+['\"]?([^'\",;]+)['\"]?", line)
+        line = line.strip()
+        match = re.match(r"(\d+)\s+['\"]?([^'\",;]+)['\"]?", line)
         if match is None:
             if ";" in line:
                 return translations
             else:
-                raise ValueError(f"Invalid translate line: {line.strip()}")
+                raise ValueError(f"Invalid translate line: {line}")
         translations[match.group(1)] = match.group(2)
     raise ValueError("Translate block not terminated with ';'")
 
