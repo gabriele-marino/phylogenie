@@ -22,7 +22,7 @@ def get_node_depths(tree: Tree) -> dict[Tree, float]:
     depths: dict[Tree, float] = {tree: tree.depth}
     for node in tree.iter_descendants():
         parent_depth = depths[node.parent]  # pyright: ignore
-        depths[node] = tree.branch_length_or_raise() + parent_depth
+        depths[node] = node.branch_length_or_raise() + parent_depth
     return depths
 
 
