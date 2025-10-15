@@ -8,8 +8,7 @@ from numpy.random import Generator, default_rng
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import data, string
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
-from phylogenie.io import dump_newick
-from phylogenie.utils import get_node_depths
+from phylogenie.treesimulator import dump_newick, get_node_depths
 
 MSAS_DIRNAME = "MSAs"
 TREES_DIRNAME = "trees"
@@ -60,26 +59,26 @@ class AliSimDatasetGenerator(DatasetGenerator):
             tree_filename = f"{filename}.temp-tree"
             msa_filename = filename
 
-        d: dict[str, Any] = {"file_id": Path(msa_filename).stem}
+        md: dict[str, Any] = {"file_id": Path(msa_filename).stem}
         rng = default_rng(seed)
         while True:
-            d.update(data(context, rng))
+            md.update(data(context, rng))
             try:
-                tree, metadata = self.trees.simulate_one(d, seed)
+                tree, metadata = self.trees.simulate_one(md, seed)
                 break
             except TimeoutError:
                 print(
                     "Tree simulation timed out, retrying with different parameters..."
                 )
-        d.update(metadata)
+        md.update(metadata)
 
         times = get_node_depths(tree)
         for leaf in tree.get_leaves():
             leaf.name += f"|{times[leaf]}"
         dump_newick(tree, f"{tree_filename}.nwk")
 
-        self._generate_one_from_tree(msa_filename, f"{tree_filename}.nwk", rng, d)
+        self._generate_one_from_tree(msa_filename, f"{tree_filename}.nwk", rng, md)
         if not self.keep_trees:
             os.remove(f"{tree_filename}.nwk")
 
-        return d
+        return md

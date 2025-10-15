@@ -48,6 +48,10 @@ context:
     low: 0.2
     high: 0.4
     size: 3
+  n_tips:
+    type: integers
+    low: 50
+    high: 250
 
 # ------------------------------------
 # Parameterization-specific parameters
@@ -77,5 +81,4 @@ sampling_proportions:
 # --------------------------
 
 init_state: E
-min_tips: 50
-max_tips: 250
+n_tips: n_tips

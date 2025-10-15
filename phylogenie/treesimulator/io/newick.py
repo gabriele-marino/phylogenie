@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from phylogenie.tree import Tree
+from phylogenie.treesimulator.tree import Tree
 
 
 def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tree:
@@ -76,8 +76,8 @@ def load_newick(filepath: str | Path) -> Tree | list[Tree]:
 def to_newick(tree: Tree) -> str:
     children_newick = ",".join([to_newick(child) for child in tree.children])
     newick = tree.name
-    if tree.features:
-        reprs = {k: repr(v).replace("'", '"') for k, v in tree.features.items()}
+    if tree.metadata:
+        reprs = {k: repr(v).replace("'", '"') for k, v in tree.metadata.items()}
         for k, r in reprs.items():
             if "," in k or "=" in k or "]" in k:
                 raise ValueError(

@@ -13,7 +13,7 @@
 # - The notification probability is drawn from a uniform distribution (low=0.3, high=0.9).
 # - The maximum number of notified contacts is drawn from an integer distribution (low=1, high=6).
 
-# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
 
 # ---------------
 # General configs
@@ -46,6 +46,10 @@ context:
     type: integers
     low: 1
     high: 6 # Note: high is exclusive, so this will generate integers from 1 to 5
+  n_tips:
+    type: integers
+    low: 50
+    high: 250
 
 # ------------------------------------
 # Parameterization-specific parameters
@@ -68,7 +72,7 @@ max_notified_contacts: C
 # Additional (optional) parameters for contact tracing are:
 # - samplable_states_after_notification: list of str (None by default)
 #   The states from which individuals can be sampled after notification. If not provided, all states will be considered samplable.
-# - sampling_rate_after_notification: SkylineParameter (infinity by default)
+# - sampling_rate_after_notification: SkylineParameter (~infinity by default)
 #   The rate at which individuals are sampled after notification.
 
 # --------------------------
@@ -76,6 +80,5 @@ max_notified_contacts: C
 # --------------------------
 
 init_state: I
-min_tips: 50
-max_tips: 250
+n_tips: n_tips
 timeout: 5

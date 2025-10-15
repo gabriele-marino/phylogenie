@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 from numpy.random import Generator
@@ -8,7 +8,6 @@ import phylogenie.generators.configs as cfg
 import phylogenie.generators.typeguards as ctg
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
-from phylogenie.models import Distribution
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -24,11 +23,7 @@ def _eval_expression(expression: str, data: dict[str, Any]) -> Any:
     return np.array(
         eval(
             expression,
-            {
-                "__builtins__": __builtins__,
-                "np": np,
-                **{k: np.array(v) for k, v in data.items()},
-            },
+            {"np": np, **{k: np.array(v) for k, v in data.items()}},
         )
     ).tolist()
 
@@ -214,12 +209,12 @@ def skyline_matrix(
     return SkylineMatrix(value=value, change_times=change_times)
 
 
-def distribution(x: Distribution, data: dict[str, Any]) -> Distribution:
+def distribution(x: cfg.Distribution, data: dict[str, Any]) -> cfg.Distribution:
     args = x.args
     for arg_name, arg_value in args.items():
         if isinstance(arg_value, str):
             args[arg_name] = _eval_expression(arg_value, data)
-    return Distribution(type=x.type, **args)
+    return cfg.Distribution(type=x.type, **args)
 
 
 def mutations(
@@ -227,11 +222,14 @@ def mutations(
     data: dict[str, Any],
     states: set[str],
     rates_to_log: list[EventType] | None,
+    rng: Generator,
 ) -> list[Mutation]:
     mutations: list[Mutation] = []
     for m in x:
         rate = skyline_parameter(m.rate, data)
-        rate_scalers = {k: distribution(v, data) for k, v in m.rate_scalers.items()}
+        rate_scalers: dict[EventType, Callable[[], float]] = {
+            k: lambda: distribution(v, data)(rng) for k, v in m.rate_scalers.items()
+        }
         if m.state is None:
             mutations.extend(
                 Mutation(s, rate, rate_scalers, rates_to_log) for s in states
@@ -241,11 +239,10 @@ def mutations(
     return mutations
 
 
-def data(context: dict[str, Distribution] | None, rng: Generator) -> dict[str, Any]:
+def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[str, Any]:
     if context is None:
         return {}
     data: dict[str, Any] = {}
     for k, v in context.items():
-        dist = distribution(v, data)
-        data[k] = np.array(getattr(rng, dist.type)(**dist.args)).tolist()
+        data[k] = np.array(distribution(v, data)(rng)).tolist()
     return data

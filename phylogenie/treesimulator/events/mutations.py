@@ -1,10 +1,9 @@
 import re
 from copy import deepcopy
-from typing import Any
+from typing import Any, Callable
 
 from numpy.random import Generator
 
-from phylogenie.models import Distribution
 from phylogenie.skyline import SkylineParameterLike
 from phylogenie.treesimulator.events.base import Event, EventType
 from phylogenie.treesimulator.events.contact_tracing import (
@@ -42,7 +41,7 @@ class Mutation(Event):
         self,
         state: str,
         rate: SkylineParameterLike,
-        rate_scalers: dict[EventType, Distribution],
+        rate_scalers: dict[EventType, Callable[[], float]],
         rates_to_log: list[EventType] | None = None,
     ):
         super().__init__(state, rate)
@@ -52,16 +51,16 @@ class Mutation(Event):
     def apply(
         self, model: Model, events: list[Event], time: float, rng: Generator
     ) -> dict[str, Any]:
-        if NEXT_MUTATION_ID not in model.context:
-            model.context[NEXT_MUTATION_ID] = 0
-        model.context[NEXT_MUTATION_ID] += 1
-        mutation_id = model.context[NEXT_MUTATION_ID]
+        if NEXT_MUTATION_ID not in model.metadata:
+            model[NEXT_MUTATION_ID] = 0
+        model[NEXT_MUTATION_ID] += 1
+        mutation_id = model[NEXT_MUTATION_ID]
 
         individual = self.draw_individual(model, rng)
         model.migrate(individual, _get_mutated_state(mutation_id, self.state), time)
 
         rate_scalers: dict[EventType, float] = {
-            target_type: getattr(rng, rate_scaler.type)(**rate_scaler.args)
+            target_type: rate_scaler()
             for target_type, rate_scaler in self.rate_scalers.items()
         }
 

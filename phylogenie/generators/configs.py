@@ -1,6 +1,28 @@
+from typing import Any
+
+from numpy.random import Generator
+from pydantic import BaseModel, ConfigDict
+
 import phylogenie.typings as pgt
-from phylogenie.models import Distribution, StrictBaseModel
 from phylogenie.treesimulator import EventType
+
+
+class StrictBaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class Distribution(BaseModel):
+    type: str
+    model_config = ConfigDict(extra="allow")
+
+    @property
+    def args(self) -> dict[str, Any]:
+        assert self.model_extra is not None
+        return self.model_extra
+
+    def __call__(self, rng: Generator) -> Any:
+        return getattr(rng, self.type)(**self.args)
+
 
 Integer = str | int
 Scalar = str | pgt.Scalar

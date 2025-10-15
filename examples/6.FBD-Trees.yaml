@@ -13,7 +13,7 @@
 
 # In this example, we will generate a dataset consisting of 100 training samples using an MTBD model with m=2 states: A and B. We draw the two diversification rates from a uniform distribution between 0.1 and 0.2, the two turnover rates from a uniform distribution between 0.3 and 0.5, and the (ancestor) sampling proportion (the same for both states) from a uniform distribution between 0.3 and 0.5. The migration rates from A to B and from B to A are set to 0.06 and 0.04, respectively. We also set full sampling at the present time.
 
-# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+# Each simulation runs for a maximum time of 15, and a tree is accepted if it has between 50 and 250 tips.
 
 # ---------------
 # General configs
@@ -71,6 +71,9 @@ sampling_proportions: s
 
 init_state: A
 max_time: 15
-min_tips: 50
-max_tips: 250
 sampling_probability_at_present: 1
+
+# Here we define an acceptance criterion to ensure that only trees with a number of tips between 50 and 250 are accepted.
+#acceptance_criterion: 50 <= tree.n_leaves <= 250
+# This acceptance criterion also includes singleton nodes in the count of tips (nodes whose branch lengths are zero). If you want to exclude singleton nodes, you can use the following acceptance criterion instead:
+acceptance_criterion: "50 <= sum(1 for l in tree.get_leaves() if l.branch_length > 0) <= 250"

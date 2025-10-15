@@ -1,10 +1,10 @@
 from collections.abc import Iterable
 from enum import Enum
 
-from phylogenie.tree import Tree
 from phylogenie.treesimulator.events.mutations import get_mutation_id
 from phylogenie.treesimulator.model import get_node_state
-from phylogenie.utils import (
+from phylogenie.treesimulator.tree import Tree
+from phylogenie.treesimulator.utils import (
     get_node_depth_levels,
     get_node_depths,
     get_node_height_levels,
@@ -46,4 +46,4 @@ def set_features(tree: Tree, features: Iterable[Feature]) -> None:
     for feature in features:
         feature_maps = FEATURES_EXTRACTORS[feature](tree)
         for node in tree:
-            node.set(feature.value, feature_maps[node])
+            node[feature.value] = feature_maps[node]

@@ -19,7 +19,7 @@
 # Fitness-decreasing mutation: rescales the birth rate by a normal distribution (loc=0.5, scale=0.1).
 # For each sample, the overall mutation rate r is drawn from a uniform distribution (low=0.01, high=0.1), and the two mutation types occur at rates of r/2 each.
 
-# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
 
 # ---------------
 # General configs
@@ -52,6 +52,10 @@ context:
     type: uniform
     low: 0.01
     high: 0.1
+  n_tips:
+    type: integers
+    low: 50
+    high: 250
 
 # ------------------------------------
 # Parameterization-specific parameters
@@ -66,8 +70,7 @@ sampling_proportion: s
 # Tree simulation parameters
 # --------------------------
 
-min_tips: 50
-max_tips: 250
+n_tips: n_tips
 timeout: 5
 node_features:
   - n_leaves

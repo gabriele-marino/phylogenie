@@ -17,7 +17,7 @@
 #   - randomly drawn at uniform from 0.1 to 0.3 for 2<t.
 # - The infectious period is fixed at 2.5.
 
-# For each simulation, a target number of tips between 50 and 250 is drawn at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
 
 # ---------------
 # General configs
@@ -57,7 +57,7 @@ seed: 42 # Random seed to ensure reproducibility (None by default)
 # - beta(a: float, b: float);
 # - integers(low: int, high: int).
 # For a full list of distributions, refer to the NumPy documentation: https://numpy.org/devdocs/reference/random/generator.html#distributions.
-# In this case, we sample the reproduction number R_0 from a lognormal distribution and the values of s at different simulation times from uniform distributions.
+# In this case, we sample the reproduction number R_0 from a lognormal distribution and the values of s at different simulation times from uniform distributions. The number of tips is sampled from a discrete uniform distribution between 50 and 250.
 # If specified as strings, the arguments of the distribution are evaluated in the context of the current sample, and can refer to other (previously defined) context variables (cf. 3.BDSS-Trees.yaml).
 
 context:
@@ -73,6 +73,10 @@ context:
     type: uniform
     low: 0.1
     high: 0.3
+  n_tips:
+    type: integers
+    low: 50
+    high: 250
 
 # ------------------------------------
 # Parameterization-specific parameters
@@ -111,8 +115,7 @@ infectious_period: 2.5
 # This section defines the parameters for the tree simulation.
 # In this case we specify a minimum and a maximum number of tips in the simulated trees. At each simulation, a target number of tips is randomly drawn between the minimum and maximum values, and the simulation stops when the number of tips reaches the target.
 
-min_tips: 50 # Minimum number of tips in the simulated trees, 1 by default
-max_tips: 50 # Maximum number of tips in the simulated trees, ~infinity by default
+n_tips: n_tips # Number of tips in the simulated trees
 node_features:  # List of features to compute and attach to each node of the simulated trees
   - n_leaves
   - depth
@@ -124,7 +127,7 @@ node_features:  # List of features to compute and attach to each node of the sim
 
 # Other optional arguments are:
 # - max_time: float (infinity by default)
-#   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value, eventually repeating the simulation until getting a valid number of tips.
+#   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_tips.
 # - mutations: list[Mutation] (None by default)
 #   List of mutation to apply during the simulation (cf. 8.BD-Mutations-Trees.yaml).
 # - rates_to_log: list of event types (None by default)
@@ -135,3 +138,5 @@ node_features:  # List of features to compute and attach to each node of the sim
 #   The state of the first (seed) individual of the simulation. This is necessary for multiple-state models.
 # - timeout: float (infinity by default)
 #   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.
+# - acceptance_criterion: str (None by default)
+#   A string representing a boolean function that takes a Tree object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Tree class (cfr. 6.FBD-Trees.yaml).

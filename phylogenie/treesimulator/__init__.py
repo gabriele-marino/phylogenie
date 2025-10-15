@@ -19,7 +19,20 @@ from phylogenie.treesimulator.events import (
 )
 from phylogenie.treesimulator.features import Feature, set_features
 from phylogenie.treesimulator.gillespie import generate_trees, simulate_tree
+from phylogenie.treesimulator.io import dump_newick, load_newick, load_nexus
 from phylogenie.treesimulator.model import get_node_state
+from phylogenie.treesimulator.tree import Tree
+from phylogenie.treesimulator.utils import (
+    compute_mean_leaf_pairwise_distance,
+    compute_sackin_index,
+    get_distance,
+    get_mrca,
+    get_node_depth_levels,
+    get_node_depths,
+    get_node_height_levels,
+    get_node_heights,
+    get_node_leaf_counts,
+)
 
 __all__ = [
     "Birth",
@@ -38,10 +51,23 @@ __all__ = [
     "get_contact_tracing_events",
     "get_epidemiological_events",
     "get_FBD_events",
-    "generate_trees",
-    "simulate_tree",
     "get_mutation_id",
-    "get_node_state",
     "Feature",
     "set_features",
+    "simulate_tree",
+    "dump_newick",
+    "load_newick",
+    "load_nexus",
+    "generate_trees",
+    "get_node_state",
+    "Tree",
+    "compute_mean_leaf_pairwise_distance",
+    "compute_sackin_index",
+    "get_distance",
+    "get_mrca",
+    "get_node_depth_levels",
+    "get_node_depths",
+    "get_node_height_levels",
+    "get_node_heights",
+    "get_node_leaf_counts",
 ]

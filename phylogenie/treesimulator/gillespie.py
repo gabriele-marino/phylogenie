@@ -1,7 +1,7 @@
 import time
 from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import joblib
 import numpy as np
@@ -9,26 +9,28 @@ import pandas as pd
 from numpy.random import default_rng
 from tqdm import tqdm
 
-from phylogenie.io import dump_newick
-from phylogenie.tree import Tree
 from phylogenie.treesimulator.events import Event
 from phylogenie.treesimulator.features import Feature, set_features
+from phylogenie.treesimulator.io import dump_newick
 from phylogenie.treesimulator.model import Model
+from phylogenie.treesimulator.tree import Tree
 
 
 def simulate_tree(
     events: Sequence[Event],
-    min_tips: int = 1,
-    max_tips: int | None = None,
+    n_tips: int | None = None,
     max_time: float = np.inf,
     init_state: str | None = None,
     sampling_probability_at_present: float = 0.0,
     seed: int | None = None,
     timeout: float = np.inf,
+    acceptance_criterion: Callable[[Tree], bool] | None = None,
 ) -> tuple[Tree, dict[str, Any]]:
-    if max_time == np.inf and sampling_probability_at_present:
+    if (max_time != np.inf) == (n_tips is not None):
+        raise ValueError("Exactly one of max_time or n_tips must be specified.")
+    if sampling_probability_at_present and max_time == np.inf:
         raise ValueError(
-            "sampling_probability_at_present cannot be set when max_time is infinite."
+            "sampling_probability_at_present can only be used with max_time."
         )
 
     states = {e.state for e in events if e.state}
@@ -51,32 +53,12 @@ def simulate_tree(
         change_times = sorted(set(t for e in events for t in e.rate.change_times))
         next_change_time = change_times.pop(0) if change_times else np.inf
 
-        if max_time == np.inf:
-            if max_tips is None:
-                raise ValueError("Either max_time or max_tips must be specified.")
-            target_n_tips = rng.integers(min_tips, max_tips + 1)
-        else:
-            target_n_tips = None
-
-        while current_time < max_time:
+        while current_time < max_time and (n_tips is None or model.n_sampled < n_tips):
             if time.perf_counter() - start_clock > timeout:
                 raise TimeoutError("Simulation timed out.")
 
             rates = [e.get_propensity(model, current_time) for e in run_events]
-
-            instantaneous_events = [e for e, r in zip(run_events, rates) if r == np.inf]
-            if instantaneous_events:
-                event = instantaneous_events[rng.integers(len(instantaneous_events))]
-                event.apply(model, run_events, current_time, rng)
-                continue
-
-            if (
-                not any(rates)
-                or max_tips is not None
-                and model.n_sampled >= max_tips
-                or target_n_tips is not None
-                and model.n_sampled >= target_n_tips
-            ):
+            if not any(rates):
                 break
 
             time_step = rng.exponential(1 / sum(rates))
@@ -95,22 +77,23 @@ def simulate_tree(
             if event_metadata is not None:
                 metadata.update(event_metadata)
 
+        if current_time != max_time and model.n_sampled != n_tips:
+            continue
+
         for individual in model.get_population():
             if rng.random() < sampling_probability_at_present:
                 model.sample(individual, current_time, True)
 
-        if min_tips <= model.n_sampled and (
-            max_tips is None or model.n_sampled <= max_tips
-        ):
-            return (model.get_sampled_tree(), metadata)
+        tree = model.get_sampled_tree()
+        if acceptance_criterion is None or acceptance_criterion(tree):
+            return (tree, metadata)
 
 
 def generate_trees(
     output_dir: str | Path,
     n_trees: int,
     events: Sequence[Event],
-    min_tips: int = 1,
-    max_tips: int | None = None,
+    n_tips: int | None = None,
     max_time: float = np.inf,
     init_state: str | None = None,
     sampling_probability_at_present: float = 0.0,
@@ -118,6 +101,7 @@ def generate_trees(
     seed: int | None = None,
     n_jobs: int = -1,
     timeout: float = np.inf,
+    acceptance_criterion: Callable[[Tree], bool] | None = None,
 ) -> pd.DataFrame:
     if isinstance(output_dir, str):
         output_dir = Path(output_dir)
@@ -130,13 +114,13 @@ def generate_trees(
             try:
                 tree, metadata = simulate_tree(
                     events=events,
-                    min_tips=min_tips,
-                    max_tips=max_tips,
+                    n_tips=n_tips,
                     max_time=max_time,
                     init_state=init_state,
                     sampling_probability_at_present=sampling_probability_at_present,
                     seed=seed,
                     timeout=timeout,
+                    acceptance_criterion=acceptance_criterion,
                 )
                 metadata["file_id"] = i
                 if node_features is not None:

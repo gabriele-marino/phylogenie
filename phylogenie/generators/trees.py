@@ -1,13 +1,14 @@
 from abc import abstractmethod
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Callable, Literal
 
 import numpy as np
 from numpy.random import default_rng
 from pydantic import Field
 
 import phylogenie.generators.configs as cfg
+from phylogenie.generators.configs import Distribution
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import (
     data,
@@ -18,13 +19,12 @@ from phylogenie.generators.factories import (
     skyline_parameter,
     skyline_vector,
 )
-from phylogenie.io import dump_newick
-from phylogenie.models import Distribution
-from phylogenie.tree import Tree
 from phylogenie.treesimulator import (
     Event,
     EventType,
     Feature,
+    Tree,
+    dump_newick,
     get_BD_events,
     get_BDEI_events,
     get_BDSS_events,
@@ -50,13 +50,13 @@ class TreeDatasetGenerator(DatasetGenerator):
     data_type: Literal[DataType.TREES] = DataType.TREES
     mutations: list[cfg.Mutation] = Field(default_factory=lambda: [])
     rates_to_log: list[EventType] | None = None
-    min_tips: cfg.Integer = 1
-    max_tips: cfg.Integer | None = None
+    n_tips: cfg.Integer | None = None
     max_time: cfg.Scalar = np.inf
     init_state: str | None = None
     sampling_probability_at_present: cfg.Scalar = 0.0
     timeout: float = np.inf
     node_features: list[Feature] | None = None
+    acceptance_criterion: str | None = None
 
     @abstractmethod
     def _get_events(self, data: dict[str, Any]) -> list[Event]: ...
@@ -71,11 +71,19 @@ class TreeDatasetGenerator(DatasetGenerator):
         )
         events = self._get_events(data)
         states = {e.state for e in events}
-        events += mutations(self.mutations, data, states, self.rates_to_log)
+        events += mutations(
+            self.mutations, data, states, self.rates_to_log, default_rng(seed)
+        )
+        acceptance_criterion: None | Callable[[Tree], bool] = (
+            None
+            if self.acceptance_criterion is None
+            else lambda tree: eval(
+                self.acceptance_criterion, {}, {"tree": tree}  # pyright: ignore
+            )
+        )
         return simulate_tree(
             events=events,
-            min_tips=integer(self.min_tips, data),
-            max_tips=None if self.max_tips is None else integer(self.max_tips, data),
+            n_tips=None if self.n_tips is None else integer(self.n_tips, data),
             max_time=scalar(self.max_time, data),
             init_state=init_state,
             sampling_probability_at_present=scalar(
@@ -83,6 +91,7 @@ class TreeDatasetGenerator(DatasetGenerator):
             ),
             seed=seed,
             timeout=self.timeout,
+            acceptance_criterion=acceptance_criterion,
         )
 
     def generate_one(
@@ -157,7 +166,7 @@ class FBDTreeDatasetGenerator(TreeDatasetGenerator):
 class ContactTracingTreeDatasetGenerator(TreeDatasetGenerator):
     max_notified_contacts: cfg.Integer = 1
     notification_probability: cfg.SkylineParameter = 0.0
-    sampling_rate_after_notification: cfg.SkylineParameter = np.inf
+    sampling_rate_after_notification: cfg.SkylineParameter = 2**32
     samplable_states_after_notification: list[str] | None = None
 
     @abstractmethod

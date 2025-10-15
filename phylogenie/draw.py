@@ -1,6 +1,5 @@
 from enum import Enum
-from itertools import islice
-from typing import Any
+from typing import Any, Callable
 
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
@@ -8,8 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # pyright: ignore
 
-from phylogenie.tree import Tree
-from phylogenie.utils import get_node_depth_levels, get_node_depths
+from phylogenie.treesimulator import Tree, get_node_depth_levels, get_node_depths
 
 
 class Coloring(str, Enum):
@@ -26,7 +24,7 @@ def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) 
 
     xs = (
         get_node_depth_levels(tree)
-        if any(node.branch_length is None for node in islice(tree, 1, None))
+        if any(node.branch_length is None for node in tree.iter_descendants())
         else get_node_depths(tree)
     )
     ys: dict[Tree, float] = {node: i for i, node in enumerate(tree.get_leaves())}
@@ -50,7 +48,7 @@ def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) 
 def draw_tree(
     tree: Tree,
     ax: Axes | None = None,
-    color_by: str | None = None,
+    color_by: str | dict[Tree, Any] | None = None,
     coloring: str | Coloring | None = None,
     default_color: Color = "black",
     cmap: str | None = None,
@@ -69,33 +67,35 @@ def draw_tree(
     if color_by is None:
         return _draw_colored_tree(tree, ax, colors=default_color)
 
-    features = [node.get(color_by) for node in tree if color_by in node.features]
+    if isinstance(color_by, dict):
+        features = {node: color_by[node] for node in tree if node in color_by}
+    else:
+        features = {node: node[color_by] for node in tree if color_by in node.metadata}
 
     if coloring is None:
         coloring = (
             Coloring.CONTINUOUS
-            if any(isinstance(f, float) for f in features)
+            if any(isinstance(f, float) for f in features.values())
             else Coloring.DISCRETE
         )
 
+    def _get_colors(feature_map: Callable[[Any], Color]) -> dict[Tree, Color]:
+        return {
+            node: feature_map(features[node]) if node in features else default_color
+            for node in tree
+        }
+
     if coloring == Coloring.DISCRETE:
-        if any(isinstance(f, float) for f in features):
+        if any(isinstance(f, float) for f in features.values()):
             raise ValueError(
                 "Discrete coloring selected but feature values are not all categorical."
             )
 
         colormap = plt.get_cmap("tab20" if cmap is None else cmap)
         feature_colors = {
-            f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(features))
+            f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(features.values()))
         }
-        colors = {
-            node: (
-                feature_colors[node.get(color_by)]
-                if color_by in node.features
-                else default_color
-            )
-            for node in tree
-        }
+        colors = _get_colors(lambda f: feature_colors[f])
 
         if show_legend:
             legend_handles = [
@@ -105,7 +105,7 @@ def draw_tree(
                 )
                 for f in feature_colors
             ]
-            if any(color_by not in node.features for node in tree):
+            if any(color_by not in node.metadata for node in tree):
                 legend_handles.append(mpatches.Patch(color=default_color, label="NA"))
             if legend_kwargs is None:
                 legend_kwargs = {}
@@ -114,18 +114,11 @@ def draw_tree(
         return _draw_colored_tree(tree, ax, colors)
 
     if coloring == Coloring.CONTINUOUS:
-        vmin = min(features) if vmin is None else vmin
-        vmax = max(features) if vmax is None else vmax
+        vmin = min(features.values()) if vmin is None else vmin
+        vmax = max(features.values()) if vmax is None else vmax
         norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
         colormap = plt.get_cmap("viridis" if cmap is None else cmap)
-        colors = {
-            node: (
-                colormap(norm(float(node.get(color_by))))
-                if color_by in node.features
-                else default_color
-            )
-            for node in tree
-        }
+        colors = _get_colors(lambda f: colormap(norm(float(f))))
 
         if show_hist:
             default_hist_axes_kwargs = {"width": "25%", "height": "25%"}

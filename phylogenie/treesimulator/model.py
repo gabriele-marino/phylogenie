@@ -1,8 +1,8 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any
 
-from phylogenie.tree import Tree
+from phylogenie.mixins import MetadataMixin
+from phylogenie.treesimulator.tree import Tree
 
 
 @dataclass
@@ -17,23 +17,22 @@ def _get_node_name(node_id: int, state: str) -> str:
 
 
 def get_node_state(node_name: str) -> str:
-    try:
-        return node_name.split("|")[1]
-    except IndexError:
+    if "|" not in node_name:
         raise ValueError(
             f"Invalid node name: {node_name} (expected format 'id|state')."
         )
+    return node_name.split("|")[-1]
 
 
-class Model:
+class Model(MetadataMixin):
     def __init__(self, init_state: str):
+        super().__init__()
         self._next_node_id = 0
         self._next_individual_id = 0
         self._population: dict[int, Individual] = {}
         self._states: dict[str, set[int]] = defaultdict(set)
         self._sampled: set[str] = set()
         self._tree = self._get_new_individual(init_state).node
-        self.context: dict[str, Any] = {}
 
     @property
     def n_sampled(self) -> int:
@@ -110,9 +109,7 @@ class Model:
             elif len(node.children) == 1:
                 (child,) = node.children
                 child.set_parent(node.parent)
-                assert child.branch_length is not None
-                assert node.branch_length is not None
-                child.branch_length += node.branch_length
+                child.branch_length += node.branch_length  # pyright: ignore
                 if node.parent is None:
                     return child
                 else:

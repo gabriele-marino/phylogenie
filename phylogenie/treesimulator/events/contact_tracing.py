@@ -2,7 +2,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from copy import deepcopy
 
-import numpy as np
 from numpy.random import Generator
 
 from phylogenie.skyline import SkylineParameterLike, skyline_parameter
@@ -32,10 +31,10 @@ class BirthWithContactTracing(Event):
     def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         new_individual = model.birth_from(individual, self.child_state, time)
-        if CONTACTS_KEY not in model.context:
-            model.context[CONTACTS_KEY] = defaultdict(list)
-        model.context[CONTACTS_KEY][individual].append(new_individual)
-        model.context[CONTACTS_KEY][new_individual].append(individual)
+        if CONTACTS_KEY not in model.metadata:
+            model[CONTACTS_KEY] = defaultdict(list)
+        model[CONTACTS_KEY][individual].append(new_individual)
+        model[CONTACTS_KEY][new_individual].append(individual)
 
     def __repr__(self) -> str:
         return f"BirthWithContactTracing(state={self.state}, rate={self.rate}, child_state={self.child_state})"
@@ -59,9 +58,9 @@ class SamplingWithContactTracing(Event):
         individual = self.draw_individual(model, rng)
         model.sample(individual, time, True)
         population = model.get_population()
-        if CONTACTS_KEY not in model.context:
+        if CONTACTS_KEY not in model.metadata:
             return
-        contacts = model.context[CONTACTS_KEY][individual]
+        contacts = model[CONTACTS_KEY][individual]
         for contact in contacts[-self.max_notified_contacts :]:
             if contact in population:
                 state = model.get_state(contact)
@@ -76,8 +75,8 @@ class SamplingWithContactTracing(Event):
 def get_contact_tracing_events(
     events: Sequence[Event],
     max_notified_contacts: int = 1,
-    notification_probability: SkylineParameterLike = 1,
-    sampling_rate_after_notification: SkylineParameterLike = np.inf,
+    notification_probability: SkylineParameterLike = 0.0,
+    sampling_rate_after_notification: SkylineParameterLike = 2**32,
     samplable_states_after_notification: list[str] | None = None,
 ) -> list[Event]:
     ct_events: list[Event] = []

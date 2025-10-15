@@ -2,8 +2,8 @@ import re
 from collections.abc import Iterator
 from pathlib import Path
 
-from phylogenie.io.newick import parse_newick
-from phylogenie.tree import Tree
+from phylogenie.treesimulator.io.newick import parse_newick
+from phylogenie.treesimulator.tree import Tree
 
 
 def _parse_translate_block(lines: Iterator[str]) -> dict[str, str]:
