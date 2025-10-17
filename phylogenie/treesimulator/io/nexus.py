@@ -34,7 +34,7 @@ def _parse_trees_block(lines: Iterator[str]) -> dict[str, Tree]:
             if match is None:
                 raise ValueError(f"Invalid tree line. Expected 'TREE name = newick'")
             trees[match.group(1)] = parse_newick(match.group(2), translations)
-    return trees
+    raise ValueError("Unterminated TREES block.")
 
 
 def load_nexus(nexus_file: str | Path) -> dict[str, Tree]:
