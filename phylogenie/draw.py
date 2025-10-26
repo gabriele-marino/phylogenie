@@ -48,7 +48,7 @@ def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) 
 def draw_tree(
     tree: Tree,
     ax: Axes | None = None,
-    color_by: str | dict[Tree, Any] | None = None,
+    color_by: str | dict[str, Any] | None = None,
     coloring: str | Coloring | None = None,
     default_color: Color = "black",
     cmap: str | None = None,
@@ -67,15 +67,16 @@ def draw_tree(
     if color_by is None:
         return _draw_colored_tree(tree, ax, colors=default_color)
 
-    if isinstance(color_by, dict):
-        features = {node: color_by[node] for node in tree if node in color_by}
-    else:
+    if isinstance(color_by, str):
         features = {node: node[color_by] for node in tree if color_by in node.metadata}
+    else:
+        features = {node: color_by[node.name] for node in tree if node.name in color_by}
+    values = list(features.values())
 
     if coloring is None:
         coloring = (
             Coloring.CONTINUOUS
-            if any(isinstance(f, float) for f in features.values())
+            if any(isinstance(f, float) for f in values)
             else Coloring.DISCRETE
         )
 
@@ -86,14 +87,14 @@ def draw_tree(
         }
 
     if coloring == Coloring.DISCRETE:
-        if any(isinstance(f, float) for f in features.values()):
+        if any(isinstance(f, float) for f in values):
             raise ValueError(
                 "Discrete coloring selected but feature values are not all categorical."
             )
 
         colormap = plt.get_cmap("tab20" if cmap is None else cmap)
         feature_colors = {
-            f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(features.values()))
+            f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(values))
         }
         colors = _get_colors(lambda f: feature_colors[f])
 
@@ -114,8 +115,8 @@ def draw_tree(
         return _draw_colored_tree(tree, ax, colors)
 
     if coloring == Coloring.CONTINUOUS:
-        vmin = min(features.values()) if vmin is None else vmin
-        vmax = max(features.values()) if vmax is None else vmax
+        vmin = min(values) if vmin is None else vmin
+        vmax = max(values) if vmax is None else vmax
         norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
         colormap = plt.get_cmap("viridis" if cmap is None else cmap)
         colors = _get_colors(lambda f: colormap(norm(float(f))))
@@ -127,7 +128,7 @@ def draw_tree(
             hist_ax = inset_axes(ax, **default_hist_axes_kwargs)  # pyright: ignore
 
             hist_kwargs = {} if hist_kwargs is None else hist_kwargs
-            _, bins, patches = hist_ax.hist(features, **hist_kwargs)  # pyright: ignore
+            _, bins, patches = hist_ax.hist(values, **hist_kwargs)  # pyright: ignore
 
             for patch, b0, b1 in zip(  # pyright: ignore
                 patches, bins[:-1], bins[1:]  # pyright: ignore
