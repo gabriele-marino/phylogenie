@@ -5,6 +5,7 @@ import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+from matplotlib.colors import Colormap
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # pyright: ignore
 
 from phylogenie.treesimulator import Tree, get_node_depth_levels, get_node_depths
@@ -51,7 +52,7 @@ def draw_tree(
     color_by: str | dict[str, Any] | None = None,
     coloring: str | Coloring | None = None,
     default_color: Color = "black",
-    cmap: str | None = None,
+    colormap: str | Colormap | None = None,
     vmin: float | None = None,
     vmax: float | None = None,
     show_legend: bool = True,
@@ -79,6 +80,10 @@ def draw_tree(
             if any(isinstance(f, float) for f in values)
             else Coloring.DISCRETE
         )
+    if colormap is None:
+        colormap = "tab20" if coloring == Coloring.DISCRETE else "viridis"
+    if isinstance(colormap, str):
+        colormap = plt.get_cmap(colormap)
 
     def _get_colors(feature_map: Callable[[Any], Color]) -> dict[Tree, Color]:
         return {
@@ -91,8 +96,6 @@ def draw_tree(
             raise ValueError(
                 "Discrete coloring selected but feature values are not all categorical."
             )
-
-        colormap = plt.get_cmap("tab20" if cmap is None else cmap)
         feature_colors = {
             f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(values))
         }
@@ -118,7 +121,6 @@ def draw_tree(
         vmin = min(values) if vmin is None else vmin
         vmax = max(values) if vmax is None else vmax
         norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-        colormap = plt.get_cmap("viridis" if cmap is None else cmap)
         colors = _get_colors(lambda f: colormap(norm(float(f))))
 
         if show_hist:

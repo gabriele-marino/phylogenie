@@ -15,14 +15,10 @@ def run(config_path: str) -> None:
     if os.path.isdir(config_path):
         for config_file in glob(os.path.join(config_path, "**/*.yaml"), recursive=True):
             with open(config_file, "r") as f:
-                config = safe_load(f)
-            generator = adapter.validate_python(config)
-            generator.generate()
+                adapter.validate_python(safe_load(f)).generate()
     else:
         with open(config_path, "r") as f:
-            config = safe_load(f)
-        generator = adapter.validate_python(config)
-        generator.generate()
+            adapter.validate_python(safe_load(f)).generate()
 
 
 def main() -> None:
