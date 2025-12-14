@@ -8,9 +8,9 @@
 
 # In this example, we generate a dataset with 100 samples. For each sample:
 # - The reproduction number is drawn from a lognormal distribution (mean=1, sigma=0.2);
-# - The sampling proportion is drawn from a uniform distribution (low=0.1, high=0.7).
-# - The infectious period is fixed at 2.5.
-# - The notification probability is drawn from a uniform distribution (low=0.3, high=0.9).
+# - The sampling proportion is drawn from a uniform distribution (low=0.1, high=0.7);
+# - The infectious period is fixed at 2.5;
+# - The notification probability is drawn from a uniform distribution (low=0.3, high=0.9);
 # - The maximum number of notified contacts is drawn from an integer distribution (low=1, high=6).
 
 # For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.

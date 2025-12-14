@@ -19,7 +19,12 @@ class Coloring(str, Enum):
 Color = str | tuple[float, float, float] | tuple[float, float, float, float]
 
 
-def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) -> Axes:
+def draw_colored_tree(
+    tree: Tree, ax: Axes | None = None, colors: Color | dict[Tree, Color] = "black"
+) -> Axes:
+    if ax is None:
+        ax = plt.gca()
+
     if not isinstance(colors, dict):
         colors = {node: colors for node in tree}
 
@@ -33,14 +38,14 @@ def _draw_colored_tree(tree: Tree, ax: Axes, colors: Color | dict[Tree, Color]) 
         if node.is_internal():
             ys[node] = sum(ys[child] for child in node.children) / len(node.children)
 
+    if tree.branch_length is not None:
+        ax.hlines(y=ys[tree], xmin=0, xmax=xs[tree], color=colors[tree])  # pyright: ignore
     for node in tree:
         x1, y1 = xs[node], ys[node]
-        if node.parent is None:
-            ax.hlines(y=y1, xmin=0, xmax=x1, color=colors[node])  # pyright: ignore
-            continue
-        x0, y0 = xs[node.parent], ys[node.parent]
-        ax.vlines(x=x0, ymin=y0, ymax=y1, color=colors[node])  # pyright: ignore
-        ax.hlines(y=y1, xmin=x0, xmax=x1, color=colors[node])  # pyright: ignore
+        for child in node.children:
+            x2, y2 = xs[child], ys[child]
+            ax.hlines(y=y2, xmin=x1, xmax=x2, color=colors[child])  # pyright: ignore
+            ax.vlines(x=x1, ymin=y1, ymax=y2, color=colors[child])  # pyright: ignore
 
     ax.set_yticks([])  # pyright: ignore
     return ax
@@ -66,7 +71,7 @@ def draw_tree(
         ax = plt.gca()
 
     if color_by is None:
-        return _draw_colored_tree(tree, ax, colors=default_color)
+        return draw_colored_tree(tree, ax, colors=default_color)
 
     if isinstance(color_by, str):
         features = {node: node[color_by] for node in tree if color_by in node.metadata}
@@ -115,7 +120,7 @@ def draw_tree(
                 legend_kwargs = {}
             ax.legend(handles=legend_handles, **legend_kwargs)  # pyright: ignore
 
-        return _draw_colored_tree(tree, ax, colors)
+        return draw_colored_tree(tree, ax, colors)
 
     if coloring == Coloring.CONTINUOUS:
         vmin = min(values) if vmin is None else vmin
@@ -132,17 +137,15 @@ def draw_tree(
             hist_kwargs = {} if hist_kwargs is None else hist_kwargs
             _, bins, patches = hist_ax.hist(values, **hist_kwargs)  # pyright: ignore
 
-            for patch, b0, b1 in zip(  # pyright: ignore
-                patches, bins[:-1], bins[1:]  # pyright: ignore
-            ):
+            for patch, b0, b1 in zip(patches, bins[:-1], bins[1:]):  # pyright: ignore
                 midpoint = (b0 + b1) / 2  # pyright: ignore
                 patch.set_facecolor(colormap(norm(midpoint)))  # pyright: ignore
-            return _draw_colored_tree(tree, ax, colors), hist_ax  # pyright: ignore
+            return draw_colored_tree(tree, ax, colors), hist_ax  # pyright: ignore
 
         else:
             sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
             ax.get_figure().colorbar(sm, ax=ax)  # pyright: ignore
-            return _draw_colored_tree(tree, ax, colors)
+            return draw_colored_tree(tree, ax, colors)
 
     raise ValueError(
         f"Unknown coloring method: {coloring}. Choices are {list(Coloring)}."

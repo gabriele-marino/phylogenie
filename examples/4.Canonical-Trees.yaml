@@ -7,9 +7,9 @@
 # The canonical parameterization of an MTBD model with m states/populations is characterized by the following parameters:
 # - An m-dimensional vector of birth rates;
 # - An m-dimensional vector of death rates;
-# - An m-dimensional vector of sampling rates.
+# - An m-dimensional vector of sampling rates;
 # - An mx(m-1)-dimensional matrix of migration (transition) rates;
-# - An mx(m-1)-dimensional matrix of transmission rates among states;
+# - An mx(m-1)-dimensional matrix of transmission rates among states.
 
 # In this example, we will generate a dataset consisting of 100 training samples using an MTBD model with m=3 states: A, B, and C.
 

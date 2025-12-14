@@ -7,9 +7,9 @@
 # The FBD parameterization of an MTBD model with m states/populations is characterized by the following parameters:
 # - An m-dimensional vector of diversification rates;
 # - An m-dimensional vector of turnover rates;
-# - An m-dimensional vector of sampling proportions.
+# - An m-dimensional vector of sampling proportions;
 # - An mx(m-1)-dimensional matrix of migration (transition) rates;
-# - An mx(m-1)-dimensional matrix of diversification rates among states;
+# - An mx(m-1)-dimensional matrix of diversification rates among states.
 
 # In this example, we will generate a dataset consisting of 100 training samples using an MTBD model with m=2 states: A and B. We draw the two diversification rates from a uniform distribution between 0.1 and 0.2, the two turnover rates from a uniform distribution between 0.3 and 0.5, and the (ancestor) sampling proportion (the same for both states) from a uniform distribution between 0.3 and 0.5. The migration rates from A to B and from B to A are set to 0.06 and 0.04, respectively. We also set full sampling at the present time.
 

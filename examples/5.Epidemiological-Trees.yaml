@@ -7,9 +7,9 @@
 # The canonical parameterization of an MTBD model with m states/populations is characterized by the following parameters:
 # - An m-dimensional vector of reproduction numbers;
 # - An m-dimensional vector of become uninfectious rates;
-# - An m-dimensional vector of sampling proportions.
+# - An m-dimensional vector of sampling proportions;
 # - An mx(m-1)-dimensional matrix of migration (transition) rates;
-# - An mx(m-1)-dimensional matrix of reproduction numbers among states;
+# - An mx(m-1)-dimensional matrix of reproduction numbers among states.
 
 # In this example, we will use the generic epidemiological parameterization to model a birth-death with exposed-infectious (BDEI) process, reproducing the dataset of the 2.BDEI-Trees.yaml example.
 
