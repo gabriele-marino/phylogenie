@@ -1,4 +1,11 @@
-from phylogenie.draw import Coloring, draw_tree
+from phylogenie.draw import (
+    draw_colored_dated_tree_categorical,
+    draw_colored_dated_tree_continuous,
+    draw_colored_tree_categorical,
+    draw_colored_tree_continuous,
+    draw_dated_tree,
+    draw_tree,
+)
 from phylogenie.generators import (
     AliSimDatasetGenerator,
     BDEITreeDatasetGenerator,
@@ -11,8 +18,8 @@ from phylogenie.generators import (
     FBDTreeDatasetGenerator,
     TreeDatasetGeneratorConfig,
 )
-from phylogenie.io import load_fasta
-from phylogenie.msa import MSA
+from phylogenie.io import dump_fasta, load_fasta
+from phylogenie.msa import MSA, Sequence
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -64,7 +71,11 @@ from phylogenie.treesimulator import (
 )
 
 __all__ = [
-    "Coloring",
+    "draw_colored_dated_tree_categorical",
+    "draw_colored_dated_tree_continuous",
+    "draw_colored_tree_categorical",
+    "draw_colored_tree_continuous",
+    "draw_dated_tree",
     "draw_tree",
     "AliSimDatasetGenerator",
     "BDEITreeDatasetGenerator",
@@ -76,8 +87,10 @@ __all__ = [
     "EpidemiologicalTreeDatasetGenerator",
     "FBDTreeDatasetGenerator",
     "TreeDatasetGeneratorConfig",
+    "dump_fasta",
     "load_fasta",
     "MSA",
+    "Sequence",
     "SkylineMatrix",
     "SkylineMatrixCoercible",
     "SkylineParameter",
