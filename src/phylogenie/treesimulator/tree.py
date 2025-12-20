@@ -159,8 +159,11 @@ class Tree(MetadataMixin):
     # Other useful miscellaneous methods.
 
     def ladderize(self, key: Callable[["Tree"], Any] | None = None) -> None:
+        def _default_key(node: Tree) -> int:
+            return node.n_leaves
+
         if key is None:
-            key = lambda node: node.n_leaves
+            key = _default_key
         self._children.sort(key=key)
         for child in self.children:
             child.ladderize(key)
@@ -169,7 +172,7 @@ class Tree(MetadataMixin):
         for node in self:
             if node.name == name:
                 return node
-        raise ValueError(f"Node with name {name} not found.")
+        raise ValueError(f"Node {name} not found.")
 
     def copy(self):
         new_tree = Tree(self.name, self.branch_length)

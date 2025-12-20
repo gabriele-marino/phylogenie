@@ -15,7 +15,7 @@ def _parse_translate_block(lines: Iterator[str]) -> dict[str, str]:
             if ";" in line:
                 return translations
             else:
-                raise ValueError(f"Invalid translate line. Expected '<num> <name>'.")
+                raise ValueError("Invalid translate line. Expected '<num> <name>'.")
         translations[match.group(1)] = match.group(2)
     raise ValueError("Translate block not terminated with ';'.")
 
@@ -33,7 +33,7 @@ def _parse_trees_block(lines: Iterator[str]) -> dict[str, Tree]:
             match = re.match(r"^TREE\s*\*?\s+(\S+)\s*=\s*(.+)$", line, re.IGNORECASE)
             if match is None:
                 raise ValueError(
-                    f"Invalid tree line. Expected 'TREE <name> = <newick>'."
+                    "Invalid tree line. Expected 'TREE <name> = <newick>'."
                 )
             name = match.group(1)
             if name in trees:

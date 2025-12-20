@@ -24,3 +24,11 @@ def load_fasta(
             chars = next(f).strip()
             sequences.append(Sequence(id, chars, time))
     return MSA(sequences)
+
+
+def dump_fasta(msa: MSA | list[Sequence], fasta_file: str | Path) -> None:
+    with open(fasta_file, "w") as f:
+        sequences = msa.sequences if isinstance(msa, MSA) else msa
+        for seq in sequences:
+            f.write(f">{seq.id}\n")
+            f.write(f"{seq.chars}\n")
