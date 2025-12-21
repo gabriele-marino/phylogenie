@@ -51,6 +51,17 @@ def get_node_heights(tree: Tree) -> dict[Tree, float]:
     return heights
 
 
+def get_node_times(tree: Tree) -> dict[Tree, float]:
+    return get_node_depths(tree)
+
+
+def get_node_ages(tree: Tree) -> dict[Tree, float]:
+    ages: dict[Tree, float] = {tree: tree.height}
+    for node in tree.iter_descendants():
+        ages[node] = ages[node.parent] - node.branch_length  # pyright: ignore
+    return ages
+
+
 def get_mrca(node1: Tree, node2: Tree) -> Tree:
     node1_ancestors = set(node1.iter_upward())
     for node2_ancestor in node2.iter_upward():

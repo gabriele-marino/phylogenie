@@ -153,6 +153,16 @@ class Tree(MetadataMixin):
             child.branch_length_or_raise() + child.height for child in self.children
         )
 
+    @property
+    def time(self) -> float:
+        return self.depth
+
+    @property
+    def age(self) -> float:
+        if self.parent is None:
+            return self.height
+        return self.parent.age - self.branch_length_or_raise()
+
     # -------------
     # Miscellaneous
     # -------------

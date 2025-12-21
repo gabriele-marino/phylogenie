@@ -119,11 +119,13 @@ n_tips: n_tips # Number of tips in the simulated trees
 node_features:  # List of features to compute and attach to each node of the simulated trees
   - n_leaves
   - depth
+  # - age # Age of each node
   # - depth_level # Depth level of each node
   # - height # Height of each node
   # - height_level # Height level of each node
   # - mutation # Mutation id of each node (useful for mutation models, cf. 8.BD-Mutation-Trees.yaml)
   # - state # State of each node (useful for multi-state models)
+  # - time # Time of each node
 
 # Other optional arguments are:
 # - max_time: float (infinity by default)

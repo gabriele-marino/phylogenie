@@ -5,11 +5,13 @@ from phylogenie.treesimulator.events.mutations import get_mutation_id
 from phylogenie.treesimulator.model import get_node_state
 from phylogenie.treesimulator.tree import Tree
 from phylogenie.treesimulator.utils import (
+    get_node_ages,
     get_node_depth_levels,
     get_node_depths,
     get_node_height_levels,
     get_node_heights,
     get_node_leaf_counts,
+    get_node_times,
 )
 
 
@@ -22,6 +24,7 @@ def _get_mutations(tree: Tree) -> dict[Tree, int]:
 
 
 class Feature(str, Enum):
+    AGE = "age"
     DEPTH = "depth"
     DEPTH_LEVEL = "depth_level"
     HEIGHT = "height"
@@ -29,9 +32,11 @@ class Feature(str, Enum):
     MUTATION = "mutation"
     N_LEAVES = "n_leaves"
     STATE = "state"
+    TIME = "time"
 
 
 FEATURES_EXTRACTORS = {
+    Feature.AGE: get_node_ages,
     Feature.DEPTH: get_node_depths,
     Feature.DEPTH_LEVEL: get_node_depth_levels,
     Feature.HEIGHT: get_node_heights,
@@ -39,6 +44,7 @@ FEATURES_EXTRACTORS = {
     Feature.MUTATION: _get_mutations,
     Feature.N_LEAVES: get_node_leaf_counts,
     Feature.STATE: _get_states,
+    Feature.TIME: get_node_times,
 }
 
 

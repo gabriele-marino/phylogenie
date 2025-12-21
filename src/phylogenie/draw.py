@@ -10,7 +10,12 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Colormap
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # pyright: ignore
 
-from phylogenie.treesimulator import Tree, get_node_depth_levels, get_node_depths
+from phylogenie.treesimulator import (
+    Tree,
+    get_node_ages,
+    get_node_depth_levels,
+    get_node_depths,
+)
 
 
 @dataclass
@@ -54,13 +59,12 @@ def draw_tree(
         colors = {node: colors for node in tree}
 
     xs = (
-        get_node_depth_levels(tree)
+        get_node_ages(tree)
+        if backward_time
+        else get_node_depth_levels(tree)
         if any(node.branch_length is None for node in tree.iter_descendants())
         else get_node_depths(tree)
     )
-    if backward_time:
-        max_x = max(xs.values())
-        xs = {node: max_x - x for node, x in xs.items()}
 
     ys: dict[Tree, float] = {node: i for i, node in enumerate(tree.get_leaves())}
     for node in tree.postorder_traversal():

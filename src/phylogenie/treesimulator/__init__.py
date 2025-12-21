@@ -27,11 +27,14 @@ from phylogenie.treesimulator.utils import (
     compute_sackin_index,
     get_distance,
     get_mrca,
+    get_node_ages,
     get_node_depth_levels,
     get_node_depths,
     get_node_height_levels,
     get_node_heights,
     get_node_leaf_counts,
+    get_node_times,
+    get_path,
 )
 
 __all__ = [
@@ -65,9 +68,12 @@ __all__ = [
     "compute_sackin_index",
     "get_distance",
     "get_mrca",
+    "get_node_ages",
     "get_node_depth_levels",
     "get_node_depths",
     "get_node_height_levels",
     "get_node_heights",
     "get_node_leaf_counts",
+    "get_node_times",
+    "get_path",
 ]
