@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import date
 
 import numpy as np
 
@@ -8,7 +9,7 @@ import numpy as np
 class Sequence:
     id: str
     chars: str
-    time: float | None = None
+    time: float | date | None = None
 
 
 class MSA:
@@ -25,8 +26,8 @@ class MSA:
         return [sequence.id for sequence in self.sequences]
 
     @property
-    def times(self) -> list[float]:
-        times: list[float] = []
+    def times(self) -> list[float | date]:
+        times: list[float | date] = []
         for sequence in self:
             if sequence.time is None:
                 raise ValueError(f"Time is not set for sequence {sequence.id}.")

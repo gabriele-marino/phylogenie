@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 from typing import Callable
 
@@ -5,7 +6,8 @@ from phylogenie.msa import MSA, Sequence
 
 
 def load_fasta(
-    fasta_file: str | Path, extract_time_from_id: Callable[[str], float] | None = None
+    fasta_file: str | Path,
+    extract_time_from_id: Callable[[str], float | date] | None = None,
 ) -> MSA:
     sequences: list[Sequence] = []
     with open(fasta_file, "r") as f:
@@ -17,10 +19,14 @@ def load_fasta(
             if extract_time_from_id is not None:
                 time = extract_time_from_id(id)
             elif "|" in id:
+                last_metadata = id.split("|")[-1]
                 try:
-                    time = float(id.split("|")[-1])
+                    time = float(last_metadata)
                 except ValueError:
-                    pass
+                    try:
+                        time = date.fromisoformat(last_metadata)
+                    except ValueError:
+                        pass
             chars = next(f).strip()
             sequences.append(Sequence(id, chars, time))
     return MSA(sequences)

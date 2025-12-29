@@ -382,7 +382,7 @@ def _init_colored_tree_continuous(
     vmin: float | None = ...,
     vmax: float | None = ...,
     *,
-    show_hist: Literal[True],
+    show_hist: Literal[True] = True,
     hist_kwargs: dict[str, Any] | None = ...,
     hist_axes_kwargs: dict[str, Any] | None = ...,
 ) -> tuple[Axes, dict[Tree, Color], Axes]: ...
@@ -394,7 +394,6 @@ def _init_colored_tree_continuous(
     colormap: str | Colormap = "viridis",
     vmin: float | None = None,
     vmax: float | None = None,
-    *,
     show_hist: bool = True,
     hist_kwargs: dict[str, Any] | None = None,
     hist_axes_kwargs: dict[str, Any] | None = None,
@@ -493,8 +492,7 @@ def draw_colored_tree_continuous(
     colormap: str | Colormap = "viridis",
     vmin: float | None = None,
     vmax: float | None = None,
-    *,
-    show_hist: Literal[True],
+    show_hist: Literal[True] = True,
     hist_kwargs: dict[str, Any] | None = None,
     hist_axes_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Axes, Axes]: ...
@@ -602,8 +600,7 @@ def draw_colored_dated_tree_continuous(
     colormap: str | Colormap = "viridis",
     vmin: float | None = None,
     vmax: float | None = None,
-    *,
-    show_hist: Literal[True],
+    show_hist: Literal[True] = True,
     hist_kwargs: dict[str, Any] | None = None,
     hist_axes_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Axes, Axes]: ...
