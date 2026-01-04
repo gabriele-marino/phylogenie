@@ -1,0 +1,79 @@
+# ------------------------------------
+# 6. Fossilize-birth-death (FBD) trees
+# ------------------------------------
+
+# This tutorial walks you through setting up a configuration file to simulate phylogenetic trees with a generic multi-type birth-death (MTBD) model using the fossilized birth-death (FBD) parameterization.
+
+# The FBD parameterization of an MTBD model with m states/populations is characterized by the following parameters:
+# - An m-dimensional vector of diversification rates;
+# - An m-dimensional vector of turnover rates;
+# - An m-dimensional vector of sampling proportions;
+# - An mx(m-1)-dimensional matrix of migration (transition) rates;
+# - An mx(m-1)-dimensional matrix of diversification rates among states.
+
+# In this example, we will generate a dataset consisting of 100 training samples using an MTBD model with m=2 states: A and B. We draw the two diversification rates from a uniform distribution between 0.1 and 0.2, the two turnover rates from a uniform distribution between 0.3 and 0.5, and the (ancestor) sampling proportion (the same for both states) from a uniform distribution between 0.3 and 0.5. The migration rates from A to B and from B to A are set to 0.06 and 0.04, respectively. We also set full sampling at the present time.
+
+# Each simulation runs for a maximum time of 15, and a tree is accepted if it has between 50 and 250 tips.
+
+# ---------------
+# General configs
+# ---------------
+
+output_dir: outputs/FBD-Trees
+data_type: trees
+n_samples: 100
+n_jobs: -1
+seed: 42
+
+# -------
+# Context
+# -------
+
+context:
+  d:
+    type: uniform
+    low: 0.1
+    high: 0.2
+    size: 2
+  t:
+    type: uniform
+    low: 0.3
+    high: 0.5
+    size: 2
+  s:
+    type: uniform
+    low: 0.3
+    high: 0.5
+
+# ------------------------------------
+# Parameterization-specific parameters
+# ------------------------------------
+
+# The FBD parameterization uses three SkylineVectors:
+# - sampling_proportions  (equal to 0 by default);
+# - diversification (equal to 0 by default);
+# - turnover (equal to 0 by default);
+# and two SkylineMatrices, that can be provided when the model involves more than one state:
+# - diversification_between_states (None by default);
+# - migration_rates (None by default).
+# It also needs you to specify the states involved in the simulation, as a list of strings, and assumes sampling without removal (ancestor sampling).
+
+parameterization: FBD
+states: [A, B]
+migration_rates: [[0.06], [0.04]]
+diversification: d
+turnover: t
+sampling_proportions: s
+
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+init_state: A
+max_time: 15
+sampling_probability_at_present: 1
+
+# Here we define an acceptance criterion to ensure that only trees with a number of tips between 50 and 250 are accepted.
+#acceptance_criterion: 50 <= tree.n_leaves <= 250
+# This acceptance criterion also includes singleton nodes in the count of tips (nodes whose branch lengths are zero). If you want to exclude singleton nodes, you can use the following acceptance criterion instead:
+acceptance_criterion: "50 <= sum(1 for l in tree.get_leaves() if l.branch_length > 0) <= 250"

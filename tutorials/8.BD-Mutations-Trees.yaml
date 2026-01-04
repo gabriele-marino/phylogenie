@@ -1,0 +1,109 @@
+# --------------------------
+# 8. BD trees with mutations
+# --------------------------
+
+# This tutorial walks you through setting up a configuration file to simulate phylogenetic trees under a birth-death model with mutations.
+
+# Mutations introduce new sets of states into the model.
+# When a mutation occurs, the model creates a new set of states labeled as MUT-<id>.<state>, where <id> is a unique integer identifier.
+# Each mutation event set mirrors the original states and events, but the rates of these events are rescaled by a factor that is randomly drawn at the time of mutation.
+# In this way, mutated lineages behave like the original model but with modified evolutionary dynamics.
+
+# In this example, we generate a dataset with 100 BD samples. For each sample:
+# - The reproduction number is drawn from a lognormal distribution (mean=1, sigma=0.2);
+# - The infectious period is drawn from a lognormal distribution (mean=1, sigma=0.3);
+# - The sampling proportion is drawn from a uniform distribution (low=0.1, high=1).
+
+# Two distinct mutation types are included:
+# Fitness-increasing mutation: rescales the birth rate by a factor drawn from a normal distribution (loc=2, scale=0.2).
+# Fitness-decreasing mutation: rescales the birth rate by a normal distribution (loc=0.5, scale=0.1).
+# For each sample, the overall mutation rate r is drawn from a uniform distribution (low=0.01, high=0.1), and the two mutation types occur at rates of r/2 each.
+
+# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
+
+# ---------------
+# General configs
+# ---------------
+
+output_dir: outputs/BD-Mutations-Trees
+data_type: trees
+n_samples: 100
+n_jobs: -1
+seed: 42
+
+# -------
+# Context
+# -------
+
+context:
+  R_0:
+    type: lognormal
+    mean: 1
+    sigma: 0.2
+  T_I:
+    type: lognormal
+    mean: 1
+    sigma: 0.3
+  s:
+    type: uniform
+    low: 0.1
+    high: 1
+  r:
+    type: uniform
+    low: 0.01
+    high: 0.1
+  n_tips:
+    type: integers
+    low: 50
+    high: 250
+
+# ------------------------------------
+# Parameterization-specific parameters
+# ------------------------------------
+
+parameterization: BD
+reproduction_number: R_0
+infectious_period: T_I
+sampling_proportion: s
+
+# --------------------------
+# Tree simulation parameters
+# --------------------------
+
+n_tips: n_tips
+timeout: 5
+node_features:
+  - n_leaves
+  - depth
+  - mutation
+  - height_level
+
+# ---------
+# Mutations
+# ---------
+
+# The mutation block is defined by a list of mutation objects and a list of event types for which the rescaled rates should be logged in the metadata (by default, no rates are logged).
+# Each mutation object includes the following keys:
+# - rate: scalar
+#   The rate at which the mutation occurs.
+# - rate_scalers: RateScaler
+#   Maps event types to the probability distribution that rescales their rates when the mutation occurs.
+#   The distribution is defined in the same format as in context variables and supports all distributions available in NumPy’s random generator.
+#   For details, see: https://numpy.org/devdocs/reference/random/generator.html#distributions  
+# Supported event types are: birth, death, migration, sampling, and mutation.
+
+mutations:
+  - rate: r / 2
+    rate_scalers:
+      birth:
+        type: normal
+        loc: 2
+        scale: 0.2
+  - rate: r / 2
+    rate_scalers:
+      birth:
+        type: normal
+        loc: 0.5
+        scale: 0.1
+rates_to_log:
+  - birth
