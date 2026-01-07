@@ -224,7 +224,7 @@ def _init_colored_tree_categorical(
     color_by: str,
     ax: Axes | None = None,
     default_color: Color = "black",
-    colormap: str | Colormap = "tab20",
+    colormap: str | dict[str, Color] | Colormap = "tab20",
     show_legend: bool = True,
     labels: dict[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
@@ -242,8 +242,11 @@ def _init_colored_tree_categorical(
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
         The color to use for nodes without the specified metadata.
-    colormap : str | Colormap, optional
-        The colormap to use for coloring categories. Defaults to 'tab20'.
+    colormap : str | dict[str, Color] | Colormap, optional
+        The colormap to use for coloring categories.
+        If a string, it is used to get a matplotlib colormap.
+        If a dict, it maps category values to colors directly.
+        Defaults to 'tab20'.
     show_legend : bool, optional
         Whether to display a legend for the categories.
     labels : dict[Any, str] | None, optional
@@ -259,13 +262,16 @@ def _init_colored_tree_categorical(
     if ax is None:
         ax = plt.gca()
 
+    features = {node: node[color_by] for node in tree if color_by in node.metadata}
     if isinstance(colormap, str):
         colormap = plt.get_cmap(colormap)
+    if isinstance(colormap, Colormap):
+        feature_colors = {
+            f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(features.values()))
+        }
+    else:
+        feature_colors = colormap
 
-    features = {node: node[color_by] for node in tree if color_by in node.metadata}
-    feature_colors = {
-        f: mcolors.to_hex(colormap(i)) for i, f in enumerate(set(features.values()))
-    }
     colors = {
         node: feature_colors[features[node]] if node in features else default_color
         for node in tree
