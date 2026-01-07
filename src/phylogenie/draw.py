@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, overload
 
@@ -30,7 +31,7 @@ Color = str | tuple[float, float, float] | tuple[float, float, float, float]
 def draw_tree(
     tree: Tree,
     ax: Axes | None = None,
-    colors: Color | dict[Tree, Color] = "black",
+    colors: Color | Mapping[Tree, Color] = "black",
     backward_time: bool = False,
     branch_kwargs: dict[str, Any] | None = None,
     sampled_ancestor_kwargs: dict[str, Any] | None = None,
@@ -44,8 +45,8 @@ def draw_tree(
         The phylogenetic tree to draw.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
-    colors : Color | dict[Tree, Color], optional
-        A single color for all branches or a dictionary mapping each node to a color.
+    colors : Color | Mapping[Tree, Color], optional
+        A single color for all branches or a mapping from each node to a color.
     backward_time : bool, optional
         If True, the x-axis is inverted to represent time going backward.
     branch_kwargs : dict[str, Any] | None, optional
@@ -67,7 +68,7 @@ def draw_tree(
     if "marker" not in sampled_ancestor_kwargs:
         sampled_ancestor_kwargs["marker"] = "o"
 
-    if not isinstance(colors, dict):
+    if not isinstance(colors, Mapping):
         colors = {node: colors for node in tree}
 
     xs = (
@@ -141,7 +142,7 @@ def draw_dated_tree(
     tree: Tree,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     ax: Axes | None = None,
-    colors: Color | dict[Tree, Color] = "black",
+    colors: Color | Mapping[Tree, Color] = "black",
     branch_kwargs: dict[str, Any] | None = None,
 ) -> Axes:
     """
@@ -155,8 +156,8 @@ def draw_dated_tree(
         Two calibration nodes defining the mapping from depth to date.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
-    colors : Color | dict[Tree, Color], optional
-        A single color for all branches or a dictionary mapping each node to a color.
+    colors : Color | Mapping[Tree, Color], optional
+        A single color for all branches or a mapping from each node to a color.
     branch_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the branch drawing functions.
 
@@ -170,7 +171,7 @@ def draw_dated_tree(
     if branch_kwargs is None:
         branch_kwargs = {}
 
-    if not isinstance(colors, dict):
+    if not isinstance(colors, Mapping):
         colors = {node: colors for node in tree}
 
     xs = {
@@ -224,9 +225,9 @@ def _init_colored_tree_categorical(
     color_by: str,
     ax: Axes | None = None,
     default_color: Color = "black",
-    colormap: str | dict[str, Color] | Colormap = "tab20",
+    colormap: str | Mapping[str, Color] | Colormap = "tab20",
     show_legend: bool = True,
-    labels: dict[Any, str] | None = None,
+    labels: Mapping[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Axes, dict[Tree, Color]]:
     """
@@ -242,14 +243,14 @@ def _init_colored_tree_categorical(
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
         The color to use for nodes without the specified metadata.
-    colormap : str | dict[str, Color] | Colormap, optional
+    colormap : str | Mapping[str, Color] | Colormap, optional
         The colormap to use for coloring categories.
         If a string, it is used to get a matplotlib colormap.
-        If a dict, it maps category values to colors directly.
+        If a mapping, it maps category values to colors directly.
         Defaults to 'tab20'.
     show_legend : bool, optional
         Whether to display a legend for the categories.
-    labels : dict[Any, str] | None, optional
+    labels : Mapping[Any, str] | None, optional
         A mapping from category values to labels for the legend.
     legend_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the legend.
@@ -300,9 +301,9 @@ def draw_colored_tree_categorical(
     ax: Axes | None = None,
     backward_time: bool = False,
     default_color: Color = "black",
-    colormap: str | dict[str, Color] | Colormap = "tab20",
+    colormap: str | Mapping[str, Color] | Colormap = "tab20",
     show_legend: bool = True,
-    labels: dict[Any, str] | None = None,
+    labels: Mapping[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
     branch_kwargs: dict[str, Any] | None = None,
     sampled_ancestor_kwargs: dict[str, Any] | None = None,
@@ -322,14 +323,14 @@ def draw_colored_tree_categorical(
         If True, the x-axis is inverted to represent time going backward.
     default_color : Color, optional
         The color to use for nodes without the specified metadata.
-    colormap : str | dict[str, Color] | Colormap, optional
+    colormap : str | Mapping[str, Color] | Colormap, optional
         The colormap to use for coloring categories.
         If a string, it is used to get a matplotlib colormap.
-        If a dict, it maps category values to colors directly.
+        If a mapping, it maps category values to colors directly.
         Defaults to 'tab20'.
     show_legend : bool, optional
         Whether to display a legend for the categories.
-    labels : dict[Any, str] | None, optional
+    labels : Mapping[Any, str] | None, optional
         A mapping from category values to labels for the legend.
     legend_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the legend.
@@ -369,9 +370,9 @@ def draw_colored_dated_tree_categorical(
     color_by: str,
     ax: Axes | None = None,
     default_color: Color = "black",
-    colormap: str | dict[str, Color] | Colormap = "tab20",
+    colormap: str | Mapping[str, Color] | Colormap = "tab20",
     show_legend: bool = True,
-    labels: dict[Any, str] | None = None,
+    labels: Mapping[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
     branch_kwargs: dict[str, Any] | None = None,
 ) -> Axes:
@@ -390,14 +391,14 @@ def draw_colored_dated_tree_categorical(
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
         The color to use for nodes without the specified metadata.
-    colormap : str | dict[str, Color] | Colormap, optional
+    colormap : str | Mapping[str, Color] | Colormap, optional
         The colormap to use for coloring categories.
         If a string, it is used to get a matplotlib colormap.
-        If a dict, it maps category values to colors directly.
+        If a mapping, it maps category values to colors directly.
         Defaults to 'tab20'.
     show_legend : bool, optional
         Whether to display a legend for the categories.
-    labels : dict[Any, str] | None, optional
+    labels : Mapping[Any, str] | None, optional
         A mapping from category values to labels for the legend.
     legend_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the legend.
