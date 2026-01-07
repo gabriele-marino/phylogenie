@@ -1,11 +1,3 @@
-from phylogenie.draw import (
-    draw_colored_dated_tree_categorical,
-    draw_colored_dated_tree_continuous,
-    draw_colored_tree_categorical,
-    draw_colored_tree_continuous,
-    draw_dated_tree,
-    draw_tree,
-)
 from phylogenie.generators import (
     AliSimDatasetGenerator,
     BDEITreeDatasetGenerator,
@@ -71,12 +63,6 @@ from phylogenie.treesimulator import (
 )
 
 __all__ = [
-    "draw_colored_dated_tree_categorical",
-    "draw_colored_dated_tree_continuous",
-    "draw_colored_tree_categorical",
-    "draw_colored_tree_continuous",
-    "draw_dated_tree",
-    "draw_tree",
     "AliSimDatasetGenerator",
     "BDEITreeDatasetGenerator",
     "BDSSTreeDatasetGenerator",

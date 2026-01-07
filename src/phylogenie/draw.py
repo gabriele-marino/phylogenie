@@ -1,5 +1,5 @@
+import datetime
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Literal, overload
 
 import matplotlib.colors as mcolors
@@ -21,7 +21,7 @@ from phylogenie.treesimulator import (
 @dataclass
 class CalibrationNode:
     node: Tree
-    date: datetime
+    date: datetime.date
 
 
 Color = str | tuple[float, float, float] | tuple[float, float, float, float]
@@ -115,7 +115,7 @@ def draw_tree(
 
 def _depth_to_date(
     depth: float, calibration_nodes: tuple[CalibrationNode, CalibrationNode]
-) -> datetime:
+) -> datetime.date:
     """
     Convert a depth value to a date using linear interpolation between two calibration nodes.
 
@@ -128,7 +128,7 @@ def _depth_to_date(
 
     Returns
     -------
-    datetime
+    datetime.date
         The interpolated date corresponding to the given depth.
     """
     node1, node2 = calibration_nodes

@@ -8,7 +8,6 @@
 [![PyPI version](https://img.shields.io/pypi/v/phylogenie)](https://pypi.org/project/phylogenie/)
 ![Downloads](https://img.shields.io/pypi/dm/phylogenie)
 
-
 Phylogenie is a [Python](https://www.python.org/) package designed to easily simulate phylogenetic datasets—such as trees and multiple sequence alignments (MSAs)—with minimal setup effort. Simply specify the distributions from which your parameters should be sampled, and Phylogenie will handle the rest!
 
 ## ✨ Features
@@ -58,21 +57,21 @@ Phylogenie relies on [AliSim](https://iqtree.github.io/doc/AliSim) for simulatin
 
 ## 🚀 Quick Start
 
-Once you have installed Phylogenie, check out the [examples](https://github.com/gabriele-marino/phylogenie/tree/main/examples) folder.  
+Once you have installed Phylogenie, check out the [tutorials](https://github.com/gabriele-marino/phylogenie/tree/main/tutorials) folder.  
 It includes a collection of thoroughly commented configuration files, organized as a step-by-step tutorial. These examples will help you understand how to use Phylogenie in practice and can be easily adapted to fit your own workflow.
 
 For quick start, pick your favorite config file and run Phylogenie with:
 ```bash
-phylogenie examples/config_file.yaml
+phylogenie tutorials/config_file.yaml
 ```
 This command will create the output dataset in the folder specified inside the configuration file, including data directories and metadata files for each dataset split defined in the config.
 
 >❗ *Tip*: Can’t choose just one config file?
-You can run them all at once by pointing Phylogenie to the folder! Just use: `phylogenie examples`. In this mode, Phylogenie will automatically find all `.yaml` files in the folder you specified and run for each of them!
+You can run them all at once by pointing Phylogenie to the folder! Just use: `phylogenie tutorials`. In this mode, Phylogenie will automatically find all `.yaml` files in the folder you specified and run for each of them!
 
 ## 📖 Documentation
 
-- The [examples](https://github.com/gabriele-marino/phylogenie/tree/main/examples) folder contains many ready-to-use, extensively commented configuration files that serve as a step-by-step tutorial to guide you through using Phylogenie. You can explore them to learn how it works or adapt them directly to your own workflows.
+- The [tutorials](https://github.com/gabriele-marino/phylogenie/tree/main/tutorials) folder contains many ready-to-use, extensively commented configuration files that serve as a step-by-step tutorial to guide you through using Phylogenie. You can explore them to learn how it works or adapt them directly to your own workflows.
 - A complete user guide and API reference are under development. In the meantime, feel free to [reach out](mailto:gabmarino.8601@email.com) if you have any questions about integrating Phylogenie into your workflows.
 
 ## 📄 License
