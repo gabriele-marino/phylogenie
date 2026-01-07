@@ -300,7 +300,7 @@ def draw_colored_tree_categorical(
     ax: Axes | None = None,
     backward_time: bool = False,
     default_color: Color = "black",
-    colormap: str | Colormap = "tab20",
+    colormap: str | dict[str, Color] | Colormap = "tab20",
     show_legend: bool = True,
     labels: dict[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
@@ -322,8 +322,11 @@ def draw_colored_tree_categorical(
         If True, the x-axis is inverted to represent time going backward.
     default_color : Color, optional
         The color to use for nodes without the specified metadata.
-    colormap : str | Colormap, optional
-        The colormap to use for coloring categories. Defaults to 'tab20'.
+    colormap : str | dict[str, Color] | Colormap, optional
+        The colormap to use for coloring categories.
+        If a string, it is used to get a matplotlib colormap.
+        If a dict, it maps category values to colors directly.
+        Defaults to 'tab20'.
     show_legend : bool, optional
         Whether to display a legend for the categories.
     labels : dict[Any, str] | None, optional
@@ -366,7 +369,7 @@ def draw_colored_dated_tree_categorical(
     color_by: str,
     ax: Axes | None = None,
     default_color: Color = "black",
-    colormap: str | Colormap = "tab20",
+    colormap: str | dict[str, Color] | Colormap = "tab20",
     show_legend: bool = True,
     labels: dict[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
@@ -387,8 +390,11 @@ def draw_colored_dated_tree_categorical(
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
         The color to use for nodes without the specified metadata.
-    colormap : str | Colormap, optional
-        The colormap to use for coloring categories. Defaults to 'tab20'.
+    colormap : str | dict[str, Color] | Colormap, optional
+        The colormap to use for coloring categories.
+        If a string, it is used to get a matplotlib colormap.
+        If a dict, it maps category values to colors directly.
+        Defaults to 'tab20'.
     show_legend : bool, optional
         Whether to display a legend for the categories.
     labels : dict[Any, str] | None, optional
