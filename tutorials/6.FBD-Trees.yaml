@@ -73,7 +73,7 @@ init_state: A
 max_time: 15
 sampling_probability_at_present: 1
 
-# Here we define an acceptance criterion to ensure that only trees with a number of tips between 50 and 250 are accepted.
-#acceptance_criterion: 50 <= tree.n_leaves <= 250
-# This acceptance criterion also includes singleton nodes in the count of tips (nodes whose branch lengths are zero). If you want to exclude singleton nodes, you can use the following acceptance criterion instead:
-acceptance_criterion: "50 <= sum(1 for l in tree.get_leaves() if l.branch_length > 0) <= 250"
+# Here we define an acceptance criterion to ensure that only trees with a number of leaves between 50 and 250 are accepted.
+acceptance_criterion: 50 <= tree.n_leaves <= 250
+# This acceptance criterion also includes singleton nodes in the count of leaves (nodes whose branch lengths are zero). If you want to exclude singleton nodes, you can use the following acceptance criterion instead:
+# acceptance_criterion: "50 <= sum(1 for l in tree.get_leaves() if l.branch_length > 0) <= 250"

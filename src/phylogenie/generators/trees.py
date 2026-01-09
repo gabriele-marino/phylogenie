@@ -12,6 +12,7 @@ from phylogenie.generators.configs import Distribution
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import (
     data,
+    eval_expression,
     integer,
     mutations,
     scalar,
@@ -77,8 +78,10 @@ class TreeDatasetGenerator(DatasetGenerator):
         acceptance_criterion: None | Callable[[Tree], bool] = (
             None
             if self.acceptance_criterion is None
-            else lambda tree: eval(
-                self.acceptance_criterion, {}, {"tree": tree}  # pyright: ignore
+            else lambda tree: eval_expression(
+                self.acceptance_criterion,  # pyright: ignore
+                data,
+                {"tree": tree},
             )
         )
         return simulate_tree(

@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import date
 
@@ -11,15 +11,22 @@ class Sequence:
     chars: str
     time: float | date | None = None
 
+    def __len__(self) -> int:
+        return len(self.chars)
+
 
 class MSA:
-    def __init__(self, sequences: list[Sequence]):
-        self.sequences = sequences
-        lengths = {len(sequence.chars) for sequence in sequences}
+    def __init__(self, sequences: Iterable[Sequence]):
+        self._sequences = sequences
+        lengths = {len(sequence) for sequence in sequences}
         if len(lengths) > 1:
             raise ValueError(
                 f"All sequences in the alignment must have the same length (got lengths: {lengths})"
             )
+
+    @property
+    def sequences(self) -> tuple[Sequence, ...]:
+        return tuple(self._sequences)
 
     @property
     def ids(self) -> list[str]:

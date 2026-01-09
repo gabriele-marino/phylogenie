@@ -1,14 +1,14 @@
-# Python-generated files
 __pycache__/
 .pytest_cache/
-*.py[oc]
-build/
+
+*.pyd
+*.pyd
+*.so
+
 dist/
-wheels/
+/rust/target/
 *.egg-info
 
-# Virtual environments
 .venv
 
-# Project-specific ignores
 outputs/

@@ -19,18 +19,22 @@ from phylogenie.skyline import (
 from phylogenie.treesimulator import EventType, Mutation
 
 
-def _eval_expression(expression: str, data: dict[str, Any]) -> Any:
+def eval_expression(
+    expression: str, data: dict[str, Any], extra_globals: dict[str, Any] | None = None
+) -> Any:
+    if extra_globals is None:
+        extra_globals = {}
     return np.array(
         eval(
             expression,
-            {"np": np, **{k: np.array(v) for k, v in data.items()}},
+            {"np": np, **{k: np.array(v) for k, v in data.items()}, **extra_globals},
         )
     ).tolist()
 
 
 def integer(x: cfg.Integer, data: dict[str, Any]) -> int:
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if isinstance(e, int):
             return e
         raise ValueError(
@@ -41,7 +45,7 @@ def integer(x: cfg.Integer, data: dict[str, Any]) -> int:
 
 def scalar(x: cfg.Scalar, data: dict[str, Any]) -> pgt.Scalar:
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if isinstance(e, pgt.Scalar):
             return e
         raise ValueError(
@@ -54,13 +58,13 @@ def string(s: Any, data: dict[str, Any]) -> str:
     if not isinstance(s, str):
         return str(s)
     return re.sub(
-        r"\{([^{}]+)\}", lambda match: str(_eval_expression(match.group(1), data)), s
+        r"\{([^{}]+)\}", lambda match: str(eval_expression(match.group(1), data)), s
     )  # Match content inside curly braces
 
 
 def many_scalars(x: cfg.ManyScalars, data: dict[str, Any]) -> pgt.ManyScalars:
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if tg.is_many_scalars(e):
             return e
         raise ValueError(
@@ -73,7 +77,7 @@ def one_or_many_scalars(
     x: cfg.OneOrManyScalars, data: dict[str, Any]
 ) -> pgt.OneOrManyScalars:
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if tg.is_one_or_many_scalars(e):
             return e
         raise ValueError(
@@ -99,7 +103,7 @@ def skyline_vector(
     x: cfg.SkylineVector, data: dict[str, Any]
 ) -> SkylineVectorCoercible:
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if tg.is_one_or_many_scalars(e):
             return e
         raise ValueError(
@@ -114,7 +118,7 @@ def skyline_vector(
 
     change_times = many_scalars(x.change_times, data)
     if isinstance(x.value, str):
-        e = _eval_expression(x.value, data)
+        e = eval_expression(x.value, data)
         if tg.is_many_one_or_many_scalars(e):
             value = e
         else:
@@ -142,7 +146,7 @@ def one_or_many_2D_scalars(
     x: cfg.OneOrMany2DScalars, data: dict[str, Any]
 ) -> pgt.OneOrMany2DScalars:
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if tg.is_one_or_many_2D_scalars(e):
             return e
         raise ValueError(
@@ -160,7 +164,7 @@ def skyline_matrix(
         return None
 
     if isinstance(x, str):
-        e = _eval_expression(x, data)
+        e = eval_expression(x, data)
         if tg.is_one_or_many_2D_scalars(e):
             return e
         raise ValueError(
@@ -175,7 +179,7 @@ def skyline_matrix(
 
     change_times = many_scalars(x.change_times, data)
     if isinstance(x.value, str):
-        e = _eval_expression(x.value, data)
+        e = eval_expression(x.value, data)
         if tg.is_many_one_or_many_2D_scalars(e):
             value = e
         else:
@@ -213,7 +217,7 @@ def distribution(x: cfg.Distribution, data: dict[str, Any]) -> cfg.Distribution:
     args = x.args
     for arg_name, arg_value in args.items():
         if isinstance(arg_value, str):
-            args[arg_name] = _eval_expression(arg_value, data)
+            args[arg_name] = eval_expression(arg_value, data)
     return cfg.Distribution(type=x.type, **args)
 
 
