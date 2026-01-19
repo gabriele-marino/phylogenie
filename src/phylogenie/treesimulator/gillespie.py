@@ -25,6 +25,7 @@ def simulate_tree(
     seed: int | None = None,
     timeout: float = np.inf,
     acceptance_criterion: Callable[[Tree], bool] | None = None,
+    logs: dict[str, Callable[[Tree], Any]] | None = None,
 ) -> tuple[Tree, dict[str, Any]]:
     if (max_time != np.inf) == (n_tips is not None):
         raise ValueError("Exactly one of max_time or n_tips must be specified.")
@@ -85,7 +86,13 @@ def simulate_tree(
                 model.sample(individual, current_time, True)
 
         tree = model.get_sampled_tree()
-        if acceptance_criterion is None or acceptance_criterion(tree):
+
+        if acceptance_criterion is not None and not acceptance_criterion(tree):
+            continue
+
+        if logs is not None:
+            for key, func in logs.items():
+                metadata[key] = func(tree)
             return (tree, metadata)
 
 
@@ -102,6 +109,7 @@ def generate_trees(
     n_jobs: int = -1,
     timeout: float = np.inf,
     acceptance_criterion: Callable[[Tree], bool] | None = None,
+    logs: dict[str, Callable[[Tree], Any]] | None = None,
 ) -> pd.DataFrame:
     if isinstance(output_dir, str):
         output_dir = Path(output_dir)
@@ -121,6 +129,7 @@ def generate_trees(
                     seed=seed,
                     timeout=timeout,
                     acceptance_criterion=acceptance_criterion,
+                    logs=logs,
                 )
                 metadata["file_id"] = i
                 if node_features is not None:
@@ -128,7 +137,7 @@ def generate_trees(
                 dump_newick(tree, output_dir / f"{i}.nwk")
                 return metadata
             except TimeoutError:
-                print("Simulation timed out, retrying with a different seed...")
+                print("Simulation timed out. Retrying with a different seed...")
             seed += 1
 
     rng = default_rng(seed)

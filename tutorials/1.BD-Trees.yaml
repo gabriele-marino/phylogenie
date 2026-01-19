@@ -142,3 +142,5 @@ node_features:  # List of features to compute and attach to each node of the sim
 #   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.
 # - acceptance_criterion: str (None by default)
 #   A string representing a Python boolean function that takes a Tree object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie Tree class (cfr. 6.FBD-Trees.yaml).
+# - logs: dict[str, str] (None by default)
+#   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree. The expressions can refer to any attribute or method of the Phylogenie Tree class.

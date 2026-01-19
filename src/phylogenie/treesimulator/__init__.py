@@ -25,6 +25,7 @@ from phylogenie.treesimulator.tree import Tree
 from phylogenie.treesimulator.utils import (
     compute_mean_leaf_pairwise_distance,
     compute_sackin_index,
+    count_hops,
     get_distance,
     get_mrca,
     get_node_ages,
@@ -66,6 +67,7 @@ __all__ = [
     "Tree",
     "compute_mean_leaf_pairwise_distance",
     "compute_sackin_index",
+    "count_hops",
     "get_distance",
     "get_mrca",
     "get_node_ages",

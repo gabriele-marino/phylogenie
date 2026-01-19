@@ -58,6 +58,7 @@ class TreeDatasetGenerator(DatasetGenerator):
     timeout: float = np.inf
     node_features: list[Feature] | None = None
     acceptance_criterion: str | None = None
+    logs: dict[str, str] | None = None
 
     @abstractmethod
     def _get_events(self, data: dict[str, Any]) -> list[Event]: ...
@@ -84,6 +85,15 @@ class TreeDatasetGenerator(DatasetGenerator):
                 {"tree": tree},
             )
         )
+        logs: None | dict[str, Callable[[Tree], Any]] = (
+            None
+            if self.logs is None
+            else {
+                key: lambda tree, expr=expr: eval_expression(expr, data, {"tree": tree})
+                for key, expr in self.logs.items()
+            }
+        )
+
         return simulate_tree(
             events=events,
             n_tips=None if self.n_tips is None else integer(self.n_tips, data),
@@ -95,6 +105,7 @@ class TreeDatasetGenerator(DatasetGenerator):
             seed=seed,
             timeout=self.timeout,
             acceptance_criterion=acceptance_criterion,
+            logs=logs,
         )
 
     def generate_one(
@@ -114,7 +125,7 @@ class TreeDatasetGenerator(DatasetGenerator):
                 dump_newick(tree, f"{filename}.nwk")
                 break
             except TimeoutError:
-                print("Simulation timed out, retrying with different parameters...")
+                print("Simulation timed out. Retrying with different parameters...")
         return d | metadata
 
 
