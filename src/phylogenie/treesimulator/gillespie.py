@@ -58,11 +58,11 @@ def simulate_tree(
             if time.perf_counter() - start_clock > timeout:
                 raise TimeoutError("Simulation timed out.")
 
-            rates = [e.get_propensity(model, current_time) for e in run_events]
-            if not any(rates):
+            propensities = [e.get_propensity(model, current_time) for e in run_events]
+            if not any(propensities):
                 break
 
-            time_step = rng.exponential(1 / sum(rates))
+            time_step = rng.exponential(1 / sum(propensities))
             if current_time + time_step >= next_change_time:
                 current_time = next_change_time
                 next_change_time = change_times.pop(0) if change_times else np.inf
@@ -72,7 +72,9 @@ def simulate_tree(
                 break
             current_time += time_step
 
-            event_idx = np.searchsorted(np.cumsum(rates) / sum(rates), rng.random())
+            event_idx = np.searchsorted(
+                np.cumsum(propensities) / sum(propensities), rng.random()
+            )
             event = run_events[int(event_idx)]
             event_metadata = event.apply(model, run_events, current_time, rng)
             if event_metadata is not None:
@@ -93,7 +95,8 @@ def simulate_tree(
         if logs is not None:
             for key, func in logs.items():
                 metadata[key] = func(tree)
-            return (tree, metadata)
+
+        return (tree, metadata)
 
 
 def generate_trees(
