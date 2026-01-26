@@ -73,7 +73,7 @@ def draw_tree(
         if backward_time
         else tree.depth_levels
         if any(node.branch_length is None for node in root.iter_descendants())
-        else tree.depths
+        else tree.times
     )
 
     leaves = tree.get_leaves()
@@ -111,31 +111,31 @@ def draw_tree(
     return ax
 
 
-def _depth_to_date(
-    depth: float, tree: Tree, calibration_nodes: tuple[CalibrationNode, CalibrationNode]
+def _time_to_date(
+    time: float, tree: Tree, calibration_nodes: tuple[CalibrationNode, CalibrationNode]
 ) -> datetime.date:
     """
-    Convert a depth value to a date using linear interpolation between two calibration nodes.
+    Convert a time value to a date using linear interpolation between two calibration nodes.
 
     Parameters
     ----------
-    depth : float
-        The depth value to convert.
+    time : float
+        The time value to convert.
     tree : Tree
         The phylogenetic tree.
     calibration_nodes : tuple[CalibrationNode, CalibrationNode]
-        Two calibration nodes defining the mapping from depth to date.
+        Two calibration nodes defining the mapping from time to date.
 
     Returns
     -------
     datetime.date
-        The interpolated date corresponding to the given depth.
+        The interpolated date corresponding to the given time.
     """
     node1, node2 = calibration_nodes
-    depths = tree.depths
-    depth1, depth2 = depths[node1.node], depths[node2.node]
+    times = tree.times
+    time1, time2 = times[node1.node], times[node2.node]
     date1, date2 = node1.date, node2.date
-    return date1 + (depth - depth1) * (date2 - date1) / (depth2 - depth1)
+    return date1 + (time - time1) * (date2 - date1) / (time2 - time1)
 
 
 def draw_dated_tree(
@@ -177,10 +177,8 @@ def draw_dated_tree(
     root = tree.root
 
     xs = {
-        node: _depth_to_date(
-            depth=depth, tree=tree, calibration_nodes=calibration_nodes
-        )
-        for node, depth in tree.depths.items()
+        node: _time_to_date(time=time, tree=tree, calibration_nodes=calibration_nodes)
+        for node, time in tree.times.items()
     }
 
     ys: dict[Node, float] = {node: i for i, node in enumerate(tree.get_leaves())}
@@ -189,8 +187,8 @@ def draw_dated_tree(
             ys[node] = sum(ys[child] for child in node.children) / len(node.children)
 
     if root.branch_length is not None:
-        origin_date = _depth_to_date(
-            depth=0, tree=tree, calibration_nodes=calibration_nodes
+        origin_date = _time_to_date(
+            time=0, tree=tree, calibration_nodes=calibration_nodes
         )
         ax.hlines(  # pyright: ignore
             y=ys[root],

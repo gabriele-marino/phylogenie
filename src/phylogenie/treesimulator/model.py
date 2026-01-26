@@ -56,8 +56,8 @@ class Model(MetadataMixin):
     def _set_branch_length(self, node: Node, time: float) -> None:
         if node.branch_length is not None:
             raise ValueError(f"Branch length of node {node.name} is already set.")
-        parent_depth = 0.0 if node.parent is None else self._times[node.parent]
-        node.branch_length = time - parent_depth
+        parent_time = 0.0 if node.parent is None else self._times[node.parent]
+        node.branch_length = time - parent_time
         self._times[node] = time
 
     def _stem(self, individual: Individual, time: float) -> None:
