@@ -8,7 +8,7 @@ from numpy.random import Generator, default_rng
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import data, string
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
-from phylogenie.treesimulator import dump_newick, get_node_depths
+from phylogenie.io import dump_newick
 
 MSAS_DIRNAME = "MSAs"
 TREES_DIRNAME = "trees"
@@ -72,7 +72,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
                 )
         md.update(metadata)
 
-        times = get_node_depths(tree)
+        times = tree.times
         for leaf in tree.get_leaves():
             leaf.name += f"|{times[leaf]}"
         dump_newick(tree, f"{tree_filename}.nwk")

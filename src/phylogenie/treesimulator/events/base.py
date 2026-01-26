@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import Any
 
 from numpy.random import Generator
@@ -8,17 +7,7 @@ from phylogenie.skyline import SkylineParameterLike, skyline_parameter
 from phylogenie.treesimulator.model import Model
 
 
-class EventType(str, Enum):
-    BIRTH = "birth"
-    DEATH = "death"
-    MIGRATION = "migration"
-    SAMPLING = "sampling"
-    MUTATION = "mutation"
-
-
 class Event(ABC):
-    type: EventType
-
     def __init__(self, state: str, rate: SkylineParameterLike):
         self.state = state
         self.rate = skyline_parameter(rate)
@@ -35,5 +24,5 @@ class Event(ABC):
 
     @abstractmethod
     def apply(
-        self, model: Model, events: "list[Event]", time: float, rng: Generator
+        self, model: Model, time: float, rng: Generator
     ) -> dict[str, Any] | None: ...

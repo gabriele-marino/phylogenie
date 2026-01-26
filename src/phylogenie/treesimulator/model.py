@@ -1,14 +1,14 @@
 from collections import defaultdict
 from dataclasses import dataclass
 
+from phylogenie.core import Node, Tree
 from phylogenie.mixins import MetadataMixin
-from phylogenie.treesimulator.tree import Tree
 
 
 @dataclass
 class Individual:
     id: int
-    node: Tree
+    node: Node
     state: str
 
 
@@ -32,15 +32,16 @@ class Model(MetadataMixin):
         self._population: dict[int, Individual] = {}
         self._states: dict[str, set[int]] = defaultdict(set)
         self._sampled: set[str] = set()
-        self._tree = self._get_new_individual(init_state).node
+        self._times: dict[Node, float] = {}
+        self._tree = Tree(self._get_new_individual(init_state).node)
 
     @property
     def n_sampled(self) -> int:
         return len(self._sampled)
 
-    def _get_new_node(self, state: str) -> Tree:
+    def _get_new_node(self, state: str) -> Node:
         self._next_node_id += 1
-        node = Tree(_get_node_name(self._next_node_id, state))
+        node = Node(_get_node_name(self._next_node_id, state))
         return node
 
     def _get_new_individual(self, state: str) -> Individual:
@@ -52,10 +53,12 @@ class Model(MetadataMixin):
         self._states[state].add(individual.id)
         return individual
 
-    def _set_branch_length(self, node: Tree, time: float) -> None:
+    def _set_branch_length(self, node: Node, time: float) -> None:
         if node.branch_length is not None:
             raise ValueError(f"Branch length of node {node.name} is already set.")
-        node.branch_length = time if node.parent is None else time - node.parent.depth
+        parent_depth = 0.0 if node.parent is None else self._times[node.parent]
+        node.branch_length = time - parent_depth
+        self._times[node] = time
 
     def _stem(self, individual: Individual, time: float) -> None:
         self._set_branch_length(individual.node, time)
@@ -111,7 +114,7 @@ class Model(MetadataMixin):
                 child.set_parent(node.parent)
                 child.branch_length += node.branch_length  # pyright: ignore
                 if node.parent is None:
-                    return child
+                    return Tree(child)
                 else:
                     node.parent.remove_child(node)
         return tree

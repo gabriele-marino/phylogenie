@@ -11,17 +11,12 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Colormap
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # pyright: ignore
 
-from phylogenie.treesimulator import (
-    Tree,
-    get_node_ages,
-    get_node_depth_levels,
-    get_node_depths,
-)
+from phylogenie.core import Node, Tree
 
 
 @dataclass
 class CalibrationNode:
-    node: Tree
+    node: Node
     date: datetime.date
 
 
@@ -31,7 +26,7 @@ Color = str | tuple[float, float, float] | tuple[float, float, float, float]
 def draw_tree(
     tree: Tree,
     ax: Axes | None = None,
-    colors: Color | Mapping[Tree, Color] = "black",
+    colors: Color | Mapping[Node, Color] = "black",
     backward_time: bool = False,
     branch_kwargs: dict[str, Any] | None = None,
     sampled_ancestor_kwargs: dict[str, Any] | None = None,
@@ -45,7 +40,7 @@ def draw_tree(
         The phylogenetic tree to draw.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
-    colors : Color | Mapping[Tree, Color], optional
+    colors : Color | Mapping[Node, Color], optional
         A single color for all branches or a mapping from each node to a color.
     backward_time : bool, optional
         If True, the x-axis is inverted to represent time going backward.
@@ -71,16 +66,18 @@ def draw_tree(
     if not isinstance(colors, Mapping):
         colors = {node: colors for node in tree}
 
+    root = tree.root
+
     xs = (
-        get_node_ages(tree)
+        tree.ages
         if backward_time
-        else get_node_depth_levels(tree)
-        if any(node.branch_length is None for node in tree.iter_descendants())
-        else get_node_depths(tree)
+        else tree.depth_levels
+        if any(node.branch_length is None for node in root.iter_descendants())
+        else tree.depths
     )
 
     leaves = tree.get_leaves()
-    ys: dict[Tree, float] = {
+    ys: dict[Node, float] = {
         node: i
         for i, node in enumerate(leaves)
         if node.parent is None or node.branch_length != 0
@@ -93,10 +90,10 @@ def draw_tree(
         if leaf.parent is not None and leaf.branch_length == 0:
             ys[leaf] = ys[leaf.parent]
 
-    if tree.branch_length is not None:
-        xmin = xs[tree] + tree.branch_length if backward_time else 0
+    if root.branch_length is not None:
+        xmin = xs[root] + root.branch_length if backward_time else 0
         ax.hlines(  # pyright: ignore
-            y=ys[tree], xmin=xmin, xmax=xs[tree], color=colors[tree], **branch_kwargs
+            y=ys[root], xmin=xmin, xmax=xs[root], color=colors[root], **branch_kwargs
         )
     for node in tree:
         x1, y1 = xs[node], ys[node]
@@ -115,7 +112,7 @@ def draw_tree(
 
 
 def _depth_to_date(
-    depth: float, calibration_nodes: tuple[CalibrationNode, CalibrationNode]
+    depth: float, tree: Tree, calibration_nodes: tuple[CalibrationNode, CalibrationNode]
 ) -> datetime.date:
     """
     Convert a depth value to a date using linear interpolation between two calibration nodes.
@@ -124,6 +121,8 @@ def _depth_to_date(
     ----------
     depth : float
         The depth value to convert.
+    tree : Tree
+        The phylogenetic tree.
     calibration_nodes : tuple[CalibrationNode, CalibrationNode]
         Two calibration nodes defining the mapping from depth to date.
 
@@ -133,7 +132,8 @@ def _depth_to_date(
         The interpolated date corresponding to the given depth.
     """
     node1, node2 = calibration_nodes
-    depth1, depth2 = node1.node.depth, node2.node.depth
+    depths = tree.depths
+    depth1, depth2 = depths[node1.node], depths[node2.node]
     date1, date2 = node1.date, node2.date
     return date1 + (depth - depth1) * (date2 - date1) / (depth2 - depth1)
 
@@ -142,7 +142,7 @@ def draw_dated_tree(
     tree: Tree,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     ax: Axes | None = None,
-    colors: Color | Mapping[Tree, Color] = "black",
+    colors: Color | Mapping[Node, Color] = "black",
     branch_kwargs: dict[str, Any] | None = None,
 ) -> Axes:
     """
@@ -156,7 +156,7 @@ def draw_dated_tree(
         Two calibration nodes defining the mapping from depth to date.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
-    colors : Color | Mapping[Tree, Color], optional
+    colors : Color | Mapping[Node, Color], optional
         A single color for all branches or a mapping from each node to a color.
     branch_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the branch drawing functions.
@@ -174,23 +174,29 @@ def draw_dated_tree(
     if not isinstance(colors, Mapping):
         colors = {node: colors for node in tree}
 
+    root = tree.root
+
     xs = {
-        node: _depth_to_date(depth=depth, calibration_nodes=calibration_nodes)
-        for node, depth in get_node_depths(tree).items()
+        node: _depth_to_date(
+            depth=depth, tree=tree, calibration_nodes=calibration_nodes
+        )
+        for node, depth in tree.depths.items()
     }
 
-    ys: dict[Tree, float] = {node: i for i, node in enumerate(tree.get_leaves())}
+    ys: dict[Node, float] = {node: i for i, node in enumerate(tree.get_leaves())}
     for node in tree.postorder_traversal():
         if node.is_internal():
             ys[node] = sum(ys[child] for child in node.children) / len(node.children)
 
-    if tree.branch_length is not None:
-        origin_date = _depth_to_date(depth=0, calibration_nodes=calibration_nodes)
+    if root.branch_length is not None:
+        origin_date = _depth_to_date(
+            depth=0, tree=tree, calibration_nodes=calibration_nodes
+        )
         ax.hlines(  # pyright: ignore
-            y=ys[tree],
+            y=ys[root],
             xmin=mdates.date2num(origin_date),  # pyright: ignore
-            xmax=mdates.date2num(xs[tree]),  # pyright: ignore
-            color=colors[tree],
+            xmax=mdates.date2num(xs[root]),  # pyright: ignore
+            color=colors[root],
             **branch_kwargs,
         )
     for node in tree:
@@ -229,7 +235,7 @@ def _init_colored_tree_categorical(
     show_legend: bool = True,
     labels: Mapping[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
-) -> tuple[Axes, dict[Tree, Color]]:
+) -> tuple[Axes, dict[Node, Color]]:
     """
     Initialize colors for drawing a tree based on categorical metadata.
 
@@ -442,7 +448,7 @@ def _init_colored_tree_continuous(
     show_hist: Literal[False],
     hist_kwargs: dict[str, Any] | None = ...,
     hist_axes_kwargs: dict[str, Any] | None = ...,
-) -> tuple[Axes, dict[Tree, Color]]: ...
+) -> tuple[Axes, dict[Node, Color]]: ...
 @overload
 def _init_colored_tree_continuous(
     tree: Tree,
@@ -456,7 +462,7 @@ def _init_colored_tree_continuous(
     show_hist: Literal[True] = True,
     hist_kwargs: dict[str, Any] | None = ...,
     hist_axes_kwargs: dict[str, Any] | None = ...,
-) -> tuple[Axes, dict[Tree, Color], Axes]: ...
+) -> tuple[Axes, dict[Node, Color], Axes]: ...
 def _init_colored_tree_continuous(
     tree: Tree,
     color_by: str,
@@ -468,7 +474,7 @@ def _init_colored_tree_continuous(
     show_hist: bool = True,
     hist_kwargs: dict[str, Any] | None = None,
     hist_axes_kwargs: dict[str, Any] | None = None,
-) -> tuple[Axes, dict[Tree, Color]] | tuple[Axes, dict[Tree, Color], Axes]:
+) -> tuple[Axes, dict[Node, Color]] | tuple[Axes, dict[Node, Color], Axes]:
     """
     Initialize colors for drawing a tree based on continuous metadata.
 
@@ -497,7 +503,7 @@ def _init_colored_tree_continuous(
 
     Returns
     -------
-    tuple[Axes, dict[Tree, Color]] | tuple[Axes, dict[Tree, Color], Axes]
+    tuple[Axes, dict[Node, Color]] | tuple[Axes, dict[Node, Color], Axes]
         The Axes, a dictionary mapping each node to its assigned color,
         and optionally the histogram Axes if `show_hist` is True.
     """

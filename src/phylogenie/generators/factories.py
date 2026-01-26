@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 from numpy.random import Generator
@@ -16,7 +16,6 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
-from phylogenie.treesimulator import EventType, Mutation
 
 
 def eval_expression(
@@ -219,28 +218,6 @@ def distribution(x: cfg.Distribution, data: dict[str, Any]) -> cfg.Distribution:
         if isinstance(arg_value, str):
             args[arg_name] = eval_expression(arg_value, data)
     return cfg.Distribution(type=x.type, **args)
-
-
-def mutations(
-    x: list[cfg.Mutation],
-    data: dict[str, Any],
-    states: set[str],
-    rates_to_log: list[EventType] | None,
-    rng: Generator,
-) -> list[Mutation]:
-    mutations: list[Mutation] = []
-    for m in x:
-        rate = skyline_parameter(m.rate, data)
-        rate_scalers: dict[EventType, Callable[[], float]] = {
-            k: lambda: distribution(v, data)(rng) for k, v in m.rate_scalers.items()
-        }
-        if m.state is None:
-            mutations.extend(
-                Mutation(s, rate, rate_scalers, rates_to_log) for s in states
-            )
-        else:
-            mutations.append(Mutation(m.state, rate, rate_scalers, rates_to_log))
-    return mutations
 
 
 def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[str, Any]:

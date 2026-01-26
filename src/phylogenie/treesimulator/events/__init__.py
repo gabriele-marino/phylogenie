@@ -1,4 +1,4 @@
-from phylogenie.treesimulator.events.base import Event, EventType
+from phylogenie.treesimulator.events.base import Event
 from phylogenie.treesimulator.events.contact_tracing import (
     BirthWithContactTracing,
     SamplingWithContactTracing,
@@ -16,14 +16,12 @@ from phylogenie.treesimulator.events.core import (
     get_epidemiological_events,
     get_FBD_events,
 )
-from phylogenie.treesimulator.events.mutations import Mutation, get_mutation_id
 
 __all__ = [
     "Birth",
     "BirthWithContactTracing",
     "Death",
     "Event",
-    "EventType",
     "Migration",
     "Sampling",
     "SamplingWithContactTracing",
@@ -34,6 +32,4 @@ __all__ = [
     "get_contact_tracing_events",
     "get_epidemiological_events",
     "get_FBD_events",
-    "Mutation",
-    "get_mutation_id",
 ]

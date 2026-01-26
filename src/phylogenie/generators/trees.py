@@ -8,24 +8,21 @@ from numpy.random import default_rng
 from pydantic import Field
 
 import phylogenie.generators.configs as cfg
+from phylogenie.core import Tree
 from phylogenie.generators.configs import Distribution
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.factories import (
     data,
     eval_expression,
     integer,
-    mutations,
     scalar,
     skyline_matrix,
     skyline_parameter,
     skyline_vector,
 )
+from phylogenie.io import dump_newick
 from phylogenie.treesimulator import (
     Event,
-    EventType,
-    Feature,
-    Tree,
-    dump_newick,
     get_BD_events,
     get_BDEI_events,
     get_BDSS_events,
@@ -33,7 +30,6 @@ from phylogenie.treesimulator import (
     get_contact_tracing_events,
     get_epidemiological_events,
     get_FBD_events,
-    set_features,
     simulate_tree,
 )
 
@@ -49,14 +45,12 @@ class ParameterizationType(str, Enum):
 
 class TreeDatasetGenerator(DatasetGenerator):
     data_type: Literal[DataType.TREES] = DataType.TREES
-    mutations: list[cfg.Mutation] = Field(default_factory=lambda: [])
-    rates_to_log: list[EventType] | None = None
     n_tips: cfg.Integer | None = None
     max_time: cfg.Scalar = np.inf
     init_state: str | None = None
     sampling_probability_at_present: cfg.Scalar = 0.0
     timeout: float = np.inf
-    node_features: list[Feature] | None = None
+    node_features: dict[str, str] | None = None
     acceptance_criterion: str | None = None
     logs: dict[str, str] | None = None
 
@@ -72,10 +66,7 @@ class TreeDatasetGenerator(DatasetGenerator):
             else self.init_state.format(**data)
         )
         events = self._get_events(data)
-        states = {e.state for e in events}
-        events += mutations(
-            self.mutations, data, states, self.rates_to_log, default_rng(seed)
-        )
+
         acceptance_criterion: None | Callable[[Tree], bool] = (
             None
             if self.acceptance_criterion is None
@@ -121,7 +112,10 @@ class TreeDatasetGenerator(DatasetGenerator):
                 d.update(data(context, rng))
                 tree, metadata = self.simulate_one(d, seed)
                 if self.node_features is not None:
-                    set_features(tree, self.node_features)
+                    for name, feature in self.node_features.items():
+                        mapping = getattr(tree, feature)
+                        for node in tree:
+                            node[name] = mapping[node]
                 dump_newick(tree, f"{filename}.nwk")
                 break
             except TimeoutError:

@@ -5,7 +5,7 @@ from copy import deepcopy
 from numpy.random import Generator
 
 from phylogenie.skyline import SkylineParameterLike, skyline_parameter
-from phylogenie.treesimulator.events.base import Event, EventType
+from phylogenie.treesimulator.events.base import Event
 from phylogenie.treesimulator.events.core import Birth, Death, Migration, Sampling
 from phylogenie.treesimulator.model import Model
 
@@ -22,13 +22,11 @@ def is_CT_state(state: str) -> bool:
 
 
 class BirthWithContactTracing(Event):
-    type = EventType.BIRTH
-
     def __init__(self, state: str, rate: SkylineParameterLike, child_state: str):
         super().__init__(state, rate)
         self.child_state = child_state
 
-    def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
+    def apply(self, model: Model, time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         new_individual = model.birth_from(individual, self.child_state, time)
         if CONTACTS_KEY not in model.metadata:
@@ -41,8 +39,6 @@ class BirthWithContactTracing(Event):
 
 
 class SamplingWithContactTracing(Event):
-    type = EventType.SAMPLING
-
     def __init__(
         self,
         state: str,
@@ -54,7 +50,7 @@ class SamplingWithContactTracing(Event):
         self.max_notified_contacts = max_notified_contacts
         self.notification_probability = skyline_parameter(notification_probability)
 
-    def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
+    def apply(self, model: Model, time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         model.sample(individual, time, True)
         population = model.get_population()

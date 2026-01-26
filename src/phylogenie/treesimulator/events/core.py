@@ -7,7 +7,7 @@ from phylogenie.skyline import (
     skyline_matrix,
     skyline_vector,
 )
-from phylogenie.treesimulator.events.base import Event, EventType
+from phylogenie.treesimulator.events.base import Event
 from phylogenie.treesimulator.model import Model
 
 INFECTIOUS_STATE = "I"
@@ -16,13 +16,11 @@ SUPERSPREADER_STATE = "S"
 
 
 class Birth(Event):
-    type = EventType.BIRTH
-
     def __init__(self, state: str, rate: SkylineParameterLike, child_state: str):
         super().__init__(state, rate)
         self.child_state = child_state
 
-    def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
+    def apply(self, model: Model, time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         model.birth_from(individual, self.child_state, time)
 
@@ -31,9 +29,7 @@ class Birth(Event):
 
 
 class Death(Event):
-    type = EventType.DEATH
-
-    def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
+    def apply(self, model: Model, time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         model.remove(individual, time)
 
@@ -42,13 +38,11 @@ class Death(Event):
 
 
 class Migration(Event):
-    type = EventType.MIGRATION
-
     def __init__(self, state: str, rate: SkylineParameterLike, target_state: str):
         super().__init__(state, rate)
         self.target_state = target_state
 
-    def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
+    def apply(self, model: Model, time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         model.migrate(individual, self.target_state, time)
 
@@ -57,13 +51,11 @@ class Migration(Event):
 
 
 class Sampling(Event):
-    type = EventType.SAMPLING
-
     def __init__(self, state: str, rate: SkylineParameterLike, removal: bool):
         super().__init__(state, rate)
         self.removal = removal
 
-    def apply(self, model: Model, events: list[Event], time: float, rng: Generator):
+    def apply(self, model: Model, time: float, rng: Generator):
         individual = self.draw_individual(model, rng)
         model.sample(individual, time, self.removal)
 

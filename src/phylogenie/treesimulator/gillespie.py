@@ -1,5 +1,5 @@
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Callable
 
@@ -9,11 +9,10 @@ import pandas as pd
 from numpy.random import default_rng
 from tqdm import tqdm
 
+from phylogenie.core import Tree
+from phylogenie.io import dump_newick
 from phylogenie.treesimulator.events import Event
-from phylogenie.treesimulator.features import Feature, set_features
-from phylogenie.treesimulator.io import dump_newick
 from phylogenie.treesimulator.model import Model
-from phylogenie.treesimulator.tree import Tree
 
 
 def simulate_tree(
@@ -49,7 +48,6 @@ def simulate_tree(
     while True:
         model = Model(init_state)
         metadata: dict[str, Any] = {}
-        run_events = list(events)
         current_time = 0.0
         change_times = sorted(set(t for e in events for t in e.rate.change_times))
         next_change_time = change_times.pop(0) if change_times else np.inf
@@ -58,7 +56,7 @@ def simulate_tree(
             if time.perf_counter() - start_clock > timeout:
                 raise TimeoutError("Simulation timed out.")
 
-            propensities = [e.get_propensity(model, current_time) for e in run_events]
+            propensities = [e.get_propensity(model, current_time) for e in events]
             if not any(propensities):
                 break
 
@@ -75,8 +73,8 @@ def simulate_tree(
             event_idx = np.searchsorted(
                 np.cumsum(propensities) / sum(propensities), rng.random()
             )
-            event = run_events[int(event_idx)]
-            event_metadata = event.apply(model, run_events, current_time, rng)
+            event = events[int(event_idx)]
+            event_metadata = event.apply(model, current_time, rng)
             if event_metadata is not None:
                 metadata.update(event_metadata)
 
@@ -107,7 +105,7 @@ def generate_trees(
     max_time: float = np.inf,
     init_state: str | None = None,
     sampling_probability_at_present: float = 0.0,
-    node_features: Iterable[Feature] | None = None,
+    node_features: Mapping[str, str] | None = None,
     seed: int | None = None,
     n_jobs: int = -1,
     timeout: float = np.inf,
@@ -136,7 +134,10 @@ def generate_trees(
                 )
                 metadata["file_id"] = i
                 if node_features is not None:
-                    set_features(tree, node_features)
+                    for name, feature in node_features.items():
+                        mapping = getattr(tree, feature)
+                        for node in tree:
+                            node[name] = mapping[node]
                 dump_newick(tree, output_dir / f"{i}.nwk")
                 return metadata
             except TimeoutError:

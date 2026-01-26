@@ -1,16 +1,16 @@
 import re
 from pathlib import Path
 
-from phylogenie.treesimulator.tree import Tree
+from phylogenie.core import Node, Tree
 
 
 def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tree:
     newick = newick.strip()
     newick = re.sub(r"^\[\&[^\]]*\]", "", newick).strip()
 
-    stack: list[list[Tree]] = []
-    current_children: list[Tree] = []
-    current_nodes: list[Tree] = []
+    stack: list[list[Node]] = []
+    current_children: list[Node] = []
+    current_nodes: list[Node] = []
     i = 0
     while True:
 
@@ -33,7 +33,7 @@ def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tre
         name = _read_chars([":", "[", ",", ")", ";"])
         if translations is not None and name in translations:
             name = translations[name]
-        current_node = Tree(name)
+        current_node = Node(name)
 
         if newick[i] == "[":
             i += 1
@@ -62,7 +62,7 @@ def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tre
             current_children = current_nodes
             current_nodes = stack.pop()
         elif newick[i] == ";":
-            return current_node
+            return Tree(current_node)
 
         i += 1
 
@@ -74,26 +74,29 @@ def load_newick(filepath: str | Path) -> Tree | list[Tree]:
 
 
 def to_newick(tree: Tree) -> str:
-    children_newick = ",".join([to_newick(child) for child in tree.children])
-    newick = tree.name
-    if tree.metadata:
-        reprs = {k: repr(v).replace("'", '"') for k, v in tree.metadata.items()}
-        for k, r in reprs.items():
-            if "," in k or "=" in k or "]" in k:
-                raise ValueError(
-                    f"Invalid feature key `{k}`: keys must not contain ',', '=', or ']'"
-                )
-            if "=" in r or "]" in r:
-                raise ValueError(
-                    f"Invalid value  `{r}` for feature `{k}`: values must not contain '=' or ']'"
-                )
-        features = [f"{k}={repr}" for k, repr in reprs.items()]
-        newick += f"[&{','.join(features)}]"
-    if children_newick:
-        newick = f"({children_newick}){newick}"
-    if tree.branch_length is not None:
-        newick += f":{tree.branch_length}"
-    return newick
+    def _to_newick(node: Node) -> str:
+        children_newick = ",".join([_to_newick(child) for child in node.children])
+        newick = node.name
+        if node.metadata:
+            reprs = {k: repr(v).replace("'", '"') for k, v in node.metadata.items()}
+            for k, r in reprs.items():
+                if "," in k or "=" in k or "]" in k:
+                    raise ValueError(
+                        f"Invalid feature key `{k}`: keys must not contain ',', '=', or ']'"
+                    )
+                if "=" in r or "]" in r:
+                    raise ValueError(
+                        f"Invalid value  `{r}` for feature `{k}`: values must not contain '=' or ']'"
+                    )
+            features = [f"{k}={r}" for k, r in reprs.items()]
+            newick += f"[&{','.join(features)}]"
+        if children_newick:
+            newick = f"({children_newick}){newick}"
+        if node.branch_length is not None:
+            newick += f":{node.branch_length}"
+        return newick
+
+    return _to_newick(tree.root)
 
 
 def dump_newick(trees: Tree | list[Tree], filepath: str | Path) -> None:
