@@ -1,5 +1,5 @@
 # ----------
-# 9. BD MSAs
+# 8. BD MSAs
 # ----------
 
 # This tutorial walks you through setting up a configuration file to simulate multiple sequence alignments (MSAs) using the AliSim backend. AliSim is an external tool used to simulate MSAs, and is distributed with IQ-TREE. IQ-TREE requires separate installation if you wish to use AliSim as backend: please refer to the official IQ-TREE website at https://iqtree.github.io/ for installation instructions.

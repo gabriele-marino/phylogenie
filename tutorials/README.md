@@ -14,8 +14,7 @@ These examples demonstrate different settings and use cases to help you get star
 | `5.Epidemiological-Trees.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model with the epidemiological parameterization. |
 | `6.FBD-Trees.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model with the fossilized birth-death (FBD) parameterization;<br> • You want to define acceptance creteria on the simulated trees. |
 | `7.BD-CT-Trees.yaml` | You want to add contact tracing (CT) to your tree simulations. |
-| `8.BD-Mutations-Trees.yaml` | You want to add mutation events to your tree simulations. |
-| `9.BD-MSAs.yaml` | You want to simulate multiple sequence alignments (MSAs). |
+| `8.BD-MSAs.yaml` | You want to simulate multiple sequence alignments (MSAs). |
 
 ## ▶️ How to use
 

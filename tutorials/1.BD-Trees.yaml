@@ -116,24 +116,18 @@ infectious_period: 2.5
 # In this case we specify a minimum and a maximum number of tips in the simulated trees. At each simulation, a target number of tips is randomly drawn between the minimum and maximum values, and the simulation stops when the number of tips reaches the target.
 
 n_tips: n_tips # Number of tips in the simulated trees
-node_features:  # List of features to compute and attach to each node of the simulated trees
-  - n_leaves
-  - depth
-  # - age # Age of each node
-  # - depth_level # Depth level of each node
-  # - height # Height of each node
-  # - height_level # Height level of each node
-  # - mutation # Mutation id of each node (useful for mutation models, cf. 8.BD-Mutation-Trees.yaml)
-  # - state # State of each node (useful for multi-state models)
-  # - time # Time of each node
+node_features:  # Mapping of node feature names to Tree attributes to be recorded for each node
+  n_leaves: leaf_counts
+  depth: depths
+  # - ages # Age of each node
+  # - depth_levels # Depth level of each node
+  # - heights # Height of each node
+  # - height_levels # Height level of each node
+  # - times # Time of each node
 
 # Other optional arguments are:
 # - max_time: float (infinity by default)
 #   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_tips.
-# - mutations: list[Mutation] (None by default)
-#   List of mutation to apply during the simulation (cf. 8.BD-Mutations-Trees.yaml).
-# - rates_to_log: list of event types (None by default)
-#   A list of event types for which the rescaled rates should be logged in the metadata when mutations are provided. By default, no rates will be logged. (cf. 8.BD-Mutations-Trees.yaml).
 # - sampling_probability_at_present: float (0 by default)
 #   The probability of sampling a tip at the end of the simulation. Can be specified for a finite value of max_time.
 # - init_state: str (None by default)

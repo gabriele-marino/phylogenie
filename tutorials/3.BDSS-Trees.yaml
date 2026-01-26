@@ -88,5 +88,3 @@ sampling_proportion: 0.25
 
 init_state: "{init_state}"
 n_tips: n_tips
-node_features:
-  - state
