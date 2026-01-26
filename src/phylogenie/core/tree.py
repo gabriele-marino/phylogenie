@@ -63,27 +63,8 @@ class Tree(MetadataMixin):
         return n_leaves
 
     @property
-    def depth_levels(self) -> dict[Node, int]:
-        depth_levels: dict[Node, int] = {self.root: 0}
-        for node in self.root.iter_descendants():
-            depth_levels[node] = depth_levels[node.parent] + 1  # pyright: ignore
-        return depth_levels
-
-    @property
-    def depths(self) -> dict[Node, float]:
-        depths: dict[Node, float] = {self.root: 0.0}
-        for node in self.root.iter_descendants():
-            parent_depth = depths[node.parent]  # pyright: ignore
-            depths[node] = node.branch_length_or_raise() + parent_depth
-        return depths
-
-    @property
     def height_level(self) -> int:
         return self.height_levels[self.root]
-
-    @property
-    def times(self) -> dict[Node, float]:
-        return self.depths
 
     @property
     def height_levels(self) -> dict[Node, int]:
@@ -115,8 +96,36 @@ class Tree(MetadataMixin):
         return heights
 
     @property
+    def depth_level(self) -> float:
+        return self.height_level
+
+    @property
+    def depth_levels(self) -> dict[Node, int]:
+        depth_levels: dict[Node, int] = {self.root: 0}
+        for node in self.root.iter_descendants():
+            depth_levels[node] = depth_levels[node.parent] + 1  # pyright: ignore
+        return depth_levels
+
+    @property
+    def depth(self) -> float:
+        return self.height
+
+    @property
+    def depths(self) -> dict[Node, float]:
+        depths: dict[Node, float] = {self.root: 0.0}
+        for node in self.root.iter_descendants():
+            parent_depth = depths[node.parent]  # pyright: ignore
+            depths[node] = node.branch_length_or_raise() + parent_depth
+        return depths
+
+    @property
+    def times(self) -> dict[Node, float]:
+        root_time = self.root.branch_length_or_raise()
+        return {node: root_time + depth for node, depth in self.depths.items()}
+
+    @property
     def age(self) -> float:
-        return self.ages[self.root]
+        return self.height + self.root.branch_length_or_raise()
 
     @property
     def ages(self) -> dict[Node, float]:
