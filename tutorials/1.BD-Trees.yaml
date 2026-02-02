@@ -17,7 +17,7 @@
 #   - randomly drawn at uniform from 0.1 to 0.3 for 2<t.
 # - The infectious period is fixed at 2.5.
 
-# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of leaves between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of leaves is reached.
 
 # ---------------
 # General configs
@@ -57,7 +57,7 @@ seed: 42 # Random seed to ensure reproducibility (None by default)
 # - beta(a: float, b: float);
 # - integers(low: int, high: int).
 # For a full list of distributions, refer to the NumPy documentation: https://numpy.org/devdocs/reference/random/generator.html#distributions.
-# In this case, we sample the reproduction number R_0 from a lognormal distribution and the values of s at different simulation times from uniform distributions. The number of tips is sampled from a discrete uniform distribution between 50 and 250.
+# In this case, we sample the reproduction number R_0 from a lognormal distribution and the values of s at different simulation times from uniform distributions. The number of leaves is sampled from a discrete uniform distribution between 50 and 250.
 # If specified as strings, the arguments of the distribution are evaluated in the context of the current sample, and can refer to other (previously defined) context variables (cf. 3.BDSS-Trees.yaml).
 
 context:
@@ -73,7 +73,7 @@ context:
     type: uniform
     low: 0.1
     high: 0.3
-  n_tips:
+  n_leaves:
     type: integers
     low: 50
     high: 250
@@ -113,10 +113,10 @@ infectious_period: 2.5
 # --------------------------
 
 # This section defines the parameters for the tree simulation.
-# In this case we specify a minimum and a maximum number of tips in the simulated trees. At each simulation, a target number of tips is randomly drawn between the minimum and maximum values, and the simulation stops when the number of tips reaches the target.
+# In this case we specify a minimum and a maximum number of leaves in the simulated trees. At each simulation, a target number of leaves is randomly drawn between the minimum and maximum values, and the simulation stops when the number of leaves reaches the target.
 
-n_tips: n_tips # Number of tips in the simulated trees
-node_features:  # Mapping of node feature names to Tree attributes to be recorded for each node
+n_leaves: n_leaves # Number of leaves in the simulated trees
+node_features:  # Mapping of node feature names to TreeNode attributes to be recorded for each node
   n_leaves: leaf_counts
   depth: depths
   # - ages # Age of each node
@@ -127,14 +127,10 @@ node_features:  # Mapping of node feature names to Tree attributes to be recorde
 
 # Other optional arguments are:
 # - max_time: float (infinity by default)
-#   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_tips.
-# - sampling_probability_at_present: float (0 by default)
-#   The probability of sampling a tip at the end of the simulation. Can be specified for a finite value of max_time.
-# - init_state: str (None by default)
-#   The state of the first (seed) individual of the simulation. This is necessary for multiple-state models.
+#   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_leaves.
 # - timeout: float (infinity by default)
 #   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.
 # - acceptance_criterion: str (None by default)
-#   A string representing a Python boolean function that takes a Tree object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie Tree class (cfr. 6.FBD-Trees.yaml).
+#   A string representing a Python boolean function that takes a TreeNode object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie TreeNode class (cfr. 6.FBD-Trees.yaml).
 # - logs: dict[str, str] (None by default)
-#   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree. The expressions can refer to any attribute or method of the Phylogenie Tree class.
+#   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree. The expressions can refer to any attribute or method of the Phylogenie TreeNode class.

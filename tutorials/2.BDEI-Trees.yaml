@@ -21,7 +21,7 @@
 # - The infection time (T) is drawn from a lognormal distribution (mean=1, sigma=0.3).
 # - The incubation fraction (f) is drawn from a uniform distribution between 0 and 0.75.
 
-# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of leaves between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of leaves is reached.
 
 # ---------------
 # General configs
@@ -61,7 +61,7 @@ context:
     low: 0.2
     high: 0.4
     size: 3
-  n_tips:
+  n_leaves:
     type: integers
     low: 50
     high: 250
@@ -92,4 +92,4 @@ sampling_proportion:
 # --------------------------
 
 init_state: E # State of the first individual in the simulation (E - exposed)
-n_tips: n_tips
+n_leaves: n_leaves

@@ -1,7 +1,8 @@
 import time
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar
 
 import joblib
 import numpy as np
@@ -9,87 +10,104 @@ import pandas as pd
 from numpy.random import default_rng
 from tqdm import tqdm
 
-from phylogenie.core import Tree
 from phylogenie.io import dump_newick
-from phylogenie.treesimulator.events import Event
-from phylogenie.treesimulator.model import Model
+from phylogenie.tree_node import TreeNode
+from phylogenie.treesimulator.events import Event, TimedEvent
+from phylogenie.treesimulator.models import Model
+
+M = TypeVar("M", bound="Model")
 
 
 def simulate_tree(
-    events: Sequence[Event],
-    n_tips: int | None = None,
-    max_time: float = np.inf,
-    init_state: str | None = None,
-    sampling_probability_at_present: float = 0.0,
+    events: Sequence[Event[M]],
+    model: M,
+    timed_events: Sequence[TimedEvent[M]] | None = None,
+    n_leaves: int | None = None,
+    max_time: float | None = None,
     seed: int | None = None,
-    timeout: float = np.inf,
-    acceptance_criterion: Callable[[Tree], bool] | None = None,
-    logs: dict[str, Callable[[Tree], Any]] | None = None,
-) -> tuple[Tree, dict[str, Any]]:
-    if (max_time != np.inf) == (n_tips is not None):
-        raise ValueError("Exactly one of max_time or n_tips must be specified.")
-    if sampling_probability_at_present and max_time == np.inf:
-        raise ValueError(
-            "sampling_probability_at_present can only be used with max_time."
-        )
+    timeout: float | None = None,
+    acceptance_criterion: Callable[[TreeNode], bool] | None = None,
+    logs: dict[str, Callable[[TreeNode], Any]] | None = None,
+) -> tuple[TreeNode, dict[str, Any]]:
+    if (max_time is None) == (n_leaves is None):
+        raise ValueError("Exactly one of max_time or n_leaves must be specified.")
 
-    states = {e.state for e in events if e.state}
-    if init_state is None and len(states) > 1:
-        raise ValueError(
-            "Init state must be provided for models with more than one state."
-        )
-    elif init_state is None:
-        (init_state,) = states
-    elif init_state not in states:
-        raise ValueError(f"Init state {init_state} not found in event states: {states}")
+    events_at_time: dict[float, list[TimedEvent[M]]] = defaultdict(list)
+    if timed_events is not None:
+        for te in timed_events:
+            for t in te.times:
+                events_at_time[t].append(te)
 
     rng = default_rng(seed)
     start_clock = time.perf_counter()
     while True:
-        model = Model(init_state)
-        metadata: dict[str, Any] = {}
+        model.init()
         current_time = 0.0
         change_times = sorted(set(t for e in events for t in e.rate.change_times))
-        next_change_time = change_times.pop(0) if change_times else np.inf
+        next_change_time = change_times.pop(0) if change_times else None
+        timed_event_times = sorted(events_at_time.keys())
+        next_timed_event_time = timed_event_times.pop(0) if timed_event_times else None
 
-        while current_time < max_time and (n_tips is None or model.n_sampled < n_tips):
-            if time.perf_counter() - start_clock > timeout:
+        while n_leaves is None or model.tree_size < n_leaves:
+            if timeout is not None and time.perf_counter() - start_clock > timeout:
                 raise TimeoutError("Simulation timed out.")
 
             propensities = [e.get_propensity(model, current_time) for e in events]
-            if not any(propensities):
-                break
-
-            time_step = rng.exponential(1 / sum(propensities))
-            if current_time + time_step >= next_change_time:
-                current_time = next_change_time
-                next_change_time = change_times.pop(0) if change_times else np.inf
-                continue
-            if current_time + time_step >= max_time:
-                current_time = max_time
-                break
-            current_time += time_step
-
-            event_idx = np.searchsorted(
-                np.cumsum(propensities) / sum(propensities), rng.random()
+            total_propensity = sum(propensities)
+            next_event_time = (
+                current_time + rng.exponential(1 / total_propensity)
+                if total_propensity
+                else None
             )
-            event = events[int(event_idx)]
-            event_metadata = event.apply(model, current_time, rng)
-            if event_metadata is not None:
-                metadata.update(event_metadata)
 
-        if current_time != max_time and model.n_sampled != n_tips:
+            if (
+                next_change_time is not None
+                and (next_event_time is None or next_change_time < next_event_time)
+                and (
+                    next_timed_event_time is None
+                    or next_change_time <= next_timed_event_time
+                )
+                and (max_time is None or next_change_time < max_time)
+            ):  # The next event is a rate change
+                current_time = next_change_time
+                next_change_time = change_times.pop(0) if change_times else None
+            elif (
+                next_timed_event_time is not None
+                and (next_event_time is None or next_timed_event_time < next_event_time)
+                and (max_time is None or next_timed_event_time <= max_time)
+            ):  # The next event is a timed event
+                current_time = next_timed_event_time
+                for te in events_at_time[current_time]:
+                    te.apply(model, current_time, rng)
+                next_timed_event_time = (
+                    timed_event_times.pop(0) if timed_event_times else None
+                )
+            elif next_event_time is not None and (
+                max_time is None or next_event_time < max_time
+            ):  # The next event is a stochastic event
+                current_time = next_event_time
+                event_idx = np.searchsorted(
+                    np.cumsum(propensities) / total_propensity, rng.random()
+                )
+                event = events[int(event_idx)]
+                event.apply(model, current_time, rng)
+            else:  # No more events can occur
+                break
+
+        # If the simulation stopped because no more events could occur, restart
+        if n_leaves is not None and model.tree_size < n_leaves:
             continue
 
-        for individual in model.get_population():
-            if rng.random() < sampling_probability_at_present:
-                model.sample(individual, current_time, True)
+        tree = model.get_tree()
 
-        tree = model.get_sampled_tree()
-
-        if acceptance_criterion is not None and not acceptance_criterion(tree):
+        if (
+            tree is None
+            or acceptance_criterion is not None
+            and not acceptance_criterion(tree)
+        ):
             continue
 
+        metadata: dict[str, Any] = {}
         if logs is not None:
             for key, func in logs.items():
                 metadata[key] = func(tree)
@@ -100,17 +118,17 @@ def simulate_tree(
 def generate_trees(
     output_dir: str | Path,
     n_trees: int,
-    events: Sequence[Event],
-    n_tips: int | None = None,
-    max_time: float = np.inf,
-    init_state: str | None = None,
-    sampling_probability_at_present: float = 0.0,
+    events: Sequence[Event[M]],
+    model: M,
+    timed_events: Sequence[TimedEvent[M]] | None = None,
+    n_leaves: int | None = None,
+    max_time: float | None = None,
     node_features: Mapping[str, str] | None = None,
     seed: int | None = None,
     n_jobs: int = -1,
-    timeout: float = np.inf,
-    acceptance_criterion: Callable[[Tree], bool] | None = None,
-    logs: dict[str, Callable[[Tree], Any]] | None = None,
+    timeout: float | None = None,
+    acceptance_criterion: Callable[[TreeNode], bool] | None = None,
+    logs: dict[str, Callable[[TreeNode], Any]] | None = None,
 ) -> pd.DataFrame:
     if isinstance(output_dir, str):
         output_dir = Path(output_dir)
@@ -123,10 +141,10 @@ def generate_trees(
             try:
                 tree, metadata = simulate_tree(
                     events=events,
-                    n_tips=n_tips,
+                    n_leaves=n_leaves,
                     max_time=max_time,
-                    init_state=init_state,
-                    sampling_probability_at_present=sampling_probability_at_present,
+                    model=model,
+                    timed_events=timed_events,
                     seed=seed,
                     timeout=timeout,
                     acceptance_criterion=acceptance_criterion,
@@ -140,8 +158,8 @@ def generate_trees(
                             node[name] = mapping[node]
                 dump_newick(tree, output_dir / f"{i}.nwk")
                 return metadata
-            except TimeoutError:
-                print("Simulation timed out. Retrying with a different seed...")
+            except TimeoutError as e:
+                print(f"{e}. Retrying with a different seed...")
             seed += 1
 
     rng = default_rng(seed)

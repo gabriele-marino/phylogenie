@@ -1,9 +1,10 @@
-from typing import Any
+from enum import Enum
+from typing import Annotated, Any, Literal
 
 from numpy.random import Generator
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-import phylogenie.typings as pgt
+import phylogenie._typings as pgt
 
 
 class StrictBaseModel(BaseModel):
@@ -48,3 +49,24 @@ class SkylineMatrixModel(StrictBaseModel):
 SkylineParameter = Scalar | SkylineParameterModel
 SkylineVector = str | pgt.Scalar | pgt.Many[SkylineParameter] | SkylineVectorModel
 SkylineMatrix = str | pgt.Scalar | pgt.Many[SkylineVector] | SkylineMatrixModel | None
+
+
+class TimedEventType(str, Enum):
+    SAMPLING = "sampling"
+
+
+class TimedEventModel(StrictBaseModel):
+    times: ManyScalars
+
+
+class SamplingAtTimeModel(TimedEventModel):
+    type: Literal[TimedEventType.SAMPLING]
+    state: str
+    proportion: Scalar
+    removal: bool
+
+
+UnboundedPopulationTimedEventConfig = Annotated[
+    SamplingAtTimeModel,
+    Field(discriminator="type"),
+]

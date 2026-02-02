@@ -4,10 +4,10 @@ from typing import Any
 import numpy as np
 from numpy.random import Generator
 
-import phylogenie.generators.configs as cfg
-import phylogenie.generators.typeguards as ctg
-import phylogenie.typeguards as tg
-import phylogenie.typings as pgt
+import phylogenie._typeguards as tg
+import phylogenie._typings as pgt
+import phylogenie.generators._configs as cfg
+import phylogenie.generators._typeguards as ctg
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -16,6 +16,7 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
+from phylogenie.treesimulator import SamplingAtTime, UnboundedPopulationTimedEvent
 
 
 def eval_expression(
@@ -227,3 +228,16 @@ def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[st
     for k, v in context.items():
         data[k] = np.array(distribution(v, data)(rng)).tolist()
     return data
+
+
+def unbounded_population_timed_event(
+    config: cfg.TimedEventModel, data: dict[str, Any]
+) -> UnboundedPopulationTimedEvent:
+    if isinstance(config, cfg.SamplingAtTimeModel):
+        return SamplingAtTime(
+            times=many_scalars(config.times, data),
+            state=string(config.state, data),
+            proportion=scalar(config.proportion, data),
+            removal=config.removal,
+        )
+    raise ValueError(f"Unknown timed event type: {type(config)}")

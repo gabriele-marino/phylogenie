@@ -5,8 +5,9 @@ from typing import Any, Literal
 
 from numpy.random import Generator, default_rng
 
+from phylogenie.generators._configs import Distribution
+from phylogenie.generators._factories import data, string
 from phylogenie.generators.dataset import DatasetGenerator, DataType
-from phylogenie.generators.factories import data, string
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
 from phylogenie.io import dump_newick
 
@@ -44,7 +45,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
     def generate_one(
         self,
         filename: str,
-        context: dict[str, Any] | None = None,
+        context: dict[str, Distribution] | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]:
         if self.keep_trees:

@@ -1,8 +1,8 @@
 from collections.abc import Callable, Iterator
 from typing import Any, TypeGuard, Union, overload
 
-import phylogenie.typeguards as tg
-import phylogenie.typings as pgt
+import phylogenie._typeguards as tg
+import phylogenie._typings as pgt
 from phylogenie.skyline.parameter import SkylineParameter, is_skyline_parameter_like
 from phylogenie.skyline.vector import (
     SkylineVector,
@@ -25,12 +25,28 @@ def is_skyline_matrix_operand(x: Any) -> TypeGuard[SkylineMatrixOperand]:
 
 
 class SkylineMatrix:
+    """
+    Represent a matrix of skyline vectors.
+    """
+
     def __init__(
         self,
         params: pgt.Many[SkylineVectorLike] | None = None,
         value: pgt.Many3DScalars | None = None,
         change_times: pgt.ManyScalars | None = None,
     ):
+        """
+        Initialize a SkylineMatrix from a sequence of skyline vectors or from value and change times.
+
+        Parameters
+        -----------
+        params : Many[SkylineVectorLike] | None, optional
+            Sequence of skyline vectors or sequences to compose the matrix.
+        value : Many3DScalars | None, optional
+            3D sequence of values for each parameter over time.
+        change_times : ManyScalars | None, optional
+            Times at which the parameter values change. Must be provided if `value` is provided.
+        """
         if params is not None and value is None and change_times is None:
             if is_many_skyline_vectors_like(params):
                 self._params = [
@@ -70,29 +86,90 @@ class SkylineMatrix:
 
     @property
     def params(self) -> tuple[SkylineVector, ...]:
+        """
+        Return the skyline vectors composing this matrix.
+
+        Returns
+        --------
+        tuple[SkylineVector, ...]
+            Skyline vectors for each row.
+        """
         return tuple(self._params)
 
     @property
     def n_rows(self) -> int:
+        """
+        Return the number of rows in the matrix.
+
+        Returns
+        --------
+        int
+            Number of rows.
+        """
         return len(self.params)
 
     @property
     def n_cols(self) -> int:
+        """
+        Return the number of columns in the matrix.
+
+        Returns
+        --------
+        int
+            Number of columns.
+        """
         return len(self.params[0])
 
     @property
     def shape(self) -> tuple[int, int]:
+        """
+        Return the matrix shape as (n_rows, n_cols).
+
+        Returns
+        --------
+        tuple[int, int]
+            Matrix shape.
+        """
         return self.n_rows, self.n_cols
 
     @property
     def change_times(self) -> pgt.Vector1D:
+        """
+        Return the union of change times across all rows.
+
+        Returns
+        --------
+        Vector1D
+            Sorted unique change times.
+        """
         return tuple(sorted(set([t for row in self.params for t in row.change_times])))
 
     @property
     def value(self) -> pgt.Vector3D:
+        """
+        Return the value tensor over time.
+
+        Returns
+        --------
+        Vector3D
+            Tensor where each slice corresponds to a time segment.
+        """
         return tuple(self.get_value_at_time(t) for t in (0, *self.change_times))
 
     def get_value_at_time(self, time: pgt.Scalar) -> pgt.Vector2D:
+        """
+        Evaluate the matrix at a given time.
+
+        Parameters
+        -----------
+        time : Scalar
+            Time at which to evaluate.
+
+        Returns
+        --------
+        Vector2D
+            Matrix values at the given time.
+        """
         return tuple(param.get_value_at_time(time) for param in self.params)
 
     def _operate(
@@ -141,6 +218,14 @@ class SkylineMatrix:
 
     @property
     def T(self) -> "SkylineMatrix":
+        """
+        Return the transpose of the skyline matrix.
+
+        Returns
+        --------
+        SkylineMatrix
+            Transposed matrix.
+        """
         return SkylineMatrix([[v[i] for v in self] for i in range(self.n_cols)])
 
     def __bool__(self) -> bool:
@@ -195,6 +280,23 @@ class SkylineMatrix:
 def skyline_matrix(
     x: SkylineMatrixCoercible, n_rows: int, n_cols: int
 ) -> SkylineMatrix:
+    """
+    Coerce a value into a SkylineMatrix of a specific shape.
+
+    Parameters
+    -----------
+    x : SkylineMatrixCoercible
+        An object to coerce into a SkylineMatrix.
+    n_rows : int
+        Expected number of rows.
+    n_cols : int
+        Expected number of columns.
+
+    Returns
+    --------
+    SkylineMatrix
+        Coerced skyline matrix with the requested shape.
+    """
     if n_rows <= 0 or n_cols <= 0:
         raise ValueError(
             f" n_rows and n_cols must be positive integers to create a SkylineMatrix (got n_rows={n_rows} and n_cols={n_cols})."

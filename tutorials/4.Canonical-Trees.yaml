@@ -41,7 +41,7 @@
 
 # This setup captures the dynamics of an epidemic that initially spreads freely among interconnected states and then transitions to isolated states with active sampling.
 
-# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of leaves between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of leaves is reached.
 
 # ---------------
 # General configs
@@ -87,7 +87,7 @@ context:
     low: 0.1
     high: 0.4
     size: 3
-  n_tips:
+  n_leaves:
     type: integers
     low: 50
     high: 250
@@ -143,4 +143,4 @@ remove_after_sampling: True
 # --------------------------
 
 init_state: A
-n_tips: n_tips
+n_leaves: n_leaves

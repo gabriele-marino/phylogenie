@@ -19,7 +19,7 @@
 # - The superspreading ratio is randomly drawn at uniform between 2 and 10;
 # - The superspreaders proportion is randomly drawn at uniform between 0.1 and 0.3;
 
-# For each simulation, a target number of tips between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of tips is reached.
+# For each simulation, a target number of leaves between 50 and 250 is drawn uniformly at random, and the simulation ends when the target number of leaves is reached.
 
 # ---------------
 # General configs
@@ -57,7 +57,7 @@ context:
     type: choice
     a: [I, S]
     p: "[1 - f_SS, f_SS]"
-  n_tips:
+  n_leaves:
     type: integers
     low: 50
     high: 250
@@ -87,4 +87,4 @@ sampling_proportion: 0.25
 # In this example, we want the set the initial state of the simulation based on the value of a string context variable (init_state). This is done by including init_state inside curly braces. Phylogenie will automatically replace this with the value of the init_state variable at runtime.
 
 init_state: "{init_state}"
-n_tips: n_tips
+n_leaves: n_leaves

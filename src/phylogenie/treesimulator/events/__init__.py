@@ -1,14 +1,15 @@
-from phylogenie.treesimulator.events.base import Event
-from phylogenie.treesimulator.events.contact_tracing import (
-    BirthWithContactTracing,
-    SamplingWithContactTracing,
-    get_contact_tracing_events,
-)
-from phylogenie.treesimulator.events.core import (
+from phylogenie.treesimulator.events.base import Event, TimedEvent
+from phylogenie.treesimulator.events.unbounded_population import (
+    EXPOSED_STATE,
+    INFECTIOUS_STATE,
+    SUPERSPREADER_STATE,
     Birth,
     Death,
     Migration,
     Sampling,
+    SamplingAtTime,
+    UnboundedPopulationEvent,
+    UnboundedPopulationTimedEvent,
     get_BD_events,
     get_BDEI_events,
     get_BDSS_events,
@@ -18,18 +19,22 @@ from phylogenie.treesimulator.events.core import (
 )
 
 __all__ = [
-    "Birth",
-    "BirthWithContactTracing",
-    "Death",
+    "EXPOSED_STATE",
+    "INFECTIOUS_STATE",
+    "SUPERSPREADER_STATE",
     "Event",
+    "TimedEvent",
+    "Birth",
+    "Death",
     "Migration",
     "Sampling",
-    "SamplingWithContactTracing",
+    "SamplingAtTime",
+    "UnboundedPopulationEvent",
+    "UnboundedPopulationTimedEvent",
     "get_BD_events",
     "get_BDEI_events",
     "get_BDSS_events",
     "get_canonical_events",
-    "get_contact_tracing_events",
     "get_epidemiological_events",
     "get_FBD_events",
 ]

@@ -1,8 +1,8 @@
 from collections.abc import Callable, Iterator
 from typing import Any, TypeGuard, Union, overload
 
-import phylogenie.typeguards as tg
-import phylogenie.typings as pgt
+import phylogenie._typeguards as tg
+import phylogenie._typings as pgt
 from phylogenie.skyline.parameter import (
     SkylineParameter,
     SkylineParameterLike,
@@ -39,12 +39,28 @@ def is_many_skyline_vectors_coercible(
 
 
 class SkylineVector:
+    """
+    Represent a vector of skyline parameters.
+    """
+
     def __init__(
         self,
         params: pgt.Many[SkylineParameterLike] | None = None,
         value: pgt.Many2DScalars | None = None,
         change_times: pgt.ManyScalars | None = None,
     ):
+        """
+        Initialize a SkylineVector from a sequence of parameters or from value and change times.
+
+        Parameters
+        -----------
+        params : Many[SkylineParameterLike] | None, optional
+            Sequence of skyline parameters or scalars to compose the vector.
+        value : Many2DScalars | None, optional
+            2D sequence of values for each parameter over time.
+        change_times : ManyScalars | None, optional
+            Change points for all parameters.
+        """
         if params is not None and value is None and change_times is None:
             if is_many_skyline_parameters_like(params):
                 self._params = [skyline_parameter(param) for param in params]
@@ -74,23 +90,68 @@ class SkylineVector:
 
     @property
     def params(self) -> tuple[SkylineParameter, ...]:
+        """
+        Return the skyline parameters composing this vector.
+
+        Returns
+        --------
+        tuple[SkylineParameter, ...]
+            The parameters for each vector entry.
+        """
         return tuple(self._params)
 
     @property
     def change_times(self) -> pgt.Vector1D:
+        """
+        Return the union of change times across all parameters.
+
+        Returns
+        --------
+        Vector1D
+            Sorted unique change times.
+        """
         return tuple(
             sorted(set(t for param in self.params for t in param.change_times))
         )
 
     @property
     def value(self) -> pgt.Vector2D:
+        """
+        Return the value matrix over time.
+
+        Returns
+        --------
+        Vector2D
+            Matrix where rows correspond to time segments.
+        """
         return tuple(self.get_value_at_time(t) for t in (0, *self.change_times))
 
     @property
     def N(self) -> int:
+        """
+        Return the length of the skyline vector.
+
+        Returns
+        --------
+        int
+            Number of parameters in the vector.
+        """
         return len(self.params)
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Vector1D:
+        """
+        Evaluate the vector at a given time.
+
+        Parameters
+        -----------
+        t : Scalar
+            Time at which to evaluate.
+
+        Returns
+        --------
+        Vector1D
+            Vector values at the given time.
+        """
         return tuple(param.get_value_at_time(t) for param in self.params)
 
     def _operate(
@@ -164,6 +225,21 @@ class SkylineVector:
 
 
 def skyline_vector(x: SkylineVectorCoercible, N: int) -> SkylineVector:
+    """
+    Coerce a value into a SkylineVector of a specific length.
+
+    Parameters
+    -----------
+    x : SkylineVectorCoercible
+        An object to coerce into a SkylineVector.
+    N : int
+        Expected vector length.
+
+    Returns
+    --------
+    SkylineVector
+        Coerced skyline vector of length N.
+    """
     if N <= 0:
         raise ValueError(
             f"N must be a positive integer to create a SkylineVector (got N={N})."

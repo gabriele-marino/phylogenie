@@ -1,17 +1,14 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Annotated, Any, Callable, Literal
+from typing import Annotated, Any, Callable, Generic, Literal, TypeVar
 
-import numpy as np
 from numpy.random import default_rng
 from pydantic import Field
 
-import phylogenie.generators.configs as cfg
-from phylogenie.core import Tree
-from phylogenie.generators.configs import Distribution
-from phylogenie.generators.dataset import DatasetGenerator, DataType
-from phylogenie.generators.factories import (
+import phylogenie.generators._configs as cfg
+from phylogenie.generators._factories import (
     data,
     eval_expression,
     integer,
@@ -19,19 +16,30 @@ from phylogenie.generators.factories import (
     skyline_matrix,
     skyline_parameter,
     skyline_vector,
+    unbounded_population_timed_event,
 )
+from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.io import dump_newick
+from phylogenie.tree_node import TreeNode
 from phylogenie.treesimulator import (
+    EXPOSED_STATE,
+    INFECTIOUS_STATE,
+    SUPERSPREADER_STATE,
     Event,
+    Model,
+    TimedEvent,
+    UnboundedPopulationEvent,
+    UnboundedPopulationModel,
     get_BD_events,
     get_BDEI_events,
     get_BDSS_events,
     get_canonical_events,
-    get_contact_tracing_events,
     get_epidemiological_events,
     get_FBD_events,
     simulate_tree,
 )
+
+M = TypeVar("M", bound="Model")
 
 
 class ParameterizationType(str, Enum):
@@ -43,31 +51,32 @@ class ParameterizationType(str, Enum):
     BDSS = "BDSS"
 
 
-class TreeDatasetGenerator(DatasetGenerator):
+class TreeDatasetGenerator(DatasetGenerator, Generic[M]):
     data_type: Literal[DataType.TREES] = DataType.TREES
-    n_tips: cfg.Integer | None = None
-    max_time: cfg.Scalar = np.inf
-    init_state: str | None = None
-    sampling_probability_at_present: cfg.Scalar = 0.0
-    timeout: float = np.inf
+    n_leaves: cfg.Integer | None = None
+    max_time: cfg.Scalar | None = None
+    timeout: float | None = None
     node_features: dict[str, str] | None = None
     acceptance_criterion: str | None = None
     logs: dict[str, str] | None = None
 
     @abstractmethod
-    def _get_events(self, data: dict[str, Any]) -> list[Event]: ...
+    def _get_events(self, data: dict[str, Any]) -> Sequence[Event[M]]: ...
+
+    @abstractmethod
+    def _get_timed_events(self, data: dict[str, Any]) -> Sequence[TimedEvent[M]]: ...
+
+    @abstractmethod
+    def _get_model(self, data: dict[str, Any]) -> M: ...
 
     def simulate_one(
         self, data: dict[str, Any], seed: int | None = None
-    ) -> tuple[Tree, dict[str, Any]]:
-        init_state = (
-            self.init_state
-            if self.init_state is None
-            else self.init_state.format(**data)
-        )
+    ) -> tuple[TreeNode, dict[str, Any]]:
         events = self._get_events(data)
+        model = self._get_model(data)
+        timed_events = self._get_timed_events(data)
 
-        acceptance_criterion: None | Callable[[Tree], bool] = (
+        acceptance_criterion: None | Callable[[TreeNode], bool] = (
             None
             if self.acceptance_criterion is None
             else lambda tree: eval_expression(
@@ -76,7 +85,7 @@ class TreeDatasetGenerator(DatasetGenerator):
                 {"tree": tree},
             )
         )
-        logs: None | dict[str, Callable[[Tree], Any]] = (
+        logs: None | dict[str, Callable[[TreeNode], Any]] = (
             None
             if self.logs is None
             else {
@@ -87,12 +96,10 @@ class TreeDatasetGenerator(DatasetGenerator):
 
         return simulate_tree(
             events=events,
-            n_tips=None if self.n_tips is None else integer(self.n_tips, data),
-            max_time=scalar(self.max_time, data),
-            init_state=init_state,
-            sampling_probability_at_present=scalar(
-                self.sampling_probability_at_present, data
-            ),
+            model=model,
+            timed_events=timed_events,
+            n_leaves=None if self.n_leaves is None else integer(self.n_leaves, data),
+            max_time=None if self.max_time is None else scalar(self.max_time, data),
             seed=seed,
             timeout=self.timeout,
             acceptance_criterion=acceptance_criterion,
@@ -102,7 +109,7 @@ class TreeDatasetGenerator(DatasetGenerator):
     def generate_one(
         self,
         filename: str,
-        context: dict[str, Distribution] | None = None,
+        context: dict[str, cfg.Distribution] | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]:
         d = {"file_id": Path(filename).stem}
@@ -118,16 +125,32 @@ class TreeDatasetGenerator(DatasetGenerator):
                             node[name] = mapping[node]
                 dump_newick(tree, f"{filename}.nwk")
                 break
-            except TimeoutError:
-                print("Simulation timed out. Retrying with different parameters...")
+            except TimeoutError as e:
+                print(f"{e}. Retrying with different parameters...")
         return d | metadata
 
 
-class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
+class UnboundedPopulationTreeDatasetGenerator(
+    TreeDatasetGenerator[UnboundedPopulationModel]
+):
+    timed_events: Annotated[
+        list[cfg.UnboundedPopulationTimedEventConfig], Field(default_factory=list)
+    ]
+
+    def _get_timed_events(
+        self, data: dict[str, Any]
+    ) -> Sequence[TimedEvent[UnboundedPopulationModel]]:
+        return [
+            unbounded_population_timed_event(cfg, data) for cfg in self.timed_events
+        ]
+
+
+class CanonicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.CANONICAL] = (
         ParameterizationType.CANONICAL
     )
     states: list[str]
+    init_state: str
     sampling_rates: cfg.SkylineVector = 0
     remove_after_sampling: bool = False
     birth_rates: cfg.SkylineVector = 0
@@ -135,7 +158,10 @@ class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
     migration_rates: cfg.SkylineMatrix = None
     birth_rates_among_states: cfg.SkylineMatrix = None
 
-    def _get_events(self, data: dict[str, Any]) -> list[Event]:
+    def _get_model(self, data: dict[str, Any]) -> UnboundedPopulationModel:
+        return UnboundedPopulationModel(init_state=self.init_state.format(**data))
+
+    def _get_events(self, data: dict[str, Any]) -> list[UnboundedPopulationEvent]:
         return get_canonical_events(
             states=self.states,
             sampling_rates=skyline_vector(self.sampling_rates, data),
@@ -149,16 +175,20 @@ class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
         )
 
 
-class FBDTreeDatasetGenerator(TreeDatasetGenerator):
+class FBDTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.FBD] = ParameterizationType.FBD
     states: list[str]
+    init_state: str
     sampling_proportions: cfg.SkylineVector = 0
     diversification: cfg.SkylineVector = 0
     turnover: cfg.SkylineVector = 0
     migration_rates: cfg.SkylineMatrix = None
     diversification_between_states: cfg.SkylineMatrix = None
 
-    def _get_events(self, data: dict[str, Any]) -> list[Event]:
+    def _get_model(self, data: dict[str, Any]) -> UnboundedPopulationModel:
+        return UnboundedPopulationModel(init_state=self.init_state.format(**data))
+
+    def _get_events(self, data: dict[str, Any]) -> list[UnboundedPopulationEvent]:
         return get_FBD_events(
             states=self.states,
             diversification=skyline_vector(self.diversification, data),
@@ -171,44 +201,22 @@ class FBDTreeDatasetGenerator(TreeDatasetGenerator):
         )
 
 
-class ContactTracingTreeDatasetGenerator(TreeDatasetGenerator):
-    max_notified_contacts: cfg.Integer = 1
-    notification_probability: cfg.SkylineParameter = 0.0
-    sampling_rate_after_notification: cfg.SkylineParameter = 2**32
-    samplable_states_after_notification: list[str] | None = None
-
-    @abstractmethod
-    def _get_base_events(self, data: dict[str, Any]) -> list[Event]: ...
-
-    def _get_events(self, data: dict[str, Any]) -> list[Event]:
-        events = self._get_base_events(data)
-        if self.notification_probability:
-            events = get_contact_tracing_events(
-                events=events,
-                max_notified_contacts=integer(self.max_notified_contacts, data),
-                notification_probability=skyline_parameter(
-                    self.notification_probability, data
-                ),
-                sampling_rate_after_notification=skyline_parameter(
-                    self.sampling_rate_after_notification, data
-                ),
-                samplable_states_after_notification=self.samplable_states_after_notification,
-            )
-        return events
-
-
-class EpidemiologicalTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
+class EpidemiologicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.EPIDEMIOLOGICAL] = (
         ParameterizationType.EPIDEMIOLOGICAL
     )
     states: list[str]
+    init_state: str
     sampling_proportions: cfg.SkylineVector
     reproduction_numbers: cfg.SkylineVector = 0
     become_uninfectious_rates: cfg.SkylineVector = 0
     migration_rates: cfg.SkylineMatrix = None
     reproduction_numbers_among_states: cfg.SkylineMatrix = None
 
-    def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
+    def _get_model(self, data: dict[str, Any]) -> UnboundedPopulationModel:
+        return UnboundedPopulationModel(init_state=self.init_state.format(**data))
+
+    def _get_events(self, data: dict[str, Any]) -> list[UnboundedPopulationEvent]:
         return get_epidemiological_events(
             states=self.states,
             reproduction_numbers=skyline_vector(self.reproduction_numbers, data),
@@ -223,13 +231,16 @@ class EpidemiologicalTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
         )
 
 
-class BDTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
+class BDTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BD] = ParameterizationType.BD
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
-    def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
+    def _get_model(self, data: dict[str, Any]) -> UnboundedPopulationModel:
+        return UnboundedPopulationModel(init_state=INFECTIOUS_STATE)
+
+    def _get_events(self, data: dict[str, Any]) -> list[UnboundedPopulationEvent]:
         return get_BD_events(
             reproduction_number=skyline_parameter(self.reproduction_number, data),
             infectious_period=skyline_parameter(self.infectious_period, data),
@@ -237,14 +248,24 @@ class BDTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
         )
 
 
-class BDEITreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
+class BDEITreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BDEI] = ParameterizationType.BDEI
+    init_state: str = EXPOSED_STATE
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     incubation_period: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
-    def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
+    def _get_model(self, data: dict[str, Any]) -> UnboundedPopulationModel:
+        init_state = self.init_state.format(**data)
+        if init_state not in [EXPOSED_STATE, INFECTIOUS_STATE]:
+            raise ValueError(
+                f"Invalid init_state '{init_state}' for BDEI model. "
+                f"It must be either '{EXPOSED_STATE}' or '{INFECTIOUS_STATE}'."
+            )
+        return UnboundedPopulationModel(init_state=init_state)
+
+    def _get_events(self, data: dict[str, Any]) -> list[UnboundedPopulationEvent]:
         return get_BDEI_events(
             reproduction_number=skyline_parameter(self.reproduction_number, data),
             infectious_period=skyline_parameter(self.infectious_period, data),
@@ -253,15 +274,25 @@ class BDEITreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
         )
 
 
-class BDSSTreeDatasetGenerator(ContactTracingTreeDatasetGenerator):
+class BDSSTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BDSS] = ParameterizationType.BDSS
+    init_state: str = INFECTIOUS_STATE
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     superspreading_ratio: cfg.SkylineParameter
     superspreaders_proportion: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
-    def _get_base_events(self, data: dict[str, Any]) -> list[Event]:
+    def _get_model(self, data: dict[str, Any]) -> UnboundedPopulationModel:
+        init_state = self.init_state.format(**data)
+        if init_state not in [INFECTIOUS_STATE, SUPERSPREADER_STATE]:
+            raise ValueError(
+                f"Invalid init_state '{init_state}' for BDSS model. "
+                f"It must be either '{INFECTIOUS_STATE}' or '{SUPERSPREADER_STATE}'."
+            )
+        return UnboundedPopulationModel(init_state=init_state)
+
+    def _get_events(self, data: dict[str, Any]) -> list[UnboundedPopulationEvent]:
         return get_BDSS_events(
             reproduction_number=skyline_parameter(self.reproduction_number, data),
             infectious_period=skyline_parameter(self.infectious_period, data),

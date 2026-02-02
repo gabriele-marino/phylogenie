@@ -1,4 +1,11 @@
-from phylogenie.core import Node, Tree
+from phylogenie.draw import (
+    draw_colored_dated_tree_categorical,
+    draw_colored_dated_tree_continuous,
+    draw_colored_tree_categorical,
+    draw_colored_tree_continuous,
+    draw_dated_tree,
+    draw_tree,
+)
 from phylogenie.generators import (
     AliSimDatasetGenerator,
     BDEITreeDatasetGenerator,
@@ -12,6 +19,7 @@ from phylogenie.generators import (
     TreeDatasetGeneratorConfig,
 )
 from phylogenie.io import dump_fasta, dump_newick, load_fasta, load_newick, load_nexus
+from phylogenie.main import run
 from phylogenie.msa import MSA, Sequence
 from phylogenie.skyline import (
     SkylineMatrix,
@@ -25,29 +33,36 @@ from phylogenie.skyline import (
     skyline_parameter,
     skyline_vector,
 )
+from phylogenie.tree_node import TreeNode
 from phylogenie.treesimulator import (
     Birth,
-    BirthWithContactTracing,
     Death,
     Event,
     Migration,
+    Model,
     Sampling,
-    SamplingWithContactTracing,
+    SamplingAtTime,
+    TimedEvent,
+    UnboundedPopulationEvent,
+    UnboundedPopulationModel,
+    UnboundedPopulationTimedEvent,
     generate_trees,
     get_BD_events,
     get_BDEI_events,
     get_BDSS_events,
     get_canonical_events,
-    get_contact_tracing_events,
     get_epidemiological_events,
     get_FBD_events,
-    get_node_state,
     simulate_tree,
 )
 
 __all__ = [
-    "Node",
-    "Tree",
+    "draw_colored_dated_tree_categorical",
+    "draw_colored_dated_tree_continuous",
+    "draw_colored_tree_categorical",
+    "draw_colored_tree_continuous",
+    "draw_dated_tree",
+    "draw_tree",
     "AliSimDatasetGenerator",
     "BDEITreeDatasetGenerator",
     "BDSSTreeDatasetGenerator",
@@ -63,6 +78,7 @@ __all__ = [
     "load_fasta",
     "load_newick",
     "load_nexus",
+    "run",
     "MSA",
     "Sequence",
     "SkylineMatrix",
@@ -75,21 +91,24 @@ __all__ = [
     "skyline_matrix",
     "skyline_parameter",
     "skyline_vector",
+    "TreeNode",
     "Birth",
-    "BirthWithContactTracing",
     "Death",
     "Event",
     "Migration",
+    "Model",
     "Sampling",
-    "SamplingWithContactTracing",
+    "SamplingAtTime",
+    "TimedEvent",
+    "UnboundedPopulationEvent",
+    "UnboundedPopulationModel",
+    "UnboundedPopulationTimedEvent",
     "generate_trees",
     "get_BD_events",
     "get_BDEI_events",
     "get_BDSS_events",
     "get_canonical_events",
-    "get_contact_tracing_events",
     "get_epidemiological_events",
     "get_FBD_events",
-    "get_node_state",
     "simulate_tree",
 ]

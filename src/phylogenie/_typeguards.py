@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, TypeGuard
 
-import phylogenie.typings as pgt
+import phylogenie._typings as pgt
 
 
 def is_many(x: Any) -> TypeGuard[pgt.Many[Any]]:

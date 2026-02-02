@@ -9,6 +9,25 @@ def load_fasta(
     fasta_file: str | Path,
     extract_time_from_id: Callable[[str], float | date] | None = None,
 ) -> MSA:
+    """
+    Load a FASTA file into an MSA object.
+
+    Optionally extracts sampling times from sequence identifiers. If no custom
+    extractor is provided, the loader attempts to parse the last '|' separated
+    segment as a float or ISO date.
+
+    Parameters
+    -----------
+    fasta_file : str | Path
+        Path to the FASTA file to read.
+    extract_time_from_id : Callable[[str], float | date] | None, optional
+        Function that extracts a sampling time from a FASTA record ID.
+
+    Returns
+    --------
+    MSA
+        The loaded multiple sequence alignment.
+    """
     sequences: list[Sequence] = []
     with open(fasta_file, "r") as f:
         for line in f:
@@ -32,7 +51,17 @@ def load_fasta(
     return MSA(sequences)
 
 
-def dump_fasta(msa: MSA | list[Sequence], fasta_file: str | Path) -> None:
+def dump_fasta(msa: MSA | list[Sequence], fasta_file: str | Path):
+    """
+    Write an MSA or list of sequences to a FASTA file.
+
+    Parameters
+    -----------
+    msa : MSA | list[Sequence]
+        The alignment or raw sequences to write.
+    fasta_file : str | Path
+        Output file path.
+    """
     with open(fasta_file, "w") as f:
         sequences = msa.sequences if isinstance(msa, MSA) else msa
         for seq in sequences:

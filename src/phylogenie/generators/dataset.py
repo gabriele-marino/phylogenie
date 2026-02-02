@@ -8,7 +8,7 @@ import pandas as pd
 from numpy.random import Generator, default_rng
 from tqdm import tqdm
 
-from phylogenie.generators.configs import Distribution, StrictBaseModel
+from phylogenie.generators._configs import Distribution, StrictBaseModel
 
 
 class DataType(str, Enum):

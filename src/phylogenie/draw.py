@@ -11,12 +11,23 @@ from matplotlib.axes import Axes
 from matplotlib.colors import Colormap
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes  # pyright: ignore
 
-from phylogenie.core import Node, Tree
+from phylogenie.tree_node import TreeNode
 
 
 @dataclass
 class CalibrationNode:
-    node: Node
+    """
+    Pair a tree node with a calendar date for time calibration.
+
+    Parameters
+    -----------
+    node : Node
+        Tree node used for calibration.
+    date : datetime.date
+        Calendar date associated with the node.
+    """
+
+    node: TreeNode
     date: datetime.date
 
 
@@ -24,9 +35,9 @@ Color = str | tuple[float, float, float] | tuple[float, float, float, float]
 
 
 def draw_tree(
-    tree: Tree,
+    tree: TreeNode,
     ax: Axes | None = None,
-    colors: Color | Mapping[Node, Color] = "black",
+    colors: Color | Mapping[TreeNode, Color] = "black",
     backward_time: bool = False,
     branch_kwargs: dict[str, Any] | None = None,
     sampled_ancestor_kwargs: dict[str, Any] | None = None,
@@ -35,22 +46,22 @@ def draw_tree(
     Draw a phylogenetic tree with colored branches.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree to draw.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
-    colors : Color | Mapping[Node, Color], optional
-        A single color for all branches or a mapping from each node to a color.
+    colors : Color | Mapping[TreeNode, Color], optional
+        A single color for all branches or a mapping from each node to a color. Default is 'black'.
     backward_time : bool, optional
-        If True, the x-axis is inverted to represent time going backward.
+        If True, the x-axis is inverted to represent time going backward. Default is False.
     branch_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the branch drawing functions.
     sampled_ancestor_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to highlight sampled ancestors.
 
     Returns
-    -------
+    --------
     Axes
         The Axes with the drawn tree.
     """
@@ -72,17 +83,17 @@ def draw_tree(
         tree.ages
         if backward_time
         else tree.depth_levels
-        if any(node.branch_length is None for node in root.iter_descendants())
+        if all(node.branch_length is None for node in tree)
         else tree.times
     )
 
     leaves = tree.get_leaves()
-    ys: dict[Node, float] = {
+    ys: dict[TreeNode, float] = {
         node: i
         for i, node in enumerate(leaves)
         if node.parent is None or node.branch_length != 0
     }
-    for node in tree.postorder_traversal():
+    for node in tree.iter_postorder():
         if node.is_internal():
             children = [child for child in node.children if child.branch_length != 0]
             ys[node] = sum(ys[child] for child in children) / len(children)
@@ -112,22 +123,24 @@ def draw_tree(
 
 
 def _time_to_date(
-    time: float, tree: Tree, calibration_nodes: tuple[CalibrationNode, CalibrationNode]
+    time: float,
+    tree: TreeNode,
+    calibration_nodes: tuple[CalibrationNode, CalibrationNode],
 ) -> datetime.date:
     """
     Convert a time value to a date using linear interpolation between two calibration nodes.
 
     Parameters
-    ----------
+    -----------
     time : float
         The time value to convert.
-    tree : Tree
+    tree : TreeNode
         The phylogenetic tree.
     calibration_nodes : tuple[CalibrationNode, CalibrationNode]
         Two calibration nodes defining the mapping from time to date.
 
     Returns
-    -------
+    --------
     datetime.date
         The interpolated date corresponding to the given time.
     """
@@ -139,30 +152,30 @@ def _time_to_date(
 
 
 def draw_dated_tree(
-    tree: Tree,
+    tree: TreeNode,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     ax: Axes | None = None,
-    colors: Color | Mapping[Node, Color] = "black",
+    colors: Color | Mapping[TreeNode, Color] = "black",
     branch_kwargs: dict[str, Any] | None = None,
 ) -> Axes:
     """
     Draw a phylogenetic tree with branches positioned according to calibrated dates.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree to draw.
     calibration_nodes : tuple[CalibrationNode, CalibrationNode]
-        Two calibration nodes defining the mapping from depth to date.
+        Two calibration nodes defining the mapping from time to date.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
-    colors : Color | Mapping[Node, Color], optional
-        A single color for all branches or a mapping from each node to a color.
+    colors : Color | Mapping[TreeNode, Color], optional
+        A single color for all branches or a mapping from each node to a color. Default is 'black'.
     branch_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the branch drawing functions.
 
     Returns
-    -------
+    --------
     Axes
         The Axes with the drawn dated tree.
     """
@@ -181,8 +194,8 @@ def draw_dated_tree(
         for node, time in tree.times.items()
     }
 
-    ys: dict[Node, float] = {node: i for i, node in enumerate(tree.get_leaves())}
-    for node in tree.postorder_traversal():
+    ys: dict[TreeNode, float] = {node: i for i, node in enumerate(tree.get_leaves())}
+    for node in tree.iter_postorder():
         if node.is_internal():
             ys[node] = sum(ys[child] for child in node.children) / len(node.children)
 
@@ -225,7 +238,7 @@ def draw_dated_tree(
 
 
 def _init_colored_tree_categorical(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = None,
     default_color: Color = "black",
@@ -233,35 +246,35 @@ def _init_colored_tree_categorical(
     show_legend: bool = True,
     labels: Mapping[Any, str] | None = None,
     legend_kwargs: dict[str, Any] | None = None,
-) -> tuple[Axes, dict[Node, Color]]:
+) -> tuple[Axes, dict[TreeNode, Color]]:
     """
     Initialize colors for drawing a tree based on categorical metadata.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree.
     color_by : str
         The metadata key to color branches by.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
-        The color to use for nodes without the specified metadata.
+        The color to use for nodes without the specified metadata. Default is 'black'.
     colormap : str | Mapping[str, Color] | Colormap, optional
         The colormap to use for coloring categories.
         If a string, it is used to get a matplotlib colormap.
         If a mapping, it maps category values to colors directly.
-        Defaults to 'tab20'.
+        Default is 'tab20'.
     show_legend : bool, optional
-        Whether to display a legend for the categories.
+        Whether to display a legend for the categories. Default is True.
     labels : Mapping[Any, str] | None, optional
-        A mapping from category values to labels for the legend.
+        Additional mapping from category values to labels for the legend.
     legend_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the legend.
 
     Returns
-    -------
-    tuple[Axes, dict[Tree, Color]]
+    --------
+    tuple[Axes, dict[TreeNode, Color]]
         The Axes and a dictionary mapping each node to its assigned color.
     """
     if ax is None:
@@ -300,7 +313,7 @@ def _init_colored_tree_categorical(
 
 
 def draw_colored_tree_categorical(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = None,
     backward_time: bool = False,
@@ -316,26 +329,26 @@ def draw_colored_tree_categorical(
     Draw a phylogenetic tree with branches colored based on categorical metadata.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree to draw.
     color_by : str
         The metadata key to color branches by.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
     backward_time : bool, optional
-        If True, the x-axis is inverted to represent time going backward.
+        If True, the x-axis is inverted to represent time going backward. Default is False.
     default_color : Color, optional
-        The color to use for nodes without the specified metadata.
+        The color to use for nodes without the specified metadata. Default is 'black'.
     colormap : str | Mapping[str, Color] | Colormap, optional
         The colormap to use for coloring categories.
         If a string, it is used to get a matplotlib colormap.
         If a mapping, it maps category values to colors directly.
-        Defaults to 'tab20'.
+        Default is 'tab20'.
     show_legend : bool, optional
-        Whether to display a legend for the categories.
+        Whether to display a legend for the categories. Default is True.
     labels : Mapping[Any, str] | None, optional
-        A mapping from category values to labels for the legend.
+        Additional mapping from category values to labels for the legend.
     legend_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the legend.
     branch_kwargs : dict[str, Any] | None, optional
@@ -344,7 +357,7 @@ def draw_colored_tree_categorical(
         Additional keyword arguments to highlight sampled ancestors.
 
     Returns
-    -------
+    --------
     Axes
         The Axes with the drawn colored tree.
     """
@@ -369,7 +382,7 @@ def draw_colored_tree_categorical(
 
 
 def draw_colored_dated_tree_categorical(
-    tree: Tree,
+    tree: TreeNode,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     color_by: str,
     ax: Axes | None = None,
@@ -384,33 +397,33 @@ def draw_colored_dated_tree_categorical(
     Draw a dated phylogenetic tree with branches colored based on categorical metadata.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree to draw.
     calibration_nodes : tuple[CalibrationNode, CalibrationNode]
-        Two calibration nodes defining the mapping from depth to date.
+        Two calibration nodes defining the mapping from time to date.
     color_by : str
         The metadata key to color branches by.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
-        The color to use for nodes without the specified metadata.
+        The color to use for nodes without the specified metadata. Default is 'black'.
     colormap : str | Mapping[str, Color] | Colormap, optional
         The colormap to use for coloring categories.
         If a string, it is used to get a matplotlib colormap.
         If a mapping, it maps category values to colors directly.
-        Defaults to 'tab20'.
+        Default is 'tab20'.
     show_legend : bool, optional
-        Whether to display a legend for the categories.
+        Whether to display a legend for the categories. Default is True.
     labels : Mapping[Any, str] | None, optional
-        A mapping from category values to labels for the legend.
+        Additional mapping from category values to labels for the legend.
     legend_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the legend.
     branch_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the branch drawing functions.
 
     Returns
-    -------
+    --------
     Axes
         The Axes with the drawn colored dated tree.
     """
@@ -435,7 +448,7 @@ def draw_colored_dated_tree_categorical(
 
 @overload
 def _init_colored_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = ...,
     default_color: Color = ...,
@@ -446,10 +459,10 @@ def _init_colored_tree_continuous(
     show_hist: Literal[False],
     hist_kwargs: dict[str, Any] | None = ...,
     hist_axes_kwargs: dict[str, Any] | None = ...,
-) -> tuple[Axes, dict[Node, Color]]: ...
+) -> tuple[Axes, dict[TreeNode, Color]]: ...
 @overload
 def _init_colored_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = ...,
     default_color: Color = ...,
@@ -460,9 +473,9 @@ def _init_colored_tree_continuous(
     show_hist: Literal[True] = True,
     hist_kwargs: dict[str, Any] | None = ...,
     hist_axes_kwargs: dict[str, Any] | None = ...,
-) -> tuple[Axes, dict[Node, Color], Axes]: ...
+) -> tuple[Axes, dict[TreeNode, Color], Axes]: ...
 def _init_colored_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = None,
     default_color: Color = "black",
@@ -472,36 +485,36 @@ def _init_colored_tree_continuous(
     show_hist: bool = True,
     hist_kwargs: dict[str, Any] | None = None,
     hist_axes_kwargs: dict[str, Any] | None = None,
-) -> tuple[Axes, dict[Node, Color]] | tuple[Axes, dict[Node, Color], Axes]:
+) -> tuple[Axes, dict[TreeNode, Color]] | tuple[Axes, dict[TreeNode, Color], Axes]:
     """
     Initialize colors for drawing a tree based on continuous metadata.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree.
     color_by : str
         The metadata key to color branches by.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
-        The color to use for nodes without the specified metadata.
+        The color to use for nodes without the specified metadata. Default is 'black'.
     colormap : str | Colormap, optional
-        The colormap to use for coloring continuous values. Defaults to 'viridis'.
+        The colormap to use for coloring continuous values. Default is 'viridis'.
     vmin : float | None, optional
         The minimum value for normalization. If None, uses the minimum of the data.
     vmax : float | None, optional
         The maximum value for normalization. If None, uses the maximum of the data.
     show_hist : bool, optional
-        Whether to display a histogram of the continuous values.
+        Whether to display a histogram of the continuous values. Default is True.
     hist_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the histogram.
     hist_axes_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to define the histogram Axes.
 
     Returns
-    -------
-    tuple[Axes, dict[Node, Color]] | tuple[Axes, dict[Node, Color], Axes]
+    --------
+    tuple[Axes, dict[TreeNode, Color]] | tuple[Axes, dict[TreeNode, Color], Axes]
         The Axes, a dictionary mapping each node to its assigned color,
         and optionally the histogram Axes if `show_hist` is True.
     """
@@ -544,7 +557,7 @@ def _init_colored_tree_continuous(
 
 @overload
 def draw_colored_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = None,
     backward_time: bool = False,
@@ -561,7 +574,7 @@ def draw_colored_tree_continuous(
 ) -> Axes: ...
 @overload
 def draw_colored_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = None,
     backward_time: bool = False,
@@ -576,7 +589,7 @@ def draw_colored_tree_continuous(
     hist_axes_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Axes, Axes]: ...
 def draw_colored_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     color_by: str,
     ax: Axes | None = None,
     backward_time: bool = False,
@@ -594,19 +607,19 @@ def draw_colored_tree_continuous(
     Draw a phylogenetic tree with branches colored based on continuous metadata.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree to draw.
     color_by : str
         The metadata key to color branches by.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
     backward_time : bool, optional
-        If True, the x-axis is inverted to represent time going backward.
+        If True, the x-axis is inverted to represent time going backward. Default is False.
     default_color : Color, optional
-        The color to use for nodes without the specified metadata.
+        The color to use for nodes without the specified metadata. Default is 'black'.
     colormap : str | Colormap, optional
-        The colormap to use for coloring continuous values. Defaults to 'viridis'.
+        The colormap to use for coloring continuous values. Default is 'viridis'.
     vmin : float | None, optional
         The minimum value for normalization. If None, uses the minimum of the data.
     vmax : float | None, optional
@@ -616,14 +629,14 @@ def draw_colored_tree_continuous(
     sampled_ancestor_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to highlight sampled ancestors.
     show_hist : bool, optional
-        Whether to display a histogram of the continuous values.
+        Whether to display a histogram of the continuous values. Default is True.
     hist_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the histogram.
     hist_axes_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to define the histogram Axes.
 
     Returns
-    -------
+    --------
     Axes | tuple[Axes, Axes]
         The Axes with the drawn colored tree,
         and optionally the histogram Axes if `show_hist` is True.
@@ -674,7 +687,7 @@ def draw_colored_tree_continuous(
 
 @overload
 def draw_colored_dated_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     color_by: str,
     ax: Axes | None = None,
@@ -690,7 +703,7 @@ def draw_colored_dated_tree_continuous(
 ) -> Axes: ...
 @overload
 def draw_colored_dated_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     color_by: str,
     ax: Axes | None = None,
@@ -704,7 +717,7 @@ def draw_colored_dated_tree_continuous(
     hist_axes_kwargs: dict[str, Any] | None = None,
 ) -> tuple[Axes, Axes]: ...
 def draw_colored_dated_tree_continuous(
-    tree: Tree,
+    tree: TreeNode,
     calibration_nodes: tuple[CalibrationNode, CalibrationNode],
     color_by: str,
     ax: Axes | None = None,
@@ -721,19 +734,19 @@ def draw_colored_dated_tree_continuous(
     Draw a dated phylogenetic tree with branches colored based on continuous metadata.
 
     Parameters
-    ----------
-    tree : Tree
+    -----------
+    tree : TreeNode
         The phylogenetic tree to draw.
     calibration_nodes : tuple[CalibrationNode, CalibrationNode]
-        Two calibration nodes defining the mapping from depth to date.
+        Two calibration nodes defining the mapping from time to date.
     color_by : str
         The metadata key to color branches by.
     ax : Axes | None, optional
         The matplotlib Axes to draw on. If None, uses the current Axes.
     default_color : Color, optional
-        The color to use for nodes without the specified metadata.
+        The color to use for nodes without the specified metadata. Default is 'black'.
     colormap : str | Colormap, optional
-        The colormap to use for coloring continuous values. Defaults to 'viridis'.
+        The colormap to use for coloring continuous values. Default is 'viridis'.
     vmin : float | None, optional
         The minimum value for normalization. If None, uses the minimum of the data.
     vmax : float | None, optional
@@ -741,14 +754,14 @@ def draw_colored_dated_tree_continuous(
     branch_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the branch drawing functions.
     show_hist : bool, optional
-        Whether to display a histogram of the continuous values.
+        Whether to display a histogram of the continuous values. Default is True.
     hist_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to pass to the histogram.
     hist_axes_kwargs : dict[str, Any] | None, optional
         Additional keyword arguments to define the histogram Axes.
 
     Returns
-    -------
+    --------
     Axes | tuple[Axes, Axes]
         The Axes with the drawn colored dated tree,
         and optionally the histogram Axes if `show_hist` is True.

@@ -32,8 +32,8 @@ Phylogenie comes packed with useful features, including:
 - **Skyline parameter support** 🪜  
   Support for piece-wise constant parameters.
 
-- **Arithmetic operations on parameters** 🧮  
-  Perform flexible arithmetic operations between parameters directly within the config file.
+- **Operations on parameters** 🧮  
+  Perform flexible operations between parameters directly within the config file.
 
 ## 📦 Installation
 Phylogenie requires [Python](https://www.python.org/) 3.10 to be installed on your system. There are several ways to install Python and managing different Python versions. One popular option is to use [pyenv](https://github.com/pyenv/pyenv).
@@ -82,4 +82,4 @@ This project is licensed under [MIT License](https://raw.githubusercontent.com/g
 
 For questions, bug reports, or feature requests, please, consider opening an [issue on GitHub](https://github.com/gabriele-marino/phylogenie/issues), or [contact me directly](mailto:gabmarino.8601@email.com).
 
-If you need help with the configuration files, feel free to reach out —  I am always very available and happy to assist!
+For help with configuration files, don’t hesitate to reach out — I’m happy to assist!

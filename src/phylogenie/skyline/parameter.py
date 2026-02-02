@@ -2,8 +2,8 @@ from bisect import bisect_right
 from collections.abc import Callable
 from typing import Any, TypeGuard, Union
 
-import phylogenie.typeguards as tg
-import phylogenie.typings as pgt
+import phylogenie._typeguards as tg
+import phylogenie._typings as pgt
 
 SkylineParameterLike = Union[pgt.Scalar, "SkylineParameter"]
 
@@ -19,11 +19,25 @@ def is_many_skyline_parameters_like(
 
 
 class SkylineParameter:
+    """
+    Represent a piecewise-constant scalar parameter over time.
+    """
+
     def __init__(
         self,
         value: pgt.OneOrManyScalars,
         change_times: pgt.ManyScalars | None = None,
     ):
+        """
+        Initialize a SkylineParameter.
+
+        Parameters
+        -----------
+        value : OneOrManyScalars
+            Values for each segment of the parameter.
+        change_times : ManyScalars | None, optional
+            Times at which the parameter value changes. If None, the parameter is constant.
+        """
         if isinstance(value, pgt.Scalar):
             value = [value]
         elif not tg.is_many_scalars(value):
@@ -61,13 +75,42 @@ class SkylineParameter:
 
     @property
     def value(self) -> pgt.Vector1D:
+        """
+        Return the values of the parameter segments.
+
+        Returns
+        --------
+        Vector1D
+            Tuple of parameter values for each segment.
+        """
         return tuple(self._value)
 
     @property
     def change_times(self) -> pgt.Vector1D:
+        """
+        Return the times at which the parameter value changes.
+
+        Returns
+        --------
+        Vector1D
+            Tuple of change times corresponding to value segments.
+        """
         return tuple(self._change_times)
 
     def get_value_at_time(self, t: pgt.Scalar) -> pgt.Scalar:
+        """
+        Get the parameter value at a given time.
+
+        Parameters
+        -----------
+        t : Scalar
+            Time at which to evaluate the parameter.
+
+        Returns
+        --------
+        Scalar
+            Parameter value at the provided time.
+        """
         if t < 0:
             raise ValueError(f"Time cannot be negative (got t={t}).")
         return self.value[bisect_right(self.change_times, t)]
@@ -125,4 +168,17 @@ class SkylineParameter:
 
 
 def skyline_parameter(x: SkylineParameterLike) -> SkylineParameter:
+    """
+    Coerce a scalar or SkylineParameter into a SkylineParameter.
+
+    Parameters
+    -----------
+    x : SkylineParameterLike
+        Scalar or SkylineParameter to coerce.
+
+    Returns
+    --------
+    SkylineParameter
+        A SkylineParameter instance.
+    """
     return SkylineParameter(x) if isinstance(x, pgt.Scalar) else x
