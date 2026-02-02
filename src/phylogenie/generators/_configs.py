@@ -59,7 +59,7 @@ class TimedEventModel(StrictBaseModel):
     times: ManyScalars
 
 
-class SamplingAtTimeModel(TimedEventModel):
+class TimedSamplingModel(TimedEventModel):
     type: Literal[TimedEventType.SAMPLING]
     state: str
     proportion: Scalar
@@ -67,6 +67,6 @@ class SamplingAtTimeModel(TimedEventModel):
 
 
 UnboundedPopulationTimedEventConfig = Annotated[
-    SamplingAtTimeModel,
+    TimedSamplingModel,
     Field(discriminator="type"),
 ]

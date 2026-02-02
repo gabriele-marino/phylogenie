@@ -68,7 +68,7 @@ class Sampling(UnboundedPopulationEvent):
         return f"Sampling(state={self.state}, rate={self.rate}, removal={self.removal})"
 
 
-class SamplingAtTime(UnboundedPopulationTimedEvent):
+class TimedSampling(UnboundedPopulationTimedEvent):
     def __init__(
         self, times: Sequence[float], state: str, proportion: float, removal: bool
     ):
@@ -83,7 +83,7 @@ class SamplingAtTime(UnboundedPopulationTimedEvent):
                 model.sample(individual, time, self.removal)
 
     def __repr__(self) -> str:
-        return f"SamplingAtTime(times={self.times}, state={self.state}, proportion={self.proportion}, removal={self.removal})"
+        return f"TimedSampling(times={self.times}, state={self.state}, proportion={self.proportion}, removal={self.removal})"
 
 
 def get_canonical_events(
