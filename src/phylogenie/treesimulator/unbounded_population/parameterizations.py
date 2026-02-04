@@ -1,7 +1,5 @@
 from collections.abc import Sequence
 
-from numpy.random import Generator
-
 from phylogenie.skyline import (
     SkylineMatrixCoercible,
     SkylineParameterLike,
@@ -9,127 +7,67 @@ from phylogenie.skyline import (
     skyline_matrix,
     skyline_vector,
 )
-from phylogenie.treesimulator.events.base import SingleReactantEvent, TimedEvent
-from phylogenie.treesimulator.models import UnboundedPopulationModel
-
-UnboundedPopulationEvent = SingleReactantEvent[UnboundedPopulationModel]
-UnboundedPopulationTimedEvent = TimedEvent[UnboundedPopulationModel]
+from phylogenie.treesimulator.unbounded_population.model import UnboundedPopulationModel
 
 INFECTIOUS_STATE = "I"
 EXPOSED_STATE = "E"
 SUPERSPREADER_STATE = "S"
 
 
-class Birth(UnboundedPopulationEvent):
-    def __init__(self, state: str, rate: SkylineParameterLike, child_state: str):
-        super().__init__(state, rate)
-        self.child_state = child_state
-
-    def apply(self, model: UnboundedPopulationModel, time: float, rng: Generator):
-        individual = self.draw_individual(model, rng)
-        model.birth_from(individual, self.child_state, time)
-
-    def __repr__(self) -> str:
-        return f"Birth(state={self.state}, rate={self.rate}, child_state={self.child_state})"
-
-
-class Death(UnboundedPopulationEvent):
-    def apply(self, model: UnboundedPopulationModel, time: float, rng: Generator):
-        individual = self.draw_individual(model, rng)
-        model.remove(individual, time)
-
-    def __repr__(self) -> str:
-        return f"Death(state={self.state}, rate={self.rate})"
-
-
-class Migration(UnboundedPopulationEvent):
-    def __init__(self, state: str, rate: SkylineParameterLike, target_state: str):
-        super().__init__(state, rate)
-        self.target_state = target_state
-
-    def apply(self, model: UnboundedPopulationModel, time: float, rng: Generator):
-        individual = self.draw_individual(model, rng)
-        model.migrate(individual, self.target_state, time)
-
-    def __repr__(self) -> str:
-        return f"Migration(state={self.state}, rate={self.rate}, target_state={self.target_state})"
-
-
-class Sampling(UnboundedPopulationEvent):
-    def __init__(self, state: str, rate: SkylineParameterLike, removal: bool):
-        super().__init__(state, rate)
-        self.removal = removal
-
-    def apply(self, model: UnboundedPopulationModel, time: float, rng: Generator):
-        individual = self.draw_individual(model, rng)
-        model.sample(individual, time, self.removal)
-
-    def __repr__(self) -> str:
-        return f"Sampling(state={self.state}, rate={self.rate}, removal={self.removal})"
-
-
-class TimedSampling(UnboundedPopulationTimedEvent):
-    def __init__(
-        self, times: Sequence[float], state: str, proportion: float, removal: bool
-    ):
-        super().__init__(times)
-        self.state = state
-        self.proportion = proportion
-        self.removal = removal
-
-    def apply(self, model: UnboundedPopulationModel, time: float, rng: Generator):
-        for individual in model.get_individuals():
-            if rng.random() < self.proportion:
-                model.sample(individual, time, self.removal)
-
-    def __repr__(self) -> str:
-        return f"TimedSampling(times={self.times}, state={self.state}, proportion={self.proportion}, removal={self.removal})"
-
-
-def get_canonical_events(
-    states: list[str],
+def get_canonical_model(
+    init_state: str,
+    states: Sequence[str],
     sampling_rates: SkylineVectorCoercible = 0,
     remove_after_sampling: bool = False,
     birth_rates: SkylineVectorCoercible = 0,
     death_rates: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
     birth_rates_among_states: SkylineMatrixCoercible | None = None,
-) -> list[UnboundedPopulationEvent]:
+    max_time: float | None = None,
+    seed: int | None = None,
+) -> UnboundedPopulationModel:
     N = len(states)
 
     birth_rates = skyline_vector(birth_rates, N)
     death_rates = skyline_vector(death_rates, N)
     sampling_rates = skyline_vector(sampling_rates, N)
 
-    events: list[UnboundedPopulationEvent] = []
+    model = UnboundedPopulationModel(
+        init_state=init_state, max_time=max_time, seed=seed
+    )
     for i, state in enumerate(states):
-        events.append(Birth(state, birth_rates[i], state))
-        events.append(Death(state, death_rates[i]))
-        events.append(Sampling(state, sampling_rates[i], remove_after_sampling))
+        model.add_birth_event(state, state, birth_rates[i])
+        model.add_death_event(state, death_rates[i])
+        model.add_sampling_event(state, remove_after_sampling, sampling_rates[i])
 
     if migration_rates is not None:
         migration_rates = skyline_matrix(migration_rates, N, N - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
-                events.append(Migration(state, migration_rates[i, j], other_state))
+                model.add_migration_event(state, other_state, migration_rates[i, j])
 
     if birth_rates_among_states is not None:
         birth_rates_among_states = skyline_matrix(birth_rates_among_states, N, N - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
-                events.append(Birth(state, birth_rates_among_states[i, j], other_state))
+                model.add_birth_event(
+                    state, other_state, birth_rates_among_states[i, j]
+                )
 
-    return [event for event in events if event.rate]
+    return model
 
 
-def get_FBD_events(
-    states: list[str],
+def get_FBD_model(
+    init_state: str,
+    states: Sequence[str],
     sampling_proportions: SkylineVectorCoercible = 0,
     diversification: SkylineVectorCoercible = 0,
     turnover: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
     diversification_between_states: SkylineMatrixCoercible | None = None,
-) -> list[UnboundedPopulationEvent]:
+    max_time: float | None = None,
+    seed: int | None = None,
+) -> UnboundedPopulationModel:
     N = len(states)
 
     diversification = skyline_vector(diversification, N)
@@ -145,7 +83,8 @@ def get_FBD_events(
         else None
     )
 
-    return get_canonical_events(
+    return get_canonical_model(
+        init_state=init_state,
         states=states,
         sampling_rates=sampling_rates,
         remove_after_sampling=False,
@@ -153,17 +92,22 @@ def get_FBD_events(
         death_rates=death_rates,
         migration_rates=migration_rates,
         birth_rates_among_states=birth_rates_among_states,
+        max_time=max_time,
+        seed=seed,
     )
 
 
-def get_epidemiological_events(
-    states: list[str],
+def get_epidemiological_model(
+    init_state: str,
+    states: Sequence[str],
     sampling_proportions: SkylineVectorCoercible,
     reproduction_numbers: SkylineVectorCoercible = 0,
     become_uninfectious_rates: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
     reproduction_numbers_among_states: SkylineMatrixCoercible | None = None,
-) -> list[UnboundedPopulationEvent]:
+    max_time: float | None = None,
+    seed: int | None = None,
+) -> UnboundedPopulationModel:
     N = len(states)
 
     reproduction_numbers = skyline_vector(reproduction_numbers, N)
@@ -182,7 +126,8 @@ def get_epidemiological_events(
         else None
     )
 
-    return get_canonical_events(
+    return get_canonical_model(
+        init_state=init_state,
         states=states,
         sampling_rates=sampling_rates,
         remove_after_sampling=True,
@@ -190,54 +135,73 @@ def get_epidemiological_events(
         death_rates=death_rates,
         migration_rates=migration_rates,
         birth_rates_among_states=birth_rates_among_states,
+        max_time=max_time,
+        seed=seed,
     )
 
 
-def get_BD_events(
+def get_BD_model(
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
-) -> list[UnboundedPopulationEvent]:
-    return get_epidemiological_events(
+    max_time: float | None = None,
+    seed: int | None = None,
+) -> UnboundedPopulationModel:
+    return get_epidemiological_model(
+        init_state=INFECTIOUS_STATE,
         states=[INFECTIOUS_STATE],
         reproduction_numbers=reproduction_number,
         become_uninfectious_rates=1 / infectious_period,
         sampling_proportions=sampling_proportion,
+        max_time=max_time,
+        seed=seed,
     )
 
 
-def get_BDEI_events(
+def get_BDEI_model(
+    init_state: str,
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
     incubation_period: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
-) -> list[UnboundedPopulationEvent]:
-    return get_epidemiological_events(
+    max_time: float | None = None,
+    seed: int | None = None,
+) -> UnboundedPopulationModel:
+    return get_epidemiological_model(
+        init_state=init_state,
         states=[EXPOSED_STATE, INFECTIOUS_STATE],
         sampling_proportions=[0, sampling_proportion],
         become_uninfectious_rates=[0, 1 / infectious_period],
         reproduction_numbers_among_states=[[0], [reproduction_number]],
         migration_rates=[[1 / incubation_period], [0]],
+        max_time=max_time,
+        seed=seed,
     )
 
 
-def get_BDSS_events(
+def get_BDSS_model(
+    init_state: str,
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
     superspreading_ratio: SkylineParameterLike,
     superspreaders_proportion: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
-) -> list[UnboundedPopulationEvent]:
+    max_time: float | None = None,
+    seed: int | None = None,
+) -> UnboundedPopulationModel:
     f_SS = superspreaders_proportion
     r_SS = superspreading_ratio
     R_0_IS = reproduction_number * f_SS / (1 + r_SS * f_SS - f_SS)
     R_0_SI = (reproduction_number - r_SS * R_0_IS) * r_SS
     R_0_S = r_SS * R_0_IS
     R_0_I = R_0_SI / r_SS
-    return get_epidemiological_events(
+    return get_epidemiological_model(
+        init_state=init_state,
         states=[INFECTIOUS_STATE, SUPERSPREADER_STATE],
         reproduction_numbers=[R_0_I, R_0_S],
         reproduction_numbers_among_states=[[R_0_IS], [R_0_SI]],
         become_uninfectious_rates=1 / infectious_period,
         sampling_proportions=sampling_proportion,
+        max_time=max_time,
+        seed=seed,
     )

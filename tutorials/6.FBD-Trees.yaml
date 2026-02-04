@@ -75,10 +75,11 @@ sampling_proportions: s
 
 init_state: A
 max_time: max_time
+
 timed_events:
   - type: sampling
     times: [max_time]
-    state: A
+    state: A|B
     proportion: 1.0
     removal: True
 

@@ -16,7 +16,7 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
-from phylogenie.treesimulator import TimedSampling, UnboundedPopulationTimedEvent
+from phylogenie.treesimulator import UnboundedPopulationModel
 
 
 def eval_expression(
@@ -230,14 +230,14 @@ def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[st
     return data
 
 
-def unbounded_population_timed_event(
-    config: cfg.TimedEventModel, data: dict[str, Any]
-) -> UnboundedPopulationTimedEvent:
-    if isinstance(config, cfg.TimedSamplingModel):
-        return TimedSampling(
-            times=many_scalars(config.times, data),
-            state=string(config.state, data),
-            proportion=scalar(config.proportion, data),
-            removal=config.removal,
-        )
-    raise ValueError(f"Unknown timed event type: {type(config)}")
+def add_unbounded_population_timed_event(
+    model: UnboundedPopulationModel,
+    timed_event: cfg.UnboundedPopulationTimedEvent,
+    data: dict[str, Any],
+) -> None:
+    model.add_timed_sampling_event(
+        state=timed_event.state.format(**data),
+        proportion=scalar(timed_event.proportion, data),
+        removal=timed_event.removal,
+        times=many_scalars(timed_event.times, data),
+    )

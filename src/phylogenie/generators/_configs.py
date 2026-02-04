@@ -66,7 +66,6 @@ class TimedSamplingModel(TimedEventModel):
     removal: bool
 
 
-UnboundedPopulationTimedEventConfig = Annotated[
-    TimedSamplingModel,
-    Field(discriminator="type"),
+UnboundedPopulationTimedEvent = Annotated[
+    TimedSamplingModel, Field(discriminator="type")
 ]

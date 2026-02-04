@@ -1,22 +1,22 @@
+from collections.abc import Sequence
+
+from phylogenie.skyline import SkylineParameterLike, skyline_parameter
 from phylogenie.tree_node import TreeNode
-from phylogenie.treesimulator.models.base import Model
+from phylogenie.treesimulator.events import StochasticEvent, TimedEvent
+from phylogenie.treesimulator.model import Model
+
+STATE_KEY = "state"
 
 
 def _get_node_name(node_id: int, state: str) -> str:
     return f"{node_id}|{state}"
 
 
-def get_node_state(node_name: str) -> str:
-    if "|" not in node_name:
-        raise ValueError(
-            f"Invalid node name: {node_name} (expected format 'id|state')."
-        )
-    return node_name.split("|")[-1]
-
-
 class UnboundedPopulationModel(Model):
-    def __init__(self, init_state: str):
-        super().__init__()
+    def __init__(
+        self, init_state: str, max_time: float | None = None, seed: int | None = None
+    ):
+        super().__init__(max_time=max_time, seed=seed)
         self._init_state = init_state
         self.init()
 
@@ -36,6 +36,7 @@ class UnboundedPopulationModel(Model):
     def _get_new_node(self, state: str) -> TreeNode:
         self._next_node_id += 1
         node = TreeNode(_get_node_name(self._next_node_id, state))
+        node[STATE_KEY] = state
         return node
 
     def _get_new_individual(self, state: str) -> int:
@@ -102,3 +103,72 @@ class UnboundedPopulationModel(Model):
                 else:
                     node.parent.remove_child(node)
         return tree
+
+    # --------------
+    # Event handlers
+    # --------------
+
+    def add_birth_event(self, state: str, child_state: str, rate: SkylineParameterLike):
+        def birth_event(time: float):
+            self.birth_from(self.draw_individual(state), child_state, time)
+
+        self._stochastic_events.append(
+            StochasticEvent(
+                fn=birth_event, reactants={state: 1}, rate=skyline_parameter(rate)
+            )
+        )
+
+    def add_death_event(self, state: str, rate: SkylineParameterLike):
+        def death_event(time: float):
+            self.remove(self.draw_individual(state), time)
+
+        self._stochastic_events.append(
+            StochasticEvent(
+                fn=death_event, reactants={state: 1}, rate=skyline_parameter(rate)
+            )
+        )
+
+    def add_migration_event(
+        self, state: str, target_state: str, rate: SkylineParameterLike
+    ):
+        def migration_event(time: float):
+            self.migrate(self.draw_individual(state), target_state, time)
+
+        self._stochastic_events.append(
+            StochasticEvent(
+                fn=migration_event,
+                reactants={state: 1},
+                rate=skyline_parameter(rate),
+            )
+        )
+
+    def add_sampling_event(
+        self,
+        state: str,
+        removal: bool,
+        rate: SkylineParameterLike,
+    ):
+        def sampling_event(time: float):
+            self.sample(self.draw_individual(state), time, removal)
+
+        self._stochastic_events.append(
+            StochasticEvent(
+                fn=sampling_event, reactants={state: 1}, rate=skyline_parameter(rate)
+            )
+        )
+
+    def add_timed_sampling_event(
+        self,
+        state: str,
+        proportion: float,
+        removal: bool,
+        times: Sequence[float],
+    ):
+        def timed_sampling_event(time: float):
+            for individual in self.get_individuals(state):
+                if self._rng.random() < proportion:
+                    self.sample(individual, time, removal)
+
+        self._timed_events.append(
+            TimedEvent(fn=timed_sampling_event, times=sorted(times))
+        )

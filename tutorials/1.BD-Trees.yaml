@@ -126,11 +126,32 @@ node_features:  # Mapping of node feature names to TreeNode attributes to be rec
   # - times # Time of each node
 
 # Other optional arguments are:
+
 # - max_time: float (infinity by default)
 #   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_leaves.
+
+# - timed_events: list[TimedEvent] (None by default)
+#   A list of timed events to be scheduled during the simulation. Each timed event is defined as a dictionary with the following keys:
+#   - type: str
+#     The type of the timed event. Can be one of the following:
+#     - "sampling": samples a proportion of individuals at specified times.
+#   - times: list[float]
+#     A list of times when the event will occur.
+#   Each timed event type has specific additional arguments.
+#   Sampling timed events requires the following additional arguments:
+#     - state: str
+#       The state(s) of the individuals to be sampled. Can be a single state or a regex pattern to match multiple states.
+#     - proportion: float
+#       The proportion of individuals to be sampled at each event time.
+#     - removal: bool
+#       Whether the sampled individuals are removed from the population (True) or not (False).
+#    For an example of how to use sampling timed events, refer to 6.FBD-Trees.yaml.
+
 # - timeout: float (infinity by default)
 #   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.
+
 # - acceptance_criterion: str (None by default)
 #   A string representing a Python boolean function that takes a TreeNode object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie TreeNode class (cfr. 6.FBD-Trees.yaml).
+
 # - logs: dict[str, str] (None by default)
 #   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree. The expressions can refer to any attribute or method of the Phylogenie TreeNode class.

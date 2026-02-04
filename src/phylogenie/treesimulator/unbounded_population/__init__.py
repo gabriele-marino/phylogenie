@@ -1,10 +1,10 @@
-from phylogenie.treesimulator.gillespie import generate_trees, simulate_tree
-from phylogenie.treesimulator.model import Model
-from phylogenie.treesimulator.unbounded_population import (
+from phylogenie.treesimulator.unbounded_population.model import (
+    UnboundedPopulationModel,
+)
+from phylogenie.treesimulator.unbounded_population.parameterizations import (
     EXPOSED_STATE,
     INFECTIOUS_STATE,
     SUPERSPREADER_STATE,
-    UnboundedPopulationModel,
     get_BD_model,
     get_BDEI_model,
     get_BDSS_model,
@@ -14,6 +14,7 @@ from phylogenie.treesimulator.unbounded_population import (
 )
 
 __all__ = [
+    "UnboundedPopulationModel",
     "EXPOSED_STATE",
     "INFECTIOUS_STATE",
     "SUPERSPREADER_STATE",
@@ -23,8 +24,4 @@ __all__ = [
     "get_canonical_model",
     "get_epidemiological_model",
     "get_FBD_model",
-    "generate_trees",
-    "simulate_tree",
-    "Model",
-    "UnboundedPopulationModel",
 ]
