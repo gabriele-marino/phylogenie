@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import TypeVar
 
 _T = TypeVar("_T")
@@ -18,3 +18,5 @@ Many3DScalars = Many3D[Scalar]
 Vector1D = tuple[Scalar, ...]
 Vector2D = tuple[Vector1D, ...]
 Vector3D = tuple[Vector2D, ...]
+
+Distribution = Callable[[], Scalar]

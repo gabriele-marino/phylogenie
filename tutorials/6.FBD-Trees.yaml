@@ -54,7 +54,7 @@ context:
 # ------------------------------------
 
 # The FBD parameterization uses three SkylineVectors:
-# - sampling_proportions  (equal to 0 by default);
+# - sampling_proportions (equal to 0 by default);
 # - diversification (equal to 0 by default);
 # - turnover (equal to 0 by default);
 # and two SkylineMatrices, that can be provided when the model involves more than one state:
@@ -79,7 +79,6 @@ max_time: max_time
 timed_events:
   - type: sampling
     times: [max_time]
-    state: A|B
     proportion: 1.0
     removal: True
 

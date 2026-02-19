@@ -3,7 +3,7 @@ from collections import deque
 from collections.abc import Iterator, Mapping
 from typing import Any
 
-from phylogenie._mixins import MetadataMixin
+from phylogenie._utils import MetadataMixin
 
 
 class TreeNode(MetadataMixin):

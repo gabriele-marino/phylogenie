@@ -10,20 +10,21 @@ from tqdm import tqdm
 
 from phylogenie.io import dump_newick
 from phylogenie.tree_node import TreeNode
-from phylogenie.treesimulator.model import Model
+from phylogenie.treesimulator.core import Model
 
 
 def simulate_tree(
     model: Model,
     n_leaves: int | None = None,
+    max_time: float | None = None,
     timeout: float | None = None,
     acceptance_criterion: Callable[[TreeNode], bool] | None = None,
     logs: dict[str, Callable[[TreeNode], Any]] | None = None,
 ) -> tuple[TreeNode, dict[str, Any]]:
     start_clock = time.perf_counter()
     while True:
-        model.init()
-        while model.step() and (n_leaves is None or model.tree_size < n_leaves):
+        model.reset()
+        while model.step(max_time) and (n_leaves is None or model.tree_size < n_leaves):
             if timeout is not None and time.perf_counter() - start_clock > timeout:
                 raise TimeoutError("Simulation timed out.")
 
@@ -55,6 +56,7 @@ def generate_trees(
     n_trees: int,
     model: Model,
     n_leaves: int | None = None,
+    max_time: float | None = None,
     node_features: Mapping[str, str] | None = None,
     seed: int | None = None,
     n_jobs: int = -1,
@@ -71,9 +73,11 @@ def generate_trees(
     def _simulate_tree(i: int, seed: int) -> dict[str, Any]:
         while True:
             try:
+                model.rng.seed(seed)
                 tree, metadata = simulate_tree(
                     model=model,
                     n_leaves=n_leaves,
+                    max_time=max_time,
                     timeout=timeout,
                     acceptance_criterion=acceptance_criterion,
                     logs=logs,

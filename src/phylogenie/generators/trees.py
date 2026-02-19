@@ -8,7 +8,6 @@ from pydantic import Field
 
 import phylogenie.generators._configs as cfg
 from phylogenie.generators._factories import (
-    add_unbounded_population_timed_event,
     data,
     eval_expression,
     integer,
@@ -16,23 +15,26 @@ from phylogenie.generators._factories import (
     skyline_matrix,
     skyline_parameter,
     skyline_vector,
+    timed_event,
 )
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.io import dump_newick
 from phylogenie.tree_node import TreeNode
 from phylogenie.treesimulator import (
-    EXPOSED_STATE,
-    INFECTIOUS_STATE,
-    SUPERSPREADER_STATE,
     Model,
-    UnboundedPopulationModel,
     get_BD_model,
     get_BDEI_model,
     get_BDSS_model,
     get_canonical_model,
     get_epidemiological_model,
     get_FBD_model,
+    get_SIR_model,
     simulate_tree,
+)
+from phylogenie.treesimulator.parameterizations.open_population import (
+    EXPOSED_STATE,
+    INFECTIOUS_STATE,
+    SUPERSPREADER_STATE,
 )
 
 
@@ -43,6 +45,7 @@ class ParameterizationType(str, Enum):
     BD = "BD"
     BDEI = "BDEI"
     BDSS = "BDSS"
+    SIR = "SIR"
 
 
 class TreeDatasetGenerator(DatasetGenerator):
@@ -50,17 +53,24 @@ class TreeDatasetGenerator(DatasetGenerator):
     n_leaves: cfg.Integer | None = None
     max_time: cfg.Scalar | None = None
     timeout: float | None = None
+    timed_events: Annotated[list[cfg.TimedEvent], Field(default_factory=list)]
     node_features: dict[str, str] | None = None
     acceptance_criterion: str | None = None
     logs: dict[str, str] | None = None
 
     @abstractmethod
-    def _get_model(self, data: dict[str, Any], seed: int | None) -> Model: ...
+    def _get_model(self, data: dict[str, Any]) -> Model: ...
 
     def simulate_one(
         self, data: dict[str, Any], seed: int | None = None
     ) -> tuple[TreeNode, dict[str, Any]]:
-        model = self._get_model(data, seed)
+        model = self._get_model(data)
+        model.rng.seed(seed)
+
+        for event in self.timed_events:
+            model.add_timed_event(timed_event(event, data))
+
+        max_time = None if self.max_time is None else scalar(self.max_time, data)
 
         acceptance_criterion: None | Callable[[TreeNode], bool] = (
             None
@@ -83,22 +93,18 @@ class TreeDatasetGenerator(DatasetGenerator):
         return simulate_tree(
             model=model,
             n_leaves=None if self.n_leaves is None else integer(self.n_leaves, data),
+            max_time=max_time,
             timeout=self.timeout,
             acceptance_criterion=acceptance_criterion,
             logs=logs,
         )
 
-    def generate_one(
-        self,
-        filename: str,
-        context: dict[str, cfg.Distribution] | None = None,
-        seed: int | None = None,
-    ) -> dict[str, Any]:
+    def generate_one(self, filename: str, seed: int | None = None) -> dict[str, Any]:
         d = {"file_id": Path(filename).stem}
         rng = default_rng(seed)
         while True:
             try:
-                d.update(data(context, rng))
+                d.update(data(self.context, rng))
                 tree, metadata = self.simulate_one(d, seed)
                 if self.node_features is not None:
                     for name, feature in self.node_features.items():
@@ -112,26 +118,7 @@ class TreeDatasetGenerator(DatasetGenerator):
         return d | metadata
 
 
-class UnboundedPopulationTreeDatasetGenerator(TreeDatasetGenerator):
-    timed_events: Annotated[
-        list[cfg.UnboundedPopulationTimedEvent], Field(default_factory=list)
-    ]
-
-    @abstractmethod
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel: ...
-
-    def _get_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
-        model = self._get_base_model(data, seed)
-        for timed_event in self.timed_events:
-            add_unbounded_population_timed_event(model, timed_event, data)
-        return model
-
-
-class CanonicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
+class CanonicalTreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.CANONICAL] = (
         ParameterizationType.CANONICAL
     )
@@ -144,9 +131,7 @@ class CanonicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     migration_rates: cfg.SkylineMatrix = None
     birth_rates_among_states: cfg.SkylineMatrix = None
 
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
+    def _get_model(self, data: dict[str, Any]) -> Model:
         return get_canonical_model(
             init_state=self.init_state.format(**data),
             states=self.states,
@@ -158,12 +143,10 @@ class CanonicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
             birth_rates_among_states=skyline_matrix(
                 self.birth_rates_among_states, data
             ),
-            max_time=None if self.max_time is None else scalar(self.max_time, data),
-            seed=seed,
         )
 
 
-class FBDTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
+class FBDTreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.FBD] = ParameterizationType.FBD
     states: list[str]
     init_state: str
@@ -173,9 +156,7 @@ class FBDTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     migration_rates: cfg.SkylineMatrix = None
     diversification_between_states: cfg.SkylineMatrix = None
 
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
+    def _get_model(self, data: dict[str, Any]) -> Model:
         return get_FBD_model(
             init_state=self.init_state.format(**data),
             states=self.states,
@@ -186,12 +167,10 @@ class FBDTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
             diversification_between_states=skyline_matrix(
                 self.diversification_between_states, data
             ),
-            max_time=None if self.max_time is None else scalar(self.max_time, data),
-            seed=seed,
         )
 
 
-class EpidemiologicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
+class EpidemiologicalTreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.EPIDEMIOLOGICAL] = (
         ParameterizationType.EPIDEMIOLOGICAL
     )
@@ -203,9 +182,7 @@ class EpidemiologicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerato
     migration_rates: cfg.SkylineMatrix = None
     reproduction_numbers_among_states: cfg.SkylineMatrix = None
 
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
+    def _get_model(self, data: dict[str, Any]) -> Model:
         return get_epidemiological_model(
             init_state=self.init_state.format(**data),
             states=self.states,
@@ -218,30 +195,24 @@ class EpidemiologicalTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerato
             reproduction_numbers_among_states=skyline_matrix(
                 self.reproduction_numbers_among_states, data
             ),
-            max_time=None if self.max_time is None else scalar(self.max_time, data),
-            seed=seed,
         )
 
 
-class BDTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
+class BDTreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BD] = ParameterizationType.BD
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
+    def _get_model(self, data: dict[str, Any]) -> Model:
         return get_BD_model(
             reproduction_number=skyline_parameter(self.reproduction_number, data),
             infectious_period=skyline_parameter(self.infectious_period, data),
             sampling_proportion=skyline_parameter(self.sampling_proportion, data),
-            max_time=None if self.max_time is None else scalar(self.max_time, data),
-            seed=seed,
         )
 
 
-class BDEITreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
+class BDEITreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BDEI] = ParameterizationType.BDEI
     init_state: str = EXPOSED_STATE
     reproduction_number: cfg.SkylineParameter
@@ -249,9 +220,7 @@ class BDEITreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     incubation_period: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
+    def _get_model(self, data: dict[str, Any]) -> Model:
         init_state = self.init_state.format(**data)
         if init_state not in [EXPOSED_STATE, INFECTIOUS_STATE]:
             raise ValueError(
@@ -264,12 +233,10 @@ class BDEITreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
             infectious_period=skyline_parameter(self.infectious_period, data),
             incubation_period=skyline_parameter(self.incubation_period, data),
             sampling_proportion=skyline_parameter(self.sampling_proportion, data),
-            max_time=None if self.max_time is None else scalar(self.max_time, data),
-            seed=seed,
         )
 
 
-class BDSSTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
+class BDSSTreeDatasetGenerator(TreeDatasetGenerator):
     parameterization: Literal[ParameterizationType.BDSS] = ParameterizationType.BDSS
     init_state: str = INFECTIOUS_STATE
     reproduction_number: cfg.SkylineParameter
@@ -278,9 +245,7 @@ class BDSSTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
     superspreaders_proportion: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
-    def _get_base_model(
-        self, data: dict[str, Any], seed: int | None
-    ) -> UnboundedPopulationModel:
+    def _get_model(self, data: dict[str, Any]) -> Model:
         init_state = self.init_state.format(**data)
         if init_state not in [INFECTIOUS_STATE, SUPERSPREADER_STATE]:
             raise ValueError(
@@ -296,8 +261,22 @@ class BDSSTreeDatasetGenerator(UnboundedPopulationTreeDatasetGenerator):
                 self.superspreaders_proportion, data
             ),
             sampling_proportion=skyline_parameter(self.sampling_proportion, data),
-            max_time=None if self.max_time is None else scalar(self.max_time, data),
-            seed=seed,
+        )
+
+
+class SIRTreeDatasetGenerator(TreeDatasetGenerator):
+    parameterization: Literal[ParameterizationType.SIR] = ParameterizationType.SIR
+    transmission_rate: cfg.SkylineParameter
+    recovery_rate: cfg.SkylineParameter
+    sampling_rate: cfg.SkylineParameter
+    susceptibles: cfg.Integer
+
+    def _get_model(self, data: dict[str, Any]) -> Model:
+        return get_SIR_model(
+            transmission_rate=skyline_parameter(self.transmission_rate, data),
+            recovery_rate=skyline_parameter(self.recovery_rate, data),
+            sampling_rate=skyline_parameter(self.sampling_rate, data),
+            susceptibles=integer(self.susceptibles, data),
         )
 
 
@@ -307,6 +286,7 @@ TreeDatasetGeneratorConfig = Annotated[
     | FBDTreeDatasetGenerator
     | BDTreeDatasetGenerator
     | BDEITreeDatasetGenerator
-    | BDSSTreeDatasetGenerator,
+    | BDSSTreeDatasetGenerator
+    | SIRTreeDatasetGenerator,
     Field(discriminator="parameterization"),
 ]

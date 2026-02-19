@@ -16,7 +16,8 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
-from phylogenie.treesimulator import UnboundedPopulationModel
+from phylogenie.treesimulator import TimedEvent
+from phylogenie.treesimulator.parameterizations.common import TimedSampling
 
 
 def eval_expression(
@@ -213,12 +214,14 @@ def skyline_matrix(
     return SkylineMatrix(value=value, change_times=change_times)
 
 
-def distribution(x: cfg.Distribution, data: dict[str, Any]) -> cfg.Distribution:
+def distribution(
+    x: cfg.Distribution, data: dict[str, Any], rng: Generator
+) -> pgt.Distribution:
     args = x.args
     for arg_name, arg_value in args.items():
         if isinstance(arg_value, str):
             args[arg_name] = eval_expression(arg_value, data)
-    return cfg.Distribution(type=x.type, **args)
+    return lambda: getattr(rng, x.type)(**args)
 
 
 def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[str, Any]:
@@ -226,18 +229,15 @@ def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[st
         return {}
     data: dict[str, Any] = {}
     for k, v in context.items():
-        data[k] = np.array(distribution(v, data)(rng)).tolist()
+        data[k] = np.array(distribution(v, data, rng)()).tolist()
     return data
 
 
-def add_unbounded_population_timed_event(
-    model: UnboundedPopulationModel,
-    timed_event: cfg.UnboundedPopulationTimedEvent,
-    data: dict[str, Any],
-) -> None:
-    model.add_timed_sampling_event(
-        state=timed_event.state.format(**data),
+def timed_event(timed_event: cfg.TimedEvent, data: dict[str, Any]) -> TimedEvent:
+    state = None if timed_event.state is None else timed_event.state.format(**data)
+    return TimedSampling(
+        state=state,
+        times=many_scalars(timed_event.times, data),
         proportion=scalar(timed_event.proportion, data),
         removal=timed_event.removal,
-        times=many_scalars(timed_event.times, data),
     )

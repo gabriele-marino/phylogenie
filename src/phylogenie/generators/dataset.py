@@ -8,7 +8,7 @@ import pandas as pd
 from numpy.random import Generator, default_rng
 from tqdm import tqdm
 
-from phylogenie.generators._configs import Distribution, StrictBaseModel
+import phylogenie.generators._configs as cfg
 
 
 class DataType(str, Enum):
@@ -20,19 +20,16 @@ DATA_DIRNAME = "data"
 METADATA_FILENAME = "metadata.csv"
 
 
-class DatasetGenerator(ABC, StrictBaseModel):
+class DatasetGenerator(ABC, cfg.StrictBaseModel):
     output_dir: str = "phylogenie-outputs"
     n_samples: int | dict[str, int] = 1
     n_jobs: int = -1
     seed: int | None = None
-    context: dict[str, Distribution] | None = None
+    context: dict[str, cfg.Distribution] | None = None
 
     @abstractmethod
     def generate_one(
-        self,
-        filename: str,
-        context: dict[str, Distribution] | None = None,
-        seed: int | None = None,
+        self, filename: str, seed: int | None = None
     ) -> dict[str, Any]: ...
 
     def _generate(self, rng: Generator, n_samples: int, output_dir: str) -> None:
@@ -51,7 +48,6 @@ class DatasetGenerator(ABC, StrictBaseModel):
             joblib.delayed(self.generate_one)(
                 seed=int(rng.integers(2**32)),
                 filename=os.path.join(data_dir, str(i)),
-                context=self.context,
             )
             for i in range(n_samples)
         )

@@ -1,6 +1,28 @@
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Generic, TypeVar
+
+T = TypeVar("T")
+
+
+class OrderedSet(Generic[T]):
+    def __init__(self):
+        self._dict: dict[T, None] = {}
+
+    def add(self, item: T):
+        self._dict[item] = None
+
+    def remove(self, item: T):
+        del self._dict[item]
+
+    def __contains__(self, item: T) -> bool:
+        return item in self._dict
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self._dict)
+
+    def __len__(self):
+        return len(self._dict)
 
 
 class MetadataMixin:

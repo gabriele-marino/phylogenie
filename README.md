@@ -20,14 +20,17 @@ Phylogenie comes packed with useful features, including:
 - **Automatic metadata management** 🗂️  
   Phylogenie stores each parameter combination sampled during dataset generation in a `.csv` file.
 
-- **Generalizable configurations** 🔄  
+- **Generalizable configurations** 🔧 
   Easily apply the same configuration across multiple dataset splits (e.g., train, validation, test).
+
+- **Flexible acceptance criteria** 🔄  
+  Define custom acceptance criteria on the simulated trees to ensure they meet your requirements.
 
 - **Multiprocessing support** ⚙️💻  
   Simply specify the number of cores to use, and Phylogenie handles multiprocessing automatically.
 
 - **Pre-implemented parameterizations** 🎯  
-  Include canonical, fossilized birth-death, epidemiological, birth-death with exposed-infectious (BDEI), birth-death with superspreading (BDSS), and contact tracing (CT).
+  Include canonical, fossilized birth-death, epidemiological, birth-death with exposed-infectious (BDEI), birth-death with superspreading (BDSS).
 
 - **Skyline parameter support** 🪜  
   Support for piece-wise constant parameters.

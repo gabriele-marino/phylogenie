@@ -139,8 +139,9 @@ node_features:  # Mapping of node feature names to TreeNode attributes to be rec
 #     A list of times when the event will occur.
 #   Each timed event type has specific additional arguments.
 #   Sampling timed events requires the following additional arguments:
-#     - state: str
+#     - state: str | None (None by default)
 #       The state(s) of the individuals to be sampled. Can be a single state or a regex pattern to match multiple states.
+#       If None, individuals from all states will be sampled.
 #     - proportion: float
 #       The proportion of individuals to be sampled at each event time.
 #     - removal: bool

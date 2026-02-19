@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 from phylogenie.skyline import (
     SkylineMatrixCoercible,
@@ -7,11 +8,25 @@ from phylogenie.skyline import (
     skyline_matrix,
     skyline_vector,
 )
-from phylogenie.treesimulator.unbounded_population.model import UnboundedPopulationModel
+from phylogenie.treesimulator.core import Model
+from phylogenie.treesimulator.parameterizations.common import (
+    Death,
+    Migration,
+    Sampling,
+    StateDependentEvent,
+)
 
 INFECTIOUS_STATE = "I"
 EXPOSED_STATE = "E"
 SUPERSPREADER_STATE = "S"
+
+
+@dataclass(kw_only=True)
+class Birth(StateDependentEvent):
+    new_state: str
+
+    def apply(self, model: Model):
+        model.birth_from(model.draw_active_node(self.state), self.new_state)
 
 
 def get_canonical_model(
@@ -23,35 +38,45 @@ def get_canonical_model(
     death_rates: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
     birth_rates_among_states: SkylineMatrixCoercible | None = None,
-    max_time: float | None = None,
-    seed: int | None = None,
-) -> UnboundedPopulationModel:
+) -> Model:
     N = len(states)
 
     birth_rates = skyline_vector(birth_rates, N)
     death_rates = skyline_vector(death_rates, N)
     sampling_rates = skyline_vector(sampling_rates, N)
 
-    model = UnboundedPopulationModel(
-        init_state=init_state, max_time=max_time, seed=seed
-    )
+    model = Model(init_state=init_state)
     for i, state in enumerate(states):
-        model.add_birth_event(state, state, birth_rates[i])
-        model.add_death_event(state, death_rates[i])
-        model.add_sampling_event(state, remove_after_sampling, sampling_rates[i])
+        model.add_stochastic_event(
+            Birth(rate=birth_rates[i], state=state, new_state=state)
+        )
+        model.add_stochastic_event(Death(rate=death_rates[i], state=state))
+        model.add_stochastic_event(
+            Sampling(rate=sampling_rates[i], state=state, removal=remove_after_sampling)
+        )
 
     if migration_rates is not None:
         migration_rates = skyline_matrix(migration_rates, N, N - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
-                model.add_migration_event(state, other_state, migration_rates[i, j])
+                model.add_stochastic_event(
+                    Migration(
+                        rate=migration_rates[i, j],
+                        state=state,
+                        target_state=other_state,
+                    )
+                )
 
     if birth_rates_among_states is not None:
         birth_rates_among_states = skyline_matrix(birth_rates_among_states, N, N - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
-                model.add_birth_event(
-                    state, other_state, birth_rates_among_states[i, j]
+                model.add_stochastic_event(
+                    Birth(
+                        rate=birth_rates_among_states[i, j],
+                        state=state,
+                        new_state=other_state,
+                    )
                 )
 
     return model
@@ -65,9 +90,7 @@ def get_FBD_model(
     turnover: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
     diversification_between_states: SkylineMatrixCoercible | None = None,
-    max_time: float | None = None,
-    seed: int | None = None,
-) -> UnboundedPopulationModel:
+) -> Model:
     N = len(states)
 
     diversification = skyline_vector(diversification, N)
@@ -92,8 +115,6 @@ def get_FBD_model(
         death_rates=death_rates,
         migration_rates=migration_rates,
         birth_rates_among_states=birth_rates_among_states,
-        max_time=max_time,
-        seed=seed,
     )
 
 
@@ -105,9 +126,7 @@ def get_epidemiological_model(
     become_uninfectious_rates: SkylineVectorCoercible = 0,
     migration_rates: SkylineMatrixCoercible | None = None,
     reproduction_numbers_among_states: SkylineMatrixCoercible | None = None,
-    max_time: float | None = None,
-    seed: int | None = None,
-) -> UnboundedPopulationModel:
+) -> Model:
     N = len(states)
 
     reproduction_numbers = skyline_vector(reproduction_numbers, N)
@@ -135,8 +154,6 @@ def get_epidemiological_model(
         death_rates=death_rates,
         migration_rates=migration_rates,
         birth_rates_among_states=birth_rates_among_states,
-        max_time=max_time,
-        seed=seed,
     )
 
 
@@ -144,17 +161,13 @@ def get_BD_model(
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
-    max_time: float | None = None,
-    seed: int | None = None,
-) -> UnboundedPopulationModel:
+) -> Model:
     return get_epidemiological_model(
         init_state=INFECTIOUS_STATE,
         states=[INFECTIOUS_STATE],
         reproduction_numbers=reproduction_number,
         become_uninfectious_rates=1 / infectious_period,
         sampling_proportions=sampling_proportion,
-        max_time=max_time,
-        seed=seed,
     )
 
 
@@ -164,9 +177,7 @@ def get_BDEI_model(
     infectious_period: SkylineParameterLike,
     incubation_period: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
-    max_time: float | None = None,
-    seed: int | None = None,
-) -> UnboundedPopulationModel:
+) -> Model:
     return get_epidemiological_model(
         init_state=init_state,
         states=[EXPOSED_STATE, INFECTIOUS_STATE],
@@ -174,8 +185,6 @@ def get_BDEI_model(
         become_uninfectious_rates=[0, 1 / infectious_period],
         reproduction_numbers_among_states=[[0], [reproduction_number]],
         migration_rates=[[1 / incubation_period], [0]],
-        max_time=max_time,
-        seed=seed,
     )
 
 
@@ -186,9 +195,7 @@ def get_BDSS_model(
     superspreading_ratio: SkylineParameterLike,
     superspreaders_proportion: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
-    max_time: float | None = None,
-    seed: int | None = None,
-) -> UnboundedPopulationModel:
+) -> Model:
     f_SS = superspreaders_proportion
     r_SS = superspreading_ratio
     R_0_IS = reproduction_number * f_SS / (1 + r_SS * f_SS - f_SS)
@@ -202,6 +209,4 @@ def get_BDSS_model(
         reproduction_numbers_among_states=[[R_0_IS], [R_0_SI]],
         become_uninfectious_rates=1 / infectious_period,
         sampling_proportions=sampling_proportion,
-        max_time=max_time,
-        seed=seed,
     )

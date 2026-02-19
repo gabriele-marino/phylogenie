@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Annotated, Any, Literal
 
-from numpy.random import Generator
 from pydantic import BaseModel, ConfigDict, Field
 
 import phylogenie._typings as pgt
@@ -19,9 +18,6 @@ class Distribution(BaseModel):
     def args(self) -> dict[str, Any]:
         assert self.model_extra is not None
         return self.model_extra
-
-    def __call__(self, rng: Generator) -> Any:
-        return getattr(rng, self.type)(**self.args)
 
 
 Integer = str | int
@@ -61,11 +57,9 @@ class TimedEventModel(StrictBaseModel):
 
 class TimedSamplingModel(TimedEventModel):
     type: Literal[TimedEventType.SAMPLING]
-    state: str
+    state: str | None = None
     proportion: Scalar
     removal: bool
 
 
-UnboundedPopulationTimedEvent = Annotated[
-    TimedSamplingModel, Field(discriminator="type")
-]
+TimedEvent = Annotated[TimedSamplingModel, Field(discriminator="type")]

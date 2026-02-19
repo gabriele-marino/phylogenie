@@ -5,7 +5,6 @@ from typing import Any, Literal
 
 from numpy.random import Generator, default_rng
 
-from phylogenie.generators._configs import Distribution
 from phylogenie.generators._factories import data, string
 from phylogenie.generators.dataset import DatasetGenerator, DataType
 from phylogenie.generators.trees import TreeDatasetGeneratorConfig
@@ -42,12 +41,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["rm", f"{tree_file}.log"], check=True)
 
-    def generate_one(
-        self,
-        filename: str,
-        context: dict[str, Distribution] | None = None,
-        seed: int | None = None,
-    ) -> dict[str, Any]:
+    def generate_one(self, filename: str, seed: int | None = None) -> dict[str, Any]:
         if self.keep_trees:
             base_dir, file_id = Path(filename).parent, Path(filename).stem
             trees_dir = os.path.join(base_dir, TREES_DIRNAME)
@@ -63,7 +57,7 @@ class AliSimDatasetGenerator(DatasetGenerator):
         md: dict[str, Any] = {"file_id": Path(msa_filename).stem}
         rng = default_rng(seed)
         while True:
-            md.update(data(context, rng))
+            md.update(data(self.context, rng))
             try:
                 tree, metadata = self.trees.simulate_one(md, seed)
                 break

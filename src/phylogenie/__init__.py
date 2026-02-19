@@ -35,11 +35,9 @@ from phylogenie.skyline import (
 )
 from phylogenie.tree_node import TreeNode
 from phylogenie.treesimulator import (
-    EXPOSED_STATE,
-    INFECTIOUS_STATE,
-    SUPERSPREADER_STATE,
     Model,
-    UnboundedPopulationModel,
+    StochasticEvent,
+    TimedEvent,
     generate_trees,
     get_BD_model,
     get_BDEI_model,
@@ -86,11 +84,9 @@ __all__ = [
     "skyline_parameter",
     "skyline_vector",
     "TreeNode",
-    "EXPOSED_STATE",
-    "INFECTIOUS_STATE",
-    "SUPERSPREADER_STATE",
     "Model",
-    "UnboundedPopulationModel",
+    "StochasticEvent",
+    "TimedEvent",
     "generate_trees",
     "get_BD_model",
     "get_BDEI_model",

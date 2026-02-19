@@ -12,7 +12,7 @@ These examples demonstrate different settings and use cases to help you get star
 | `3.BDSS-Trees.yaml` | • You want to simulate trees under a birth–death with superspreading (BDSS) model;<br> • You want to create dependencies between your context variables. |
 | `4.Canonical-Trees.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model with a canonical parameterization;<br>• You want to learn about SkylineVectors and SkylineMatrices in Phylogenie;<br>• You want to sample multi-dimensional vectors. |
 | `5.Epidemiological-Trees.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model with the epidemiological parameterization. |
-| `6.FBD-Trees.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model with the fossilized birth-death (FBD) parameterization;<br> • You want to define acceptance creteria on the simulated trees. |
+| `6.FBD-Trees.yaml` | • You want to simulate trees under a generic multi-type birth–death (MTBD) model with the fossilized birth-death (FBD) parameterization;<br> • You want to schedule sampling events at specified times;<br> • You want to define acceptance creteria on the simulated trees. |
 | `7.BD-MSAs.yaml` | You want to simulate multiple sequence alignments (MSAs). |
 
 ## ▶️ How to use
