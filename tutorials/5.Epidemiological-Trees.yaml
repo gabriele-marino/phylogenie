@@ -18,7 +18,7 @@
 # ---------------
 
 output_dir: outputs/Epidemiological-Trees
-data_type: trees
+data_type: tree
 n_samples:
   train: 100
   val: 10
@@ -53,32 +53,37 @@ context:
     low: 50
     high: 250
 
-# ------------------------------------
-# Parameterization-specific parameters
-# ------------------------------------
+# ---------------------
+# Tree generator config
+# ---------------------
 
-# The epidemiological parameterization uses three SkylineVectors:
-# - sampling_proportions;
-# - reproduction_numbers (equal to 0 by default);
-# - become_uninfectious_rates (equal to 0 by default);
-# and two SkylineMatrices, that can be provided when the model involves more than one state:
-# - migration_rates (None by default).
-# - reproduction_numbers_among_states (None by default);
-# It also needs you to specify the states involved in the simulation, as a list of strings, and assumes removal after sampling.
+tree_generator:
+  backend: phylogenie
 
-parameterization: epidemiological
-states: [E, I]
-become_uninfectious_rates: [0, 1 / ((1 - f) * T)] # Become uninfectious rate for I is the inverse of the infectious period
-migration_rates: [[1 / (f * T)], [0]] # Migration rate from E to I is the inverse of the incubation period
-reproduction_numbers_among_states: [[0], [R_0]] # Reproduction number from E to I is 0, from I to E is R_0
-sampling_proportions:
-  - 0 # Only sample infectious individuals
-  - value: s
-    change_times: [1.0, 2.0]
+  init_state: E
+  n_leaves: n_leaves
+  
+  timeout: 5
 
-# --------------------------
-# Tree simulation parameters
-# --------------------------
+  # -----------------------
+  # Parameterization config
+  # -----------------------
 
-init_state: E
-n_leaves: n_leaves
+  # The epidemiological parameterization uses three SkylineVectors:
+  # - sampling_proportions;
+  # - reproduction_numbers (equal to 0 by default);
+  # - become_uninfectious_rates (equal to 0 by default);
+  # and two SkylineMatrices, that can be provided when the model involves more than one state:
+  # - migration_rates (None by default).
+  # - reproduction_numbers_among_states (None by default);
+  # It also needs you to specify the states involved in the simulation, as a list of strings, and assumes removal after sampling.
+
+  parameterization: epidemiological
+  states: [E, I]
+  become_uninfectious_rates: [0, 1 / ((1 - f) * T)] # Become uninfectious rate for I is the inverse of the infectious period
+  migration_rates: [[1 / (f * T)], [0]] # Migration rate from E to I is the inverse of the incubation period
+  reproduction_numbers_among_states: [[0], [R_0]] # Reproduction number from E to I is 0, from I to E is R_0
+  sampling_proportions:
+    - 0 # Only sample infectious individuals
+    - value: s
+      change_times: [1.0, 2.0]

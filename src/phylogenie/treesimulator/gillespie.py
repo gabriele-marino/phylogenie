@@ -90,8 +90,8 @@ def generate_trees(
                             node[name] = mapping[node]
                 dump_newick(tree, output_dir / f"{i}.nwk")
                 return metadata
-            except TimeoutError as e:
-                print(f"{e}. Retrying with a different seed...")
+            except TimeoutError:
+                print("Simulation timed out. Retrying with a different seed...")
             seed += 1
 
     rng = default_rng(seed)

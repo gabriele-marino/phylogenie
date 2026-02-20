@@ -20,7 +20,7 @@
 # ---------------
 
 output_dir: outputs/FBD-Trees
-data_type: trees
+data_type: tree
 n_samples: 100
 n_jobs: -1
 seed: 42
@@ -49,40 +49,46 @@ context:
     low: 10
     high: 20  
 
-# ------------------------------------
-# Parameterization-specific parameters
-# ------------------------------------
+# ---------------------
+# Tree generator config
+# ---------------------
 
-# The FBD parameterization uses three SkylineVectors:
-# - sampling_proportions (equal to 0 by default);
-# - diversification (equal to 0 by default);
-# - turnover (equal to 0 by default);
-# and two SkylineMatrices, that can be provided when the model involves more than one state:
-# - diversification_between_states (None by default);
-# - migration_rates (None by default).
-# It also needs you to specify the states involved in the simulation, as a list of strings, and assumes sampling without removal (ancestor sampling).
+tree_generator:
+  backend: phylogenie
 
-parameterization: FBD
-states: [A, B]
-migration_rates: [[0.06], [0.04]]
-diversification: d
-turnover: t
-sampling_proportions: s
+  init_state: A
+  max_time: max_time
 
-# --------------------------
-# Tree simulation parameters
-# --------------------------
+  timed_events:
+    - type: sampling
+      state: A|B
+      times: [max_time]
+      proportion: 1.0
+      removal: True
 
-init_state: A
-max_time: max_time
+  # Here we define an acceptance criterion to ensure that only trees with a number of leaves between 50 and 250 are accepted.
+  acceptance_criterion: 50 <= tree.n_leaves <= 250
+  # This acceptance criterion also includes singleton nodes in the count of leaves (nodes whose branch lengths are zero). If you want to exclude singleton nodes, you can use the following acceptance criterion instead:
+  # acceptance_criterion: "50 <= sum(1 for l in tree.get_leaves() if l.branch_length > 0) <= 250"
 
-timed_events:
-  - type: sampling
-    times: [max_time]
-    proportion: 1.0
-    removal: True
+  timeout: 5
 
-# Here we define an acceptance criterion to ensure that only trees with a number of leaves between 50 and 250 are accepted.
-acceptance_criterion: 50 <= tree.n_leaves <= 250
-# This acceptance criterion also includes singleton nodes in the count of leaves (nodes whose branch lengths are zero). If you want to exclude singleton nodes, you can use the following acceptance criterion instead:
-# acceptance_criterion: "50 <= sum(1 for l in tree.get_leaves() if l.branch_length > 0) <= 250"
+  # -----------------------
+  # Parameterization config
+  # -----------------------
+
+  # The FBD parameterization uses three SkylineVectors:
+  # - sampling_proportions (equal to 0 by default);
+  # - diversification (equal to 0 by default);
+  # - turnover (equal to 0 by default);
+  # and two SkylineMatrices, that can be provided when the model involves more than one state:
+  # - diversification_between_states (None by default);
+  # - migration_rates (None by default).
+  # It also needs you to specify the states involved in the simulation, as a list of strings, and assumes sampling without removal (ancestor sampling).
+
+  parameterization: FBD
+  states: [A, B]
+  migration_rates: [[0.06], [0.04]]
+  diversification: d
+  turnover: t
+  sampling_proportions: s

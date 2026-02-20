@@ -27,7 +27,7 @@
 
 output_dir: outputs/BD-Trees # Root directory where the simulated data and metadata will be saved
 
-data_type: trees # Specify the type of data to simulate: "trees" or "msas"
+data_type: tree # Specify the type of data to simulate: "tree" or "msa"
 
 # The number of samples can be an integer as well as a dictionary specifying different numbers for each dataset splits. Dataset splits can have any name; here we use train, val, and test.
 n_samples:
@@ -78,81 +78,85 @@ context:
     low: 50
     high: 250
 
-# ------------------------------------
-# Parameterization-specific parameters
-# ------------------------------------
-
-# This section defines the parameters specific to the BD parameterization.
-# The BD model uses three parameters:
-# - reproduction_number;
-# - infectious_period;
-# - sampling_proportion.
-
-# All of these arguments are skyline (piece-wise constant) parameters. In Phylogenie, a scalar skyline parameter is simply denoted as SkylineParameter, and can be defined in one of the following ways:
-# 1) A (unique) scalar value, meaning the parameter stays constant for the entire simulation;
-# 2) As a pair of attributes:
-#   - value: a list of values the parameter will take over time;
-#   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
-# In this last case, the value list must have exactly one more element than change_times.
-
-# Phylogenie also supports writing scalar values (or lists of them) as strings instead of literal numbers.
-# When you do this, Phylogenie will automatically parse and evaluate the string eventually using context variables.
-# During evaluation, context variables are converted into NumPy arrays so you can easily apply complex calculations or operations (cf. 2.BDEI-Trees.yaml). 
-# In this example, we don’t need to apply complex operations; we just refer directly to the context variables when defining the parameters.
-
-parameterization: BD
-
-reproduction_number: R_0
-sampling_proportion:
-  value: [0, s_t1, s_t2]
-  change_times: [1, 2]
-infectious_period: 2.5
-
-# --------------------------
-# Tree simulation parameters
-# --------------------------
+# ---------------------
+# Tree generator config
+# ---------------------
 
 # This section defines the parameters for the tree simulation.
-# In this case we specify a minimum and a maximum number of leaves in the simulated trees. At each simulation, a target number of leaves is randomly drawn between the minimum and maximum values, and the simulation stops when the number of leaves reaches the target.
 
-n_leaves: n_leaves # Number of leaves in the simulated trees
-node_features:  # Mapping of node feature names to TreeNode attributes to be recorded for each node
-  n_leaves: leaf_counts
-  depth: depths
-  # - ages # Age of each node
-  # - depth_levels # Depth level of each node
-  # - heights # Height of each node
-  # - height_levels # Height level of each node
-  # - times # Time of each node
+tree_generator:
+  backend: phylogenie # Specify the tree generator backend to use. Currently, the only available option is "phylogenie", which uses Phylogenie’s internal tree simulation functions.
 
-# Other optional arguments are:
+  # In this case we specify a required number of leaves in the simulated trees, so that to stop the simulation when the number of leaves reaches the target.
 
-# - max_time: float (infinity by default)
-#   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_leaves.
+  n_leaves: n_leaves # Number of leaves in the simulated trees
+  node_features:  # Mapping of node feature names to TreeNode attributes to be recorded for each node
+    n_leaves: leaf_counts
+    depth: depths
+    # - ages # Age of each node
+    # - depth_levels # Depth level of each node
+    # - heights # Height of each node
+    # - height_levels # Height level of each node
+    # - times # Time of each node
 
-# - timed_events: list[TimedEvent] (None by default)
-#   A list of timed events to be scheduled during the simulation. Each timed event is defined as a dictionary with the following keys:
-#   - type: str
-#     The type of the timed event. Can be one of the following:
-#     - "sampling": samples a proportion of individuals at specified times.
-#   - times: list[float]
-#     A list of times when the event will occur.
-#   Each timed event type has specific additional arguments.
-#   Sampling timed events requires the following additional arguments:
-#     - state: str | None (None by default)
-#       The state(s) of the individuals to be sampled. Can be a single state or a regex pattern to match multiple states.
-#       If None, individuals from all states will be sampled.
-#     - proportion: float
-#       The proportion of individuals to be sampled at each event time.
-#     - removal: bool
-#       Whether the sampled individuals are removed from the population (True) or not (False).
-#    For an example of how to use sampling timed events, refer to 6.FBD-Trees.yaml.
+  # Other optional arguments are:
 
-# - timeout: float (infinity by default)
-#   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.
+  # - max_time: float (infinity by default)
+  #   Maximum time of the simulation. If provided, the simulation will stop when the time reaches this value. It provides an alternative stopping criterion to n_leaves.
 
-# - acceptance_criterion: str (None by default)
-#   A string representing a Python boolean function that takes a TreeNode object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie TreeNode class (cfr. 6.FBD-Trees.yaml).
+  # - timed_events: list[TimedEvent] (None by default)
+  #   A list of timed events to be scheduled during the simulation. Each timed event is defined as a dictionary with the following keys:
+  #   - type: str
+  #     The type of the timed event. Can be one of the following:
+  #     - "sampling": samples a proportion of individuals at specified times.
+  #   - times: list[float]
+  #     A list of times when the event will occur.
+  #   Each timed event type has specific additional arguments.
+  #   Sampling timed events requires the following additional arguments:
+  #     - state: str | None (None by default)
+  #       The state(s) of the individuals to be sampled. Can be a single state or a regex pattern to match multiple states.
+  #       If None, individuals from all states will be sampled.
+  #     - proportion: float
+  #       The proportion of individuals to be sampled at each event time.
+  #     - removal: bool
+  #       Whether the sampled individuals are removed from the population (True) or not (False).
+  #    For an example of how to use sampling timed events, refer to 6.FBD-Trees.yaml.
 
-# - logs: dict[str, str] (None by default)
-#   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree. The expressions can refer to any attribute or method of the Phylogenie TreeNode class.
+  # - timeout: float (infinity by default)
+  #   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.
+
+  # - acceptance_criterion: str (None by default)
+  #   A string representing a Python boolean function that takes a TreeNode object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie TreeNode class (cfr. 6.FBD-Trees.yaml).
+
+  # - logs: dict[str, str] (None by default)
+  #   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree, similarly to acceptance_criterion.
+
+  # -----------------------
+  # Parameterization config
+  # -----------------------
+
+  # This section defines the parameters specific to the BD parameterization.
+  # The BD model uses three parameters:
+  # - reproduction_number;
+  # - infectious_period;
+  # - sampling_proportion.
+
+  # All of these arguments are skyline (piece-wise constant) parameters. In Phylogenie, a scalar skyline parameter is simply denoted as SkylineParameter, and can be defined in one of the following ways:
+  # 1) A (unique) scalar value, meaning the parameter stays constant for the entire simulation;
+  # 2) As a pair of attributes:
+  #   - value: a list of values the parameter will take over time;
+  #   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
+  # In this last case, the value list must have exactly one more element than change_times.
+
+  # Phylogenie also supports writing scalar values (or lists of them) as strings instead of literal numbers.
+  # When you do this, Phylogenie will automatically parse and evaluate the string eventually using context variables.
+  # During evaluation, context variables are converted into NumPy arrays so you can easily apply complex calculations or operations (cf. 2.BDEI-Trees.yaml). 
+  # In this example, we don’t need to apply complex operations; we just refer directly to the context variables when defining the parameters.
+
+  parameterization: BD
+
+  reproduction_number: R_0
+  sampling_proportion:
+    value: [0, s_t1, s_t2]
+    change_times: [1, 2]
+  infectious_period: 2.5

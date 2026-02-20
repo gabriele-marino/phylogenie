@@ -48,7 +48,7 @@
 # ---------------
 
 output_dir: outputs/Canonical-Trees
-data_type: trees
+data_type: tree
 n_samples: 100
 n_jobs: -1
 seed: 42
@@ -92,55 +92,60 @@ context:
     low: 50
     high: 250
 
-# ------------------------------------
-# Parameterization-specific parameters
-# ------------------------------------
+# ---------------------
+# Tree generator config
+# ---------------------
 
-# The canonical parameterization uses three SkylineVectors:
-# - sampling_rates (equal to 0 by default);
-# - birth_rates (equal to 0 by default);
-# - death_rates (equal to 0 by default);
-# and two SkylineMatrices, that can be provided when the model involves more than one state:
-# - birth_rates_among_states (None by default);
-# - migration_rates (None by default).
-# It also requires you to specify the states involved in the simulation, as a list of strings, and whether the model involves removal after sampling or not (by default False). Here, we set remove_after_sampling to True, which is usually the case for epidemiological simulations.
+tree_generator:
+  backend: phylogenie
 
-# In Phylogenie, a SkylineVector can be defined in one of the following ways:
-# 1) A (unique) scalar value, meaning the parameter stays constant across states and time;
-# 2) As a list of SkylineParameters, where each element represent the skyline value of the vector for a specific state;
-# 3) As a pair of attributes:
-#   - value: a list of values the vector will take over time. Each value can be a scalar (if the vector is constant across states) or a list of scalars (if the vector varies across states);
-#   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
-# In this last case, the value list must have exactly one more element than change_times.
+  init_state: A
+  n_leaves: n_leaves
 
-# A SkylineMatrix can be defined in one of the following ways:
-# 1) A (unique) scalar value, meaning the parameter stays constant across state pairs and time;
-# 2) As a list of SkylineVectors, where each element represent the skyline value of the matrix for a specific state;
-# 3) As a pair of attributes:
-#   - value: a list of values the matrix will take over time. Each value can be a scalar (if the matrix is constant across state pairs) or a nested (2D) list of scalars;
-#   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
-# In this last case, the value list must have exactly one more element than change_times.
+  timeout: 5
 
-parameterization: canonical
-states: [A, B, C]
-migration_rates:
-  value: [mu, 0]
-  change_times: [1]
-birth_rates:
-  value: [la_t1, la_t2]
-  change_times: [1]
-birth_rates_among_states:
-  value: [la_among_states, 0]
-  change_times: [1]
-death_rates: psi
-sampling_rates:
-  value: [0, s]
-  change_times: [1]
-remove_after_sampling: True
+  # -----------------------
+  # Parameterization config
+  # -----------------------
 
-# --------------------------
-# Tree simulation parameters
-# --------------------------
+  # The canonical parameterization uses three SkylineVectors:
+  # - sampling_rates (equal to 0 by default);
+  # - birth_rates (equal to 0 by default);
+  # - death_rates (equal to 0 by default);
+  # and two SkylineMatrices, that can be provided when the model involves more than one state:
+  # - birth_rates_among_states (None by default);
+  # - migration_rates (None by default).
+  # It also requires you to specify the states involved in the simulation, as a list of strings, and whether the model involves removal after sampling or not (by default False). Here, we set remove_after_sampling to True, which is usually the case for epidemiological simulations.
 
-init_state: A
-n_leaves: n_leaves
+  # In Phylogenie, a SkylineVector can be defined in one of the following ways:
+  # 1) A (unique) scalar value, meaning the parameter stays constant across states and time;
+  # 2) As a list of SkylineParameters, where each element represent the skyline value of the vector for a specific state;
+  # 3) As a pair of attributes:
+  #   - value: a list of values the vector will take over time. Each value can be a scalar (if the vector is constant across states) or a list of scalars (if the vector varies across states);
+  #   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
+  # In this last case, the value list must have exactly one more element than change_times.
+
+  # A SkylineMatrix can be defined in one of the following ways:
+  # 1) A (unique) scalar value, meaning the parameter stays constant across state pairs and time;
+  # 2) As a list of SkylineVectors, where each element represent the skyline value of the matrix for a specific state;
+  # 3) As a pair of attributes:
+  #   - value: a list of values the matrix will take over time. Each value can be a scalar (if the matrix is constant across state pairs) or a nested (2D) list of scalars;
+  #   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
+  # In this last case, the value list must have exactly one more element than change_times.
+
+  parameterization: canonical
+  states: [A, B, C]
+  migration_rates:
+    value: [mu, 0]
+    change_times: [1]
+  birth_rates:
+    value: [la_t1, la_t2]
+    change_times: [1]
+  birth_rates_among_states:
+    value: [la_among_states, 0]
+    change_times: [1]
+  death_rates: psi
+  sampling_rates:
+    value: [0, s]
+    change_times: [1]
+  remove_after_sampling: True

@@ -2,7 +2,7 @@ import re
 from typing import Any
 
 import numpy as np
-from numpy.random import Generator
+from numpy.random import default_rng
 
 import phylogenie._typeguards as tg
 import phylogenie._typings as pgt
@@ -21,21 +21,23 @@ from phylogenie.treesimulator.parameterizations.common import TimedSampling
 
 
 def eval_expression(
-    expression: str, data: dict[str, Any], extra_globals: dict[str, Any] | None = None
+    expression: str,
+    context: dict[str, Any],
+    extra_globals: dict[str, Any] | None = None,
 ) -> Any:
     if extra_globals is None:
         extra_globals = {}
     return np.array(
         eval(
             expression,
-            {"np": np, **{k: np.array(v) for k, v in data.items()}, **extra_globals},
+            {"np": np, **{k: np.array(v) for k, v in context.items()}, **extra_globals},
         )
     ).tolist()
 
 
-def integer(x: cfg.Integer, data: dict[str, Any]) -> int:
+def integer(x: cfg.Integer, context: dict[str, Any]) -> int:
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if isinstance(e, int):
             return e
         raise ValueError(
@@ -44,9 +46,9 @@ def integer(x: cfg.Integer, data: dict[str, Any]) -> int:
     return x
 
 
-def scalar(x: cfg.Scalar, data: dict[str, Any]) -> pgt.Scalar:
+def scalar(x: cfg.Scalar, context: dict[str, Any]) -> pgt.Scalar:
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if isinstance(e, pgt.Scalar):
             return e
         raise ValueError(
@@ -55,30 +57,30 @@ def scalar(x: cfg.Scalar, data: dict[str, Any]) -> pgt.Scalar:
     return x
 
 
-def string(s: Any, data: dict[str, Any]) -> str:
+def string(s: Any, context: dict[str, Any]) -> str:
     if not isinstance(s, str):
         return str(s)
     return re.sub(
-        r"\{([^{}]+)\}", lambda match: str(eval_expression(match.group(1), data)), s
+        r"\{([^{}]+)\}", lambda match: str(eval_expression(match.group(1), context)), s
     )  # Match content inside curly braces
 
 
-def many_scalars(x: cfg.ManyScalars, data: dict[str, Any]) -> pgt.ManyScalars:
+def many_scalars(x: cfg.ManyScalars, context: dict[str, Any]) -> pgt.ManyScalars:
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if tg.is_many_scalars(e):
             return e
         raise ValueError(
             f"Expression '{x}' evaluated to {e} of type {type(e)}, expected a sequence of scalars."
         )
-    return [scalar(v, data) for v in x]
+    return [scalar(v, context) for v in x]
 
 
 def one_or_many_scalars(
-    x: cfg.OneOrManyScalars, data: dict[str, Any]
+    x: cfg.OneOrManyScalars, context: dict[str, Any]
 ) -> pgt.OneOrManyScalars:
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if tg.is_one_or_many_scalars(e):
             return e
         raise ValueError(
@@ -86,25 +88,25 @@ def one_or_many_scalars(
         )
     if isinstance(x, pgt.Scalar):
         return x
-    return many_scalars(x, data)
+    return many_scalars(x, context)
 
 
 def skyline_parameter(
-    x: cfg.SkylineParameter, data: dict[str, Any]
+    x: cfg.SkylineParameter, context: dict[str, Any]
 ) -> SkylineParameterLike:
     if isinstance(x, cfg.Scalar):
-        return scalar(x, data)
+        return scalar(x, context)
     return SkylineParameter(
-        value=many_scalars(x.value, data),
-        change_times=many_scalars(x.change_times, data),
+        value=many_scalars(x.value, context),
+        change_times=many_scalars(x.change_times, context),
     )
 
 
 def skyline_vector(
-    x: cfg.SkylineVector, data: dict[str, Any]
+    x: cfg.SkylineVector, context: dict[str, Any]
 ) -> SkylineVectorCoercible:
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if tg.is_one_or_many_scalars(e):
             return e
         raise ValueError(
@@ -113,13 +115,13 @@ def skyline_vector(
     if isinstance(x, pgt.Scalar):
         return x
     if ctg.is_many_skyline_parameter_configs(x):
-        return [skyline_parameter(p, data) for p in x]
+        return [skyline_parameter(p, context) for p in x]
 
     assert isinstance(x, cfg.SkylineVectorModel)
 
-    change_times = many_scalars(x.change_times, data)
+    change_times = many_scalars(x.change_times, context)
     if isinstance(x.value, str):
-        e = eval_expression(x.value, data)
+        e = eval_expression(x.value, context)
         if tg.is_many_one_or_many_scalars(e):
             value = e
         else:
@@ -127,7 +129,7 @@ def skyline_vector(
                 f"Expression '{x.value}' evaluated to {e} of type {type(e)}, which cannot be coerced to a valid value for a SkylineVector (expected a sequence composed of scalars and/or sequences of scalars)."
             )
     else:
-        value = [one_or_many_scalars(v, data) for v in x.value]
+        value = [one_or_many_scalars(v, context) for v in x.value]
 
     if tg.is_many_scalars(value):
         return SkylineParameter(value=value, change_times=change_times)
@@ -144,10 +146,10 @@ def skyline_vector(
 
 
 def one_or_many_2D_scalars(
-    x: cfg.OneOrMany2DScalars, data: dict[str, Any]
+    x: cfg.OneOrMany2DScalars, context: dict[str, Any]
 ) -> pgt.OneOrMany2DScalars:
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if tg.is_one_or_many_2D_scalars(e):
             return e
         raise ValueError(
@@ -155,17 +157,17 @@ def one_or_many_2D_scalars(
         )
     if isinstance(x, pgt.Scalar):
         return x
-    return [many_scalars(v, data) for v in x]
+    return [many_scalars(v, context) for v in x]
 
 
 def skyline_matrix(
-    x: cfg.SkylineMatrix, data: dict[str, Any]
+    x: cfg.SkylineMatrix, context: dict[str, Any]
 ) -> SkylineMatrixCoercible | None:
     if x is None:
         return None
 
     if isinstance(x, str):
-        e = eval_expression(x, data)
+        e = eval_expression(x, context)
         if tg.is_one_or_many_2D_scalars(e):
             return e
         raise ValueError(
@@ -174,13 +176,13 @@ def skyline_matrix(
     if isinstance(x, pgt.Scalar):
         return x
     if ctg.is_many_skyline_vector_configs(x):
-        return [skyline_vector(v, data) for v in x]
+        return [skyline_vector(v, context) for v in x]
 
     assert isinstance(x, cfg.SkylineMatrixModel)
 
-    change_times = many_scalars(x.change_times, data)
+    change_times = many_scalars(x.change_times, context)
     if isinstance(x.value, str):
-        e = eval_expression(x.value, data)
+        e = eval_expression(x.value, context)
         if tg.is_many_one_or_many_2D_scalars(e):
             value = e
         else:
@@ -188,7 +190,7 @@ def skyline_matrix(
                 f"Expression '{x.value}' evaluated to {e} of type {type(e)}, which cannot be coerced to a valid value for a SkylineMatrix (expected a sequence composed of scalars and/or nested (2D) sequences of scalars)."
             )
     else:
-        value = [one_or_many_2D_scalars(v, data) for v in x.value]
+        value = [one_or_many_2D_scalars(v, context) for v in x.value]
 
     if tg.is_many_scalars(value):
         return SkylineParameter(value=value, change_times=change_times)
@@ -215,29 +217,28 @@ def skyline_matrix(
 
 
 def distribution(
-    x: cfg.Distribution, data: dict[str, Any], rng: Generator
+    x: cfg.Distribution, context: dict[str, Any], seed: int | None
 ) -> pgt.Distribution:
     args = x.args
     for arg_name, arg_value in args.items():
         if isinstance(arg_value, str):
-            args[arg_name] = eval_expression(arg_value, data)
+            args[arg_name] = eval_expression(arg_value, context)
+    rng = default_rng(seed)
     return lambda: getattr(rng, x.type)(**args)
 
 
-def data(context: dict[str, cfg.Distribution] | None, rng: Generator) -> dict[str, Any]:
-    if context is None:
-        return {}
-    data: dict[str, Any] = {}
-    for k, v in context.items():
-        data[k] = np.array(distribution(v, data, rng)()).tolist()
-    return data
+def context(x: cfg.Context, seed: int | None) -> dict[str, Any]:
+    context: dict[str, Any] = {}
+    for k, v in x.items():
+        context[k] = np.array(distribution(v, context, seed)()).tolist()
+    return context
 
 
-def timed_event(timed_event: cfg.TimedEvent, data: dict[str, Any]) -> TimedEvent:
-    state = None if timed_event.state is None else timed_event.state.format(**data)
+def timed_event(timed_event: cfg.TimedEvent, context: dict[str, Any]) -> TimedEvent:
+    state = None if timed_event.state is None else timed_event.state.format(**context)
     return TimedSampling(
         state=state,
-        times=many_scalars(timed_event.times, data),
-        proportion=scalar(timed_event.proportion, data),
+        times=many_scalars(timed_event.times, context),
+        proportion=scalar(timed_event.proportion, context),
         removal=timed_event.removal,
     )

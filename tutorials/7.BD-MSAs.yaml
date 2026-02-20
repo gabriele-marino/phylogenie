@@ -11,7 +11,7 @@
 # ---------------
 
 output_dir: outputs/BD-MSAs
-data_type: msas
+data_type: msa
 n_samples:
   train: 100
   val: 10
@@ -45,13 +45,14 @@ context:
     low: 50
     high: 250
 
-# ----------------------
-# Tree simulation config
-# ----------------------
+# ---------------------
+# Tree generator config
+# ---------------------
 
-# The trees argument defines the configuration used to generate the trees. In this case, we will use a BD model with a constant reproduction number, a skyline sampling proportion, and a fixed infectious period.
+# For tree generation, we will use a BD model with a constant reproduction number, a skyline sampling proportion, and a fixed infectious period.
 
-trees:
+tree_generator:
+  backend: phylogenie
   parameterization: BD
   reproduction_number: R_0
   sampling_proportion:
@@ -63,16 +64,23 @@ trees:
 
 keep_trees: true # Whether to keep the generated tree files, false by default
 
-# ----------------------
-# AliSim-specific config
-# ----------------------
+# --------------------
+# MSA generator config
+# --------------------
 
-# This section defines the backend-specific configurations for AliSim.
-# The AliSim backend requires the iqtree_path to be set to the path of the IQ-TREE executable. You can also specify additional string arguments that will be passed to the AliSim command line using the args dictionary.
-# In this case, we specify the amino acid substitution model (LG) using the -m model flag and the length of the MSA using the --length flag, which will be replaced by the value of the L context variable. Note that here, the value of L must be included in curly braces to indicate that it is a context variable that will be replaced with a sampled value at simulation time.
-# For more information on the available arguments, please refer to the AliSim documentation at https://iqtree.github.io/doc/AliSim.
+msa_generator:
+  backend: alisim # Specify the MSA generator backend to use. Currently, the only available option is "alisim", which uses AliSim, a flexible MSA simulatore bundled with IQTree (https://iqtree.github.io/).
 
-iqtree_path: "iqtree2" # Path to the IQ-TREE executable, "iqtree2" by default
-args:
-  -m: LG
-  --length: "{L}"
+  # -------------
+  # AliSim config
+  # -------------
+
+  # This section defines the backend-specific configurations for AliSim.
+  # The AliSim backend requires the iqtree_path to be set to the path of the IQ-TREE executable. You can also specify additional string arguments that will be passed to the AliSim command line using the args dictionary.
+  # In this case, we specify the amino acid substitution model (LG) using the -m model flag and the length of the MSA using the --length flag, which will be replaced by the value of the L context variable. Note that here, the value of L must be included in curly braces to indicate that it is a context variable that will be replaced with a sampled value at simulation time.
+  # For more information on the available arguments, please refer to the AliSim documentation at https://iqtree.github.io/doc/AliSim.
+
+  iqtree_path: "iqtree2" # Path to the IQ-TREE executable, "iqtree2" by default
+  args:
+    -m: LG
+    --length: "{L}"

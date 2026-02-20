@@ -20,6 +20,7 @@ class Distribution(BaseModel):
         return self.model_extra
 
 
+Context = dict[str, Distribution]
 Integer = str | int
 Scalar = str | pgt.Scalar
 ManyScalars = str | pgt.Many[Scalar]

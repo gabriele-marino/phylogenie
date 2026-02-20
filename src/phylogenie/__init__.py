@@ -6,18 +6,6 @@ from phylogenie.draw import (
     draw_dated_tree,
     draw_tree,
 )
-from phylogenie.generators import (
-    AliSimDatasetGenerator,
-    BDEITreeDatasetGenerator,
-    BDSSTreeDatasetGenerator,
-    BDTreeDatasetGenerator,
-    CanonicalTreeDatasetGenerator,
-    DatasetGenerator,
-    DatasetGeneratorConfig,
-    EpidemiologicalTreeDatasetGenerator,
-    FBDTreeDatasetGenerator,
-    TreeDatasetGeneratorConfig,
-)
 from phylogenie.io import dump_fasta, dump_newick, load_fasta, load_newick, load_nexus
 from phylogenie.main import run
 from phylogenie.msa import MSA, Sequence
@@ -55,16 +43,6 @@ __all__ = [
     "draw_colored_tree_continuous",
     "draw_dated_tree",
     "draw_tree",
-    "AliSimDatasetGenerator",
-    "BDEITreeDatasetGenerator",
-    "BDSSTreeDatasetGenerator",
-    "BDTreeDatasetGenerator",
-    "CanonicalTreeDatasetGenerator",
-    "DatasetGenerator",
-    "DatasetGeneratorConfig",
-    "EpidemiologicalTreeDatasetGenerator",
-    "FBDTreeDatasetGenerator",
-    "TreeDatasetGeneratorConfig",
     "dump_fasta",
     "dump_newick",
     "load_fasta",
