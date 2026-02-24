@@ -1,6 +1,8 @@
-from phylogenie.treesimulator.core import STATE_KEY, Model, StochasticEvent, TimedEvent
+from phylogenie.treesimulator.core import STATE, Model
 from phylogenie.treesimulator.gillespie import generate_trees, simulate_tree
 from phylogenie.treesimulator.parameterizations import (
+    StochasticEvent,
+    TimedEvent,
     get_BD_model,
     get_BDEI_model,
     get_BDSS_model,
@@ -11,12 +13,12 @@ from phylogenie.treesimulator.parameterizations import (
 )
 
 __all__ = [
-    "STATE_KEY",
+    "STATE",
     "Model",
-    "StochasticEvent",
-    "TimedEvent",
     "simulate_tree",
     "generate_trees",
+    "StochasticEvent",
+    "TimedEvent",
     "get_canonical_model",
     "get_BD_model",
     "get_BDEI_model",

@@ -24,17 +24,17 @@ def simulate_tree(
     start_clock = time.perf_counter()
     while True:
         model.reset()
-        while model.step(max_time) and (n_leaves is None or model.tree_size < n_leaves):
+        while model.step(max_time) and (n_leaves is None or model.n_sampled < n_leaves):
             if timeout is not None and time.perf_counter() - start_clock > timeout:
                 raise TimeoutError("Simulation timed out.")
 
         # If the simulation stopped because the process stopped,
         # and not because we reached the desired number of leaves,
         # we restart the simulation.
-        if n_leaves is not None and model.tree_size < n_leaves:
+        if n_leaves is not None and model.n_sampled < n_leaves:
             continue
 
-        tree = model.get_tree()
+        tree = model.get_sampled_tree()
 
         if (
             tree is None

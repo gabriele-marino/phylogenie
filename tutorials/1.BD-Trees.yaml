@@ -109,18 +109,26 @@ tree_generator:
   #   - type: str
   #     The type of the timed event. Can be one of the following:
   #     - "sampling": samples a proportion of individuals at specified times.
+  #     - "death": removes a proportion of individuals at specified times.
   #   - times: list[float]
   #     A list of times when the event will occur.
+  #   - firings: int | float
+  #     The number of times the event will fire at each event time. If an integer
+  #     is provided, the event will fire exactly that many times at each event time.
+  #     If a float between 0 and 1 is provided, the event will fire a number of times equal
+  #     to that proportion of the possible reactant combinations in the model at each event time.
   #   Each timed event type has specific additional arguments.
-  #   Sampling timed events requires the following additional arguments:
+  #   Timed sampling events requires the following additional arguments:
   #     - state: str | None (None by default)
   #       The state(s) of the individuals to be sampled. Can be a single state or a regex pattern to match multiple states.
   #       If None, individuals from all states will be sampled.
-  #     - proportion: float
-  #       The proportion of individuals to be sampled at each event time.
   #     - removal: bool
   #       Whether the sampled individuals are removed from the population (True) or not (False).
-  #    For an example of how to use sampling timed events, refer to 6.FBD-Trees.yaml.
+  #   Timed death events require the following additional arguments:
+  #     - state: str | None (None by default)
+  #       The state(s) of the individuals to be removed. Can be a single state or a regex pattern to match multiple states.
+  #       If None, individuals from all states will be removed. 
+  #   For an example of how to use timed sampling events, refer to 6.FBD-Trees.yaml.
 
   # - timeout: float (infinity by default)
   #   The maximum time (in seconds) allowed for the simulation. If the simulation exceeds this time, a new set of parameters will be drawn and the simulation restarted.

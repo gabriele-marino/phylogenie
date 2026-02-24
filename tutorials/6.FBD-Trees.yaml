@@ -61,9 +61,9 @@ tree_generator:
 
   timed_events:
     - type: sampling
-      state: A|B
       times: [max_time]
-      proportion: 1.0
+      firings: 1.0
+      state: A|B 
       removal: True
 
   # Here we define an acceptance criterion to ensure that only trees with a number of leaves between 50 and 250 are accepted.

@@ -20,7 +20,7 @@ class Distribution(BaseModel):
         return self.model_extra
 
 
-Context = dict[str, Distribution]
+Context = dict[str, str | Distribution]
 Integer = str | int
 Scalar = str | pgt.Scalar
 ManyScalars = str | pgt.Many[Scalar]
@@ -50,17 +50,25 @@ SkylineMatrix = str | pgt.Scalar | pgt.Many[SkylineVector] | SkylineMatrixModel 
 
 class TimedEventType(str, Enum):
     SAMPLING = "sampling"
+    DEATH = "death"
 
 
 class TimedEventModel(StrictBaseModel):
     times: ManyScalars
+    firings: Scalar
 
 
 class TimedSamplingModel(TimedEventModel):
     type: Literal[TimedEventType.SAMPLING]
     state: str | None = None
-    proportion: Scalar
     removal: bool
 
 
-TimedEvent = Annotated[TimedSamplingModel, Field(discriminator="type")]
+class TimedDeathModel(TimedEventModel):
+    type: Literal[TimedEventType.DEATH]
+    state: str | None = None
+
+
+TimedEvent = Annotated[
+    TimedSamplingModel | TimedDeathModel, Field(discriminator="type")
+]

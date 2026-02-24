@@ -8,12 +8,14 @@ from phylogenie.skyline import (
     skyline_matrix,
     skyline_vector,
 )
+from phylogenie.tree_node import TreeNode
 from phylogenie.treesimulator.core import Model
-from phylogenie.treesimulator.parameterizations.common import (
+from phylogenie.treesimulator.parameterizations.core import (
     Death,
     Migration,
     Sampling,
-    StateDependentEvent,
+    SingleReactantEventFunction,
+    StochasticEvent,
 )
 
 INFECTIOUS_STATE = "I"
@@ -22,11 +24,11 @@ SUPERSPREADER_STATE = "S"
 
 
 @dataclass(kw_only=True)
-class Birth(StateDependentEvent):
+class Birth(SingleReactantEventFunction):
     new_state: str
 
-    def apply(self, model: Model):
-        model.birth_from(model.draw_active_node(self.state), self.new_state)
+    def apply_to_node(self, model: Model, node: TreeNode):
+        model.birth_from(node, self.new_state)
 
 
 def get_canonical_model(
@@ -47,23 +49,25 @@ def get_canonical_model(
 
     model = Model(init_state=init_state)
     for i, state in enumerate(states):
-        model.add_stochastic_event(
-            Birth(rate=birth_rates[i], state=state, new_state=state)
+        model.add_event(
+            StochasticEvent(rate=birth_rates[i], fn=Birth(state=state, new_state=state))
         )
-        model.add_stochastic_event(Death(rate=death_rates[i], state=state))
-        model.add_stochastic_event(
-            Sampling(rate=sampling_rates[i], state=state, removal=remove_after_sampling)
+        model.add_event(StochasticEvent(rate=death_rates[i], fn=Death(state=state)))
+        model.add_event(
+            StochasticEvent(
+                rate=sampling_rates[i],
+                fn=Sampling(state=state, removal=remove_after_sampling),
+            )
         )
 
     if migration_rates is not None:
         migration_rates = skyline_matrix(migration_rates, N, N - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
-                model.add_stochastic_event(
-                    Migration(
+                model.add_event(
+                    StochasticEvent(
                         rate=migration_rates[i, j],
-                        state=state,
-                        target_state=other_state,
+                        fn=Migration(state=state, target_state=other_state),
                     )
                 )
 
@@ -71,11 +75,10 @@ def get_canonical_model(
         birth_rates_among_states = skyline_matrix(birth_rates_among_states, N, N - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
-                model.add_stochastic_event(
-                    Birth(
+                model.add_event(
+                    StochasticEvent(
                         rate=birth_rates_among_states[i, j],
-                        state=state,
-                        new_state=other_state,
+                        fn=Birth(state=state, new_state=other_state),
                     )
                 )
 

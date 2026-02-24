@@ -65,7 +65,7 @@ class PhylogenieTreeGenerator(TreeGenerator):
         model.rng.seed(seed)
 
         for event in self.timed_events:
-            model.add_timed_event(timed_event(event, context))
+            model.add_event(timed_event(event, context))
 
         max_time = None if self.max_time is None else scalar(self.max_time, context)
 

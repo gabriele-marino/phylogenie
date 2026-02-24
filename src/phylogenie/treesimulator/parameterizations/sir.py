@@ -1,23 +1,25 @@
 from phylogenie.skyline import SkylineParameterLike, skyline_parameter
-from phylogenie.treesimulator.core import Model, StochasticEvent
-from phylogenie.treesimulator.parameterizations.common import Recovery, Sampling
+from phylogenie.treesimulator.core import Model
+from phylogenie.treesimulator.parameterizations.core import (
+    Recovery,
+    Sampling,
+    StochasticEvent,
+)
 
 INFECTIOUS_STATE = "I"
 SUSCEPTIBLE_STATE = "S"
 
-SUSCEPTIBLES_KEY = "susceptibles"
+SUSCEPTIBLES = "susceptibles"
 
 
-class Transmission(StochasticEvent):
-    def get_propensity(self, model: Model) -> float:
-        rate = self.rate.get_value_at_time(model.current_time)
-        susceptibles = model[SUSCEPTIBLES_KEY]
-        return rate * model.count_active_nodes(INFECTIOUS_STATE) * susceptibles
+class Transmission:
+    def reactant_combinations(self, model: Model) -> int:
+        return model[SUSCEPTIBLES] * model.count_active_nodes(INFECTIOUS_STATE)
 
     def apply(self, model: Model):
-        model[SUSCEPTIBLES_KEY] -= 1
+        model[SUSCEPTIBLES] -= 1
         parent_node = model.draw_active_node(INFECTIOUS_STATE)
-        model.birth_from(parent_node, SUSCEPTIBLE_STATE)
+        model.birth_from(parent_node, INFECTIOUS_STATE)
 
 
 def get_SIR_model(
@@ -27,15 +29,20 @@ def get_SIR_model(
     susceptibles: int,
 ):
     model = Model(
-        init_state=INFECTIOUS_STATE, init_metadata={SUSCEPTIBLES_KEY: susceptibles}
+        init_state=INFECTIOUS_STATE, init_metadata={SUSCEPTIBLES: susceptibles}
     )
-    model.add_stochastic_event(Transmission(rate=skyline_parameter(transmission_rate)))
-    model.add_stochastic_event(
-        Recovery(rate=skyline_parameter(recovery_rate), state=INFECTIOUS_STATE)
+    model.add_event(
+        StochasticEvent(rate=skyline_parameter(transmission_rate), fn=Transmission())
     )
-    model.add_stochastic_event(
-        Sampling(
-            rate=skyline_parameter(sampling_rate), state=INFECTIOUS_STATE, removal=True
+    model.add_event(
+        StochasticEvent(
+            rate=skyline_parameter(recovery_rate), fn=Recovery(state=INFECTIOUS_STATE)
+        )
+    )
+    model.add_event(
+        StochasticEvent(
+            rate=skyline_parameter(sampling_rate),
+            fn=Sampling(state=INFECTIOUS_STATE, removal=True),
         )
     )
     return model

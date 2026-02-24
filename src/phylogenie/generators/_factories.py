@@ -17,7 +17,7 @@ from phylogenie.skyline import (
     SkylineVectorCoercible,
 )
 from phylogenie.treesimulator import TimedEvent
-from phylogenie.treesimulator.parameterizations.common import TimedSampling
+from phylogenie.treesimulator.parameterizations.core import Death, Sampling
 
 
 def eval_expression(
@@ -230,15 +230,21 @@ def distribution(
 def context(x: cfg.Context, seed: int | None) -> dict[str, Any]:
     context: dict[str, Any] = {}
     for k, v in x.items():
-        context[k] = np.array(distribution(v, context, seed)()).tolist()
+        if isinstance(v, str):
+            context[k] = eval_expression(v, context)
+        else:
+            context[k] = np.array(distribution(v, context, seed)()).tolist()
     return context
 
 
 def timed_event(timed_event: cfg.TimedEvent, context: dict[str, Any]) -> TimedEvent:
     state = None if timed_event.state is None else timed_event.state.format(**context)
-    return TimedSampling(
-        state=state,
+    if isinstance(timed_event, cfg.TimedSamplingModel):
+        fn = Sampling(state=state, removal=timed_event.removal)
+    else:
+        fn = Death(state=state)
+    return TimedEvent(
         times=many_scalars(timed_event.times, context),
-        proportion=scalar(timed_event.proportion, context),
-        removal=timed_event.removal,
+        firings=scalar(timed_event.firings, context),
+        fn=fn,
     )

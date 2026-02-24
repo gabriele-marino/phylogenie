@@ -1,3 +1,4 @@
+from phylogenie.treesimulator.parameterizations.core import StochasticEvent, TimedEvent
 from phylogenie.treesimulator.parameterizations.open_population import (
     get_BD_model,
     get_BDEI_model,
@@ -11,6 +12,8 @@ from phylogenie.treesimulator.parameterizations.sir import (
 )
 
 __all__ = [
+    "StochasticEvent",
+    "TimedEvent",
     "get_SIR_model",
     "get_BD_model",
     "get_BDEI_model",
