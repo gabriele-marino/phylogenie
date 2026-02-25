@@ -1,7 +1,7 @@
 from phylogenie.skyline import SkylineParameterLike, skyline_parameter
 from phylogenie.treesimulator.core import Model
 from phylogenie.treesimulator.parameterizations.core import (
-    Recovery,
+    Death,
     Sampling,
     StochasticEvent,
 )
@@ -36,7 +36,7 @@ def get_SIR_model(
     )
     model.add_event(
         StochasticEvent(
-            rate=skyline_parameter(recovery_rate), fn=Recovery(state=INFECTIOUS_STATE)
+            rate=skyline_parameter(recovery_rate), fn=Death(state=INFECTIOUS_STATE)
         )
     )
     model.add_event(

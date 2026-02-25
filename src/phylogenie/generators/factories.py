@@ -2,12 +2,12 @@ import re
 from typing import Any
 
 import numpy as np
-from numpy.random import default_rng
+from numpy.random import Generator
 
-import phylogenie._typeguards as tg
-import phylogenie._typings as pgt
-import phylogenie.generators._configs as cfg
-import phylogenie.generators._typeguards as ctg
+import phylogenie.generators.configs as cfg
+import phylogenie.generators.typeguards as ctg
+import phylogenie.typeguards as tg
+import phylogenie.typings as pgt
 from phylogenie.skyline import (
     SkylineMatrix,
     SkylineMatrixCoercible,
@@ -16,21 +16,19 @@ from phylogenie.skyline import (
     SkylineVector,
     SkylineVectorCoercible,
 )
-from phylogenie.treesimulator import TimedEvent
-from phylogenie.treesimulator.parameterizations.core import Death, Sampling
 
 
 def eval_expression(
     expression: str,
     context: dict[str, Any],
-    extra_globals: dict[str, Any] | None = None,
+    extra_context: dict[str, Any] | None = None,
 ) -> Any:
-    if extra_globals is None:
-        extra_globals = {}
+    if extra_context is None:
+        extra_context = {}
     return np.array(
         eval(
             expression,
-            {"np": np, **{k: np.array(v) for k, v in context.items()}, **extra_globals},
+            {"np": np, **{k: np.array(v) for k, v in context.items()}, **extra_context},
         )
     ).tolist()
 
@@ -217,34 +215,21 @@ def skyline_matrix(
 
 
 def distribution(
-    x: cfg.Distribution, context: dict[str, Any], seed: int | None
+    x: cfg.Distribution, context: dict[str, Any], rng: Generator
 ) -> pgt.Distribution:
     args = x.args
     for arg_name, arg_value in args.items():
         if isinstance(arg_value, str):
             args[arg_name] = eval_expression(arg_value, context)
-    rng = default_rng(seed)
     return lambda: getattr(rng, x.type)(**args)
 
 
-def context(x: cfg.Context, seed: int | None) -> dict[str, Any]:
+def context(x: cfg.Context, rng: Generator) -> dict[str, Any]:
     context: dict[str, Any] = {}
     for k, v in x.items():
-        if isinstance(v, str):
-            context[k] = eval_expression(v, context)
-        else:
-            context[k] = np.array(distribution(v, context, seed)()).tolist()
+        context[k] = (
+            eval_expression(v, context)
+            if isinstance(v, str)
+            else np.array(distribution(v, context, rng)()).tolist()
+        )
     return context
-
-
-def timed_event(timed_event: cfg.TimedEvent, context: dict[str, Any]) -> TimedEvent:
-    state = None if timed_event.state is None else timed_event.state.format(**context)
-    if isinstance(timed_event, cfg.TimedSamplingModel):
-        fn = Sampling(state=state, removal=timed_event.removal)
-    else:
-        fn = Death(state=state)
-    return TimedEvent(
-        times=many_scalars(timed_event.times, context),
-        firings=scalar(timed_event.firings, context),
-        fn=fn,
-    )

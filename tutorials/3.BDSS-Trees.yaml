@@ -67,10 +67,7 @@ context:
 # ---------------------
 
 tree_generator:
-  backend: phylogenie
-
-  # In this example, we want the set the initial state of the simulation based on the value of a string context variable (init_state). This is done by including init_state inside curly braces. Phylogenie will automatically replace this with the value of the init_state variable at runtime.
-
+  # In this example, we want the set the value of a string argument based on the value of a string context variable (init_state). This is done by including init_state inside curly braces. Phylogenie will automatically replace this with the value of the init_state variable at runtime.
   init_state: "{init_state}"
   n_leaves: n_leaves
 
@@ -85,7 +82,7 @@ tree_generator:
   # - superspreaders_proportion;
   # - sampling_proportion.
 
-  parameterization: BDSS
+  spec: phylogenie.BDSS
   reproduction_number: R_0
   infectious_period: 2.5
   superspreading_ratio: r_SS

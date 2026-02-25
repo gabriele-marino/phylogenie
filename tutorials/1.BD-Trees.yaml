@@ -1,6 +1,6 @@
-# -----------
-# 1. BD trees
-# -----------
+# --------
+# BD trees
+# --------
 
 # This tutorial walks you through setting up a configuration file to simulate phylogenetic trees with a birth-death (BD) model.
 
@@ -85,19 +85,10 @@ context:
 # This section defines the parameters for the tree simulation.
 
 tree_generator:
-  backend: phylogenie # Specify the tree generator backend to use. Currently, the only available option is "phylogenie", which uses Phylogenie’s internal tree simulation functions.
+  # Here we only specify a required number of leaves in the simulated trees,
+  # so that to stop the simulation when the number of samples reaches the target.
 
-  # In this case we specify a required number of leaves in the simulated trees, so that to stop the simulation when the number of leaves reaches the target.
-
-  n_leaves: n_leaves # Number of leaves in the simulated trees
-  node_features:  # Mapping of node feature names to TreeNode attributes to be recorded for each node
-    n_leaves: leaf_counts
-    depth: depths
-    # - ages # Age of each node
-    # - depth_levels # Depth level of each node
-    # - heights # Height of each node
-    # - height_levels # Height level of each node
-    # - times # Time of each node
+  n_leaves: n_leaves
 
   # Other optional arguments are:
 
@@ -106,7 +97,7 @@ tree_generator:
 
   # - timed_events: list[TimedEvent] (None by default)
   #   A list of timed events to be scheduled during the simulation. Each timed event is defined as a dictionary with the following keys:
-  #   - type: str
+  #   - spec: str
   #     The type of the timed event. Can be one of the following:
   #     - "sampling": samples a proportion of individuals at specified times.
   #     - "death": removes a proportion of individuals at specified times.
@@ -161,7 +152,7 @@ tree_generator:
   # During evaluation, context variables are converted into NumPy arrays so you can easily apply complex calculations or operations (cf. 2.BDEI-Trees.yaml). 
   # In this example, we don’t need to apply complex operations; we just refer directly to the context variables when defining the parameters.
 
-  parameterization: BD
+  spec: phylogenie.BD
 
   reproduction_number: R_0
   sampling_proportion:

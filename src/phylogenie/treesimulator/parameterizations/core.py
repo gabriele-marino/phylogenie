@@ -94,9 +94,6 @@ class Death(SingleReactantEventFunction):
         return model.remove(node)
 
 
-Recovery = Death
-
-
 @dataclass(kw_only=True)
 class Migration(SingleReactantEventFunction):
     target_state: str

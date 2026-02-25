@@ -1,5 +1,4 @@
 import time
-from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Callable
 
@@ -19,7 +18,8 @@ def simulate_tree(
     max_time: float | None = None,
     timeout: float | None = None,
     acceptance_criterion: Callable[[TreeNode], bool] | None = None,
-    logs: dict[str, Callable[[TreeNode], Any]] | None = None,
+    tree_logs: Callable[[TreeNode], dict[str, Any]] | None = None,
+    model_logs: Callable[[Model], dict[str, Any]] | None = None,
 ) -> tuple[TreeNode, dict[str, Any]]:
     start_clock = time.perf_counter()
     while True:
@@ -44,9 +44,10 @@ def simulate_tree(
             continue
 
         metadata: dict[str, Any] = {}
-        if logs is not None:
-            for key, func in logs.items():
-                metadata[key] = func(tree)
+        if tree_logs is not None:
+            metadata.update(tree_logs(tree))
+        if model_logs is not None:
+            metadata.update(model_logs(model))
 
         return (tree, metadata)
 
@@ -57,12 +58,12 @@ def generate_trees(
     model: Model,
     n_leaves: int | None = None,
     max_time: float | None = None,
-    node_features: Mapping[str, str] | None = None,
     seed: int | None = None,
     n_jobs: int = -1,
     timeout: float | None = None,
     acceptance_criterion: Callable[[TreeNode], bool] | None = None,
-    logs: dict[str, Callable[[TreeNode], Any]] | None = None,
+    tree_logs: Callable[[TreeNode], dict[str, Any]] | None = None,
+    model_logs: Callable[[Model], dict[str, Any]] | None = None,
 ) -> pd.DataFrame:
     if isinstance(output_dir, str):
         output_dir = Path(output_dir)
@@ -80,14 +81,10 @@ def generate_trees(
                     max_time=max_time,
                     timeout=timeout,
                     acceptance_criterion=acceptance_criterion,
-                    logs=logs,
+                    tree_logs=tree_logs,
+                    model_logs=model_logs,
                 )
                 metadata["file_id"] = i
-                if node_features is not None:
-                    for name, feature in node_features.items():
-                        mapping = getattr(tree, feature)
-                        for node in tree:
-                            node[name] = mapping[node]
                 dump_newick(tree, output_dir / f"{i}.nwk")
                 return metadata
             except TimeoutError:

@@ -9,19 +9,7 @@ def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tre
     Parse a Newick string into a TreeNode object.
 
     The parser supports embedded metadata in the `[&key=value]` syntax and an
-    optional translation mapping for taxa names.
-
-    Parameters
-    -----------
-    newick : str
-        The Newick-formatted string to parse.
-    translations : dict[str, str] | None, optional
-        Optional translation mapping (e.g., from NEXUS translate blocks).
-
-    Returns
-    --------
-    TreeNode
-        The parsed tree.
+    optional translation mapping for taxa names (e.g., from NEXUS translate blocks).
     """
     newick = newick.strip()
     newick = re.sub(r"^\[\&[^\]]*\]", "", newick).strip()
@@ -91,16 +79,7 @@ def load_newick(filepath: str | Path) -> TreeNode | list[TreeNode]:
 
     If the file contains a single tree, a TreeNode is returned. If it contains
     multiple trees (one per line), a list of TreeNode objects is returned.
-
-    Parameters
-    -----------
-    filepath : str | Path
-        Path to the Newick file to read.
-
-    Returns
-    --------
-    TreeNode | list[TreeNode]
-        A single tree or a list of trees depending on the file contents.
+    The parser supports embedded metadata in the `[&key=value]` syntax.
     """
     with open(filepath, "r") as file:
         trees = [parse_newick(newick) for newick in file]
@@ -111,20 +90,8 @@ def to_newick(node: TreeNode) -> str:
     """
     Serialize a TreeNode object to a Newick string.
 
-    Metadata keys are encoded using the `[&key=value]` syntax. Certain
-    characters in keys or values are rejected to avoid invalid Newick.
-
-    Parameters
-    -----------
-    node : TreeNode
-        The tree node to serialize.
-
-    Returns
-    --------
-    str
-        The Newick representation of the tree (without trailing semicolon).
+    Metadata keys are encoded using the `[&key=value]` syntax.
     """
-
     children_newick = ",".join([to_newick(child) for child in node.children])
     newick = node.name
     if node.metadata:
@@ -148,18 +115,7 @@ def to_newick(node: TreeNode) -> str:
 
 
 def dump_newick(trees: TreeNode | list[TreeNode], filepath: str | Path):
-    """
-    Write one or more trees to a Newick file.
-
-    Each tree is written on its own line and terminated with a semicolon.
-
-    Parameters
-    -----------
-    trees : TreeNode | list[TreeNode]
-        The tree or trees to write.
-    filepath : str | Path
-        Output file path.
-    """
+    """Write one or more trees to a Newick file, with one tree per line."""
     if isinstance(trees, TreeNode):
         trees = [trees]
     with open(filepath, "w") as file:

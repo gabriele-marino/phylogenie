@@ -52,8 +52,7 @@ context:
 # For tree generation, we will use a BD model with a constant reproduction number, a skyline sampling proportion, and a fixed infectious period.
 
 tree_generator:
-  backend: phylogenie
-  parameterization: BD
+  spec: phylogenie.BD
   reproduction_number: R_0
   sampling_proportion:
     value: [0, s_t1, s_t2]
@@ -69,7 +68,7 @@ keep_trees: true # Whether to keep the generated tree files, false by default
 # --------------------
 
 msa_generator:
-  backend: alisim # Specify the MSA generator backend to use. Currently, the only available option is "alisim", which uses AliSim, a flexible MSA simulatore bundled with IQTree (https://iqtree.github.io/).
+  spec: alisim # Specify the MSA generator backend to use. Currently, the only available option is "alisim", which uses AliSim, a flexible MSA simulatore bundled with IQTree (https://iqtree.github.io/).
 
   # -------------
   # AliSim config

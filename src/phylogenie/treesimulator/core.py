@@ -3,8 +3,8 @@ from collections import defaultdict
 from random import Random
 from typing import Any, Protocol
 
-from phylogenie._utils import MetadataMixin, OrderedSet
 from phylogenie.tree_node import TreeNode
+from phylogenie.utils import MetadataMixin, OrderedSet
 
 STATE = "state"
 
@@ -15,11 +15,7 @@ class Event(Protocol):
 
 
 class Model(MetadataMixin):
-    def __init__(
-        self,
-        init_state: str,
-        init_metadata: dict[str, Any] | None = None,
-    ):
+    def __init__(self, init_state: str, init_metadata: dict[str, Any] | None = None):
         super().__init__()
         self.rng = Random()
         self._init_state = init_state

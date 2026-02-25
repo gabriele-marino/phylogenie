@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, TypeGuard
 
-import phylogenie._typings as pgt
+import phylogenie.typings as pgt
 
 
 def is_many(x: Any) -> TypeGuard[pgt.Many[Any]]:
@@ -40,3 +40,7 @@ def is_many_one_or_many_2D_scalars(
 
 def is_many_3D_scalars(x: Any) -> TypeGuard[pgt.Many3DScalars]:
     return is_many(x) and all(is_many_2D_scalars(i) for i in x)
+
+
+def is_dictionary(x: Any) -> TypeGuard[dict[Any, Any]]:
+    return isinstance(x, dict)

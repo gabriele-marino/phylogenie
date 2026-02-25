@@ -97,8 +97,6 @@ context:
 # ---------------------
 
 tree_generator:
-  backend: phylogenie
-
   init_state: A
   n_leaves: n_leaves
 
@@ -133,7 +131,7 @@ tree_generator:
   #   - change_times: a list of times (starting from t=0) when the parameter changes to the next value.
   # In this last case, the value list must have exactly one more element than change_times.
 
-  parameterization: canonical
+  spec: phylogenie.canonical
   states: [A, B, C]
   migration_rates:
     value: [mu, 0]

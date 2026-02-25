@@ -5,6 +5,8 @@ __pycache__/
 *.pyd
 *.so
 
+.DS_Store
+
 dist/
 /rust/target/
 *.egg-info

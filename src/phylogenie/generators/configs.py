@@ -1,9 +1,20 @@
-from enum import Enum
-from typing import Annotated, Any, Literal
+"""
+Core configuration models.
 
-from pydantic import BaseModel, ConfigDict, Field
+This module provides foundational configuration models used as building
+blocks for generator configurations. Each configuration describes the
+inputs required by a factory function to construct a specific component.
 
-import phylogenie._typings as pgt
+The models defined here standardize how scalar values, distributions,
+and time-varying ("skyline") parameters are represented, enabling
+flexible and composable configuration schemas across the codebase.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+import phylogenie.typings as pgt
 
 
 class StrictBaseModel(BaseModel):
@@ -16,8 +27,7 @@ class Distribution(BaseModel):
 
     @property
     def args(self) -> dict[str, Any]:
-        assert self.model_extra is not None
-        return self.model_extra
+        return self.model_extra  # pyright: ignore
 
 
 Context = dict[str, str | Distribution]
@@ -46,29 +56,3 @@ class SkylineMatrixModel(StrictBaseModel):
 SkylineParameter = Scalar | SkylineParameterModel
 SkylineVector = str | pgt.Scalar | pgt.Many[SkylineParameter] | SkylineVectorModel
 SkylineMatrix = str | pgt.Scalar | pgt.Many[SkylineVector] | SkylineMatrixModel | None
-
-
-class TimedEventType(str, Enum):
-    SAMPLING = "sampling"
-    DEATH = "death"
-
-
-class TimedEventModel(StrictBaseModel):
-    times: ManyScalars
-    firings: Scalar
-
-
-class TimedSamplingModel(TimedEventModel):
-    type: Literal[TimedEventType.SAMPLING]
-    state: str | None = None
-    removal: bool
-
-
-class TimedDeathModel(TimedEventModel):
-    type: Literal[TimedEventType.DEATH]
-    state: str | None = None
-
-
-TimedEvent = Annotated[
-    TimedSamplingModel | TimedDeathModel, Field(discriminator="type")
-]

@@ -1,12 +1,12 @@
 import subprocess
-from typing import Any, Literal
+from typing import Any
 
-from phylogenie.generators._factories import string
-from phylogenie.generators.msa.base import Backend, MSAGenerator
+import phylogenie.generators.factories as f
+from phylogenie.generators.msa import MSAGenerator, MSAGeneratorRegistry
 
 
+@MSAGeneratorRegistry.register("alisim")
 class AliSimGenerator(MSAGenerator):
-    backend: Literal[Backend.ALISIM] = Backend.ALISIM
     iqtree_path: str = "iqtree2"
     args: dict[str, Any]
 
@@ -28,7 +28,7 @@ class AliSimGenerator(MSAGenerator):
         ]
 
         for key, value in self.args.items():
-            command.extend([key, string(value, context)])
+            command.extend([key, f.string(value, context)])
 
         command.extend(["-af", "fasta"])
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL)

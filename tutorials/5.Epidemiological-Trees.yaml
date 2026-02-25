@@ -58,8 +58,6 @@ context:
 # ---------------------
 
 tree_generator:
-  backend: phylogenie
-
   init_state: E
   n_leaves: n_leaves
   
@@ -78,7 +76,7 @@ tree_generator:
   # - reproduction_numbers_among_states (None by default);
   # It also needs you to specify the states involved in the simulation, as a list of strings, and assumes removal after sampling.
 
-  parameterization: epidemiological
+  spec: phylogenie.epidemiological
   states: [E, I]
   become_uninfectious_rates: [0, 1 / ((1 - f) * T)] # Become uninfectious rate for I is the inverse of the infectious period
   migration_rates: [[1 / (f * T)], [0]] # Migration rate from E to I is the inverse of the incubation period

@@ -3,7 +3,7 @@ from collections import deque
 from collections.abc import Iterator, Mapping
 from typing import Any
 
-from phylogenie._utils import MetadataMixin
+from phylogenie.utils import MetadataMixin
 
 
 class TreeNode(MetadataMixin):
@@ -16,16 +16,7 @@ class TreeNode(MetadataMixin):
     """
 
     def __init__(self, name: str = "", branch_length: float | None = None):
-        """
-        Initialize a tree node with optional name and branch length.
-
-        Parameters
-        -----------
-        name : str, optional
-            The name of the node. Default is an empty string.
-        branch_length : float | None, optional
-            The length of the branch leading to this node. Default is None.
-        """
+        """Initialize a tree node with optional name and branch length."""
         super().__init__()
         self.name = name
         self.branch_length = branch_length
@@ -39,38 +30,17 @@ class TreeNode(MetadataMixin):
 
     @property
     def children(self) -> tuple["TreeNode", ...]:
-        """
-        Return a read-only tuple of this node's children.
-
-        Returns
-        --------
-        tuple[TreeNode, ...]
-            Children in their current ordering.
-        """
+        """Return the children of this node as a tuple."""
         return tuple(self._children)
 
     @property
     def parent(self) -> "TreeNode | None":
-        """
-        Return the parent of this node, if any.
-
-        Returns
-        --------
-        TreeNode | None
-            The parent node or None if this node does not have a parent.
-        """
+        """Return the parent of this node, if any."""
         return self._parent
 
     @property
     def root(self) -> "TreeNode":
-        """
-        Return the root node of the tree containing this node.
-
-        Returns
-        --------
-        TreeNode
-            The root node of the tree.
-        """
+        """Return the root node of the tree containing this node."""
         node = self
         while node.parent is not None:
             node = node.parent
@@ -82,16 +52,6 @@ class TreeNode(MetadataMixin):
 
         This updates both the child's parent pointer and this node's internal
         children list. A child may only have one parent.
-
-        Parameters
-        -----------
-        child : TreeNode
-            The child node to attach.
-
-        Returns
-        --------
-        TreeNode
-            The current node.
         """
         if child.parent is not None:
             raise ValueError(f"Node {child.name} already has a parent.")
@@ -105,11 +65,6 @@ class TreeNode(MetadataMixin):
 
         The child is removed from the children list and its parent pointer is
         cleared. The child must already be attached to this node.
-
-        Parameters
-        -----------
-        child : TreeNode
-            The child node to remove.
         """
         if child not in self._children:
             raise ValueError(f"Node {child.name} is not a child of node {self.name}.")
@@ -122,11 +77,6 @@ class TreeNode(MetadataMixin):
 
         If the node currently has a parent, it is removed from that parent's
         children list before the new relationship is created.
-
-        Parameters
-        -----------
-        parent : TreeNode | None
-            The new parent node, or None to detach this node.
         """
         if self.parent is not None:
             self.parent.remove_child(self)
@@ -135,60 +85,23 @@ class TreeNode(MetadataMixin):
             parent._children.append(self)
 
     def is_leaf(self) -> bool:
-        """
-        Determine whether this node is a leaf (has no children).
-
-        Returns
-        --------
-        bool
-            True if the node has no children, otherwise False.
-        """
+        """Determine whether this node is a leaf (has no children)."""
         return not self.children
 
     def is_internal(self) -> bool:
-        """
-        Determine whether this node is internal (has one or more children).
-
-        Returns
-        --------
-        bool
-            True if the node has one or more children, otherwise False.
-        """
+        """Determine whether this node is internal (has one or more children)."""
         return not self.is_leaf()
 
     def get_leaves(self) -> tuple["TreeNode", ...]:
-        """
-        Return all leaf nodes in the subtree rooted at this node.
-
-        Returns
-        --------
-        tuple[TreeNode, ...]
-            All nodes without children in the subtree.
-        """
+        """Return all leaf nodes in the subtree rooted at this node."""
         return tuple(node for node in self if node.is_leaf())
 
     def get_internal_nodes(self) -> tuple["TreeNode", ...]:
-        """
-        Return all internal (non-leaf) nodes in the subtree rooted at this node.
-
-        Returns
-        --------
-        tuple[TreeNode, ...]
-            All nodes that have at least one child in the subtree.
-        """
+        """Return all internal (non-leaf) nodes in the subtree rooted at this node."""
         return tuple(node for node in self if node.is_internal())
 
     def is_binary(self) -> bool:
-        """
-        Determine whether the subtree rooted at this node is binary.
-
-        A binary tree has 0 or 2 children at every node.
-
-        Returns
-        --------
-        bool
-            True if every node has 0 or 2 children, otherwise False.
-        """
+        """Determine whether the subtree rooted at this node is binary (every node has 0 or 2 children)."""
         return all(len(node.children) == 2 for node in self.get_internal_nodes())
 
     def branch_length_or_raise(self) -> float:
@@ -197,11 +110,6 @@ class TreeNode(MetadataMixin):
 
         The root node returns 0.0 when its branch length is None to provide a
         convenient origin length for distance calculations.
-
-        Returns
-        --------
-        float
-            The branch length for this node.
         """
         if self.parent is None:
             return 0 if self.branch_length is None else self.branch_length
@@ -215,21 +123,7 @@ class TreeNode(MetadataMixin):
     # Methods for traversing the tree in various orders.
 
     def iter_ancestors(self, stop: "TreeNode | None" = None) -> Iterator["TreeNode"]:
-        """
-        Iterate over ancestors from the parent up to (but excluding) a stop node.
-
-        Parameters
-        -----------
-        stop : TreeNode | None, optional
-            If provided, iteration stops before yielding this node. If the
-            stop node is not found before reaching the root, a ValueError
-            is raised.
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            An iterator over ancestor nodes.
-        """
+        """Iterate over ancestors from the parent up to (but excluding) a stop node."""
         node = self
         while True:
             if node.parent is None:
@@ -242,48 +136,20 @@ class TreeNode(MetadataMixin):
             yield node
 
     def iter_upward(self, stop: "TreeNode | None" = None) -> Iterator["TreeNode"]:
-        """
-        Iterate from this node upward through its ancestors, including self and up to (but excluding) a stop node.
-
-        Parameters
-        -----------
-        stop : TreeNode | None, optional
-            If provided, iteration stops before yielding this node. If the
-            stop node is not found before reaching the root, a ValueError
-            is raised.
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            An iterator starting at this node and going up the tree.
-        """
+        """Iterate from this node upward through its ancestors, including self and up to (but excluding) a stop node."""
         if self == stop:
             return
         yield self
         yield from self.iter_ancestors(stop=stop)
 
     def iter_descendants(self) -> Iterator["TreeNode"]:
-        """
-        Iterate over all descendants of this node (excluding self).
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            A depth-first iterator over descendant nodes.
-        """
+        """Iterate over all descendants of this node (excluding self)."""
         for child in self.children:
             yield child
             yield from child.iter_descendants()
 
     def iter_preorder(self) -> Iterator["TreeNode"]:
-        """
-        Iterate over nodes in preorder (self before descendants).
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            Preorder traversal iterator.
-        """
+        """Iterate over nodes in preorder (self before descendants)."""
         yield self
         yield from self.iter_descendants()
 
@@ -293,11 +159,6 @@ class TreeNode(MetadataMixin):
 
         For non-binary trees, a ValueError is raised because inorder is not
         well-defined.
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            Inorder traversal iterator.
         """
         if self.is_leaf():
             yield self
@@ -312,27 +173,13 @@ class TreeNode(MetadataMixin):
         yield from right.iter_inorder()
 
     def iter_postorder(self) -> Iterator["TreeNode"]:
-        """
-        Iterate over nodes in postorder (descendants before self).
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            Postorder traversal iterator.
-        """
+        """Iterate over nodes in postorder (descendants before self)."""
         for child in self.children:
             yield from child.iter_postorder()
         yield self
 
     def iter_breadth_first(self) -> Iterator["TreeNode"]:
-        """
-        Iterate over nodes in breadth-first order.
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            Breadth-first traversal iterator.
-        """
+        """Iterate over nodes in breadth-first order."""
         queue: deque["TreeNode"] = deque([self])
         while queue:
             node = queue.popleft()
@@ -344,19 +191,7 @@ class TreeNode(MetadataMixin):
     # --------------
 
     def get_mrca(self, other: "TreeNode") -> "TreeNode":
-        """
-        Find the most recent common ancestor (MRCA) of two nodes.
-
-        Parameters
-        -----------
-        other : TreeNode
-            The
-
-        Returns
-        --------
-        TreeNode
-            The MRCA of the two nodes.
-        """
+        """Find the most recent common ancestor (MRCA) of this node and another node."""
         self_ancestors = set(self.iter_upward())
         for other_ancestor in other.iter_upward():
             if other_ancestor in self_ancestors:
@@ -371,16 +206,6 @@ class TreeNode(MetadataMixin):
 
         The returned list starts at this node, travels up to the MRCA, and then
         down to the target node.
-
-        Parameters
-        -----------
-        other : TreeNode
-            The target node to connect to.
-
-        Returns
-        --------
-        list[TreeNode]
-            The ordered path of nodes between the two inputs.
         """
         mrca = self.get_mrca(other)
         return [
@@ -389,35 +214,11 @@ class TreeNode(MetadataMixin):
         ]
 
     def count_hops(self, other: "TreeNode") -> int:
-        """
-        Count the number of edges between this node and another node.
-
-        Parameters
-        -----------
-        other : TreeNode
-            The target node to connect to.
-
-        Returns
-        --------
-        int
-            The number of edges (hops) between the two nodes.
-        """
+        """Count the number of edges between this node and another node."""
         return len(self.get_path(other)) - 1
 
     def get_distance(self, other: "TreeNode") -> float:
-        """
-        Compute the branch-length distance between this node and another node.
-
-        Parameters
-        -----------
-        other : TreeNode
-            The target node to connect to.
-
-        Returns
-        --------
-        float
-            The sum of branch lengths along the path between the nodes.
-        """
+        """Compute the branch-length distance between this node and another node."""
         mrca = self.get_mrca(other)
         path = self.get_path(other)
         path.remove(mrca)
@@ -429,14 +230,7 @@ class TreeNode(MetadataMixin):
 
     @property
     def leaf_counts(self) -> dict["TreeNode", int]:
-        """
-        Compute the number of leaves under each node for the subtree rooted at this node.
-
-        Returns
-        --------
-        dict[TreeNode, int]
-            Mapping from descendant node to the number of leaves under it.
-        """
+        """Compute the number of leaves under each node for the subtree rooted at this node."""
         n_leaves: dict[TreeNode, int] = {}
         for node in self.iter_postorder():
             n_leaves[node] = sum(n_leaves[child] for child in node.children) or 1
@@ -444,14 +238,7 @@ class TreeNode(MetadataMixin):
 
     @property
     def n_leaves(self) -> int:
-        """
-        Return the number of leaf nodes for the subtree rooted at this node.
-
-        Returns
-        --------
-        int
-            The count of leaf nodes under this node.
-        """
+        """Return the number of leaf nodes for the subtree rooted at this node."""
         return len(self.get_leaves())
 
     @property
@@ -460,12 +247,7 @@ class TreeNode(MetadataMixin):
         Compute the height level of all nodes for the subtree rooted at this node.
 
         The height level is defined as the number of edges from a node to its farthest leaf.
-        The height level is 0 for leaf nodes, and increases by 1 for each level up the tree.
-
-        Returns
-        --------
-        dict[TreeNode, int]
-            Mapping from descendant node to the distance in edges to its farthest leaf.
+        It is 0 for leaf nodes, and increases by 1 for each level up the tree.
         """
         height_levels: dict[TreeNode, int] = {}
         for node in self.iter_postorder():
@@ -482,12 +264,7 @@ class TreeNode(MetadataMixin):
         Return the height level of the node.
 
         The height level is defined as the number of edges from a node to its farthest leaf.
-        The height level is 0 for leaf nodes, and increases by 1 for each level up the tree.
-
-        Returns
-        --------
-        int
-            Distance in edges from the node to its farthest leaf.
+        It is 0 for leaf nodes, and increases by 1 for each level up the tree.
         """
         return self.height_levels[self]
 
@@ -497,12 +274,7 @@ class TreeNode(MetadataMixin):
         Compute the height of all nodes for the subtree rooted at this node.
 
         The height is defined as the distance in branch-length units from a node to its farthest leaf.
-        The height is 0 for leaf nodes, and increases by the branch lengths up the tree.
-
-        Returns
-        --------
-        dict[TreeNode, float]
-            Mapping from descendant node to the distance in branch-length units to its farthest leaf.
+        It is 0 for leaf nodes, and increases by the branch lengths up the tree.
         """
         heights: dict["TreeNode", float] = {}
         for node in self.iter_postorder():
@@ -522,12 +294,7 @@ class TreeNode(MetadataMixin):
         Return the height of the node.
 
         The height is defined as the distance in branch-length units from a node to its farthest leaf.
-        The height is 0 for leaf nodes, and increases by the branch lengths up the tree.
-
-        Returns
-        --------
-        float
-            Distance in branch-length units from the node to its farthest leaf.
+        It is 0 for leaf nodes, and increases by the branch lengths up the tree.
         """
         return self.heights[self]
 
@@ -537,13 +304,7 @@ class TreeNode(MetadataMixin):
         Compute the depth level of all nodes for the subtree rooted at this node.
 
         The depth level is defined as the number of edges from a node to the current node.
-        The depth level starts at 0 for the current node, and increases by 1 for each
-        level down the tree.
-
-        Returns
-        --------
-        dict[TreeNode, int]
-            Mapping from descendant node to the number of edges to the current node.
+        It is 0 for the current node, and increases by 1 for each level down the tree.
         """
         depth_levels: dict[TreeNode, int] = {self: 0}
         for node in self.iter_descendants():
@@ -556,13 +317,7 @@ class TreeNode(MetadataMixin):
         Return the depth level of the node.
 
         The depth level is defined as the number of edges from a node to the root.
-        The depth level starts at 0 for the root, and increases by 1 for each
-        level down the tree.
-
-        Returns
-        --------
-        int
-            The number of edges from the node to the root.
+        It is 0 for the root, and increases by 1 for each level down the tree.
         """
         return self.count_hops(self.root)
 
@@ -572,12 +327,7 @@ class TreeNode(MetadataMixin):
         Compute the depth of all nodes for the subtree rooted at this node.
 
         The depth is defined as the distance in branch-length units from a node to the current node.
-        The depth starts at 0.0 for the current node, and increases by the branch lengths down the tree.
-
-        Returns
-        --------
-        dict[TreeNode, float]
-            Mapping from descendant node to the distance in branch-length units to the current node.
+        It is 0 for the current node, and increases by the branch lengths down the tree.
         """
         depths: dict[TreeNode, float] = {self: 0.0}
         for node in self.iter_descendants():
@@ -591,11 +341,7 @@ class TreeNode(MetadataMixin):
         Compute the depth of this node.
 
         The depth is defined as the distance in branch-length units from a node to the root.
-
-        Returns
-        --------
-        float
-            The distance in branch-length units from this node to the root.
+        It is 0 for the root, and increases by the branch lengths down the tree.
         """
         return self.get_distance(self.root)
 
@@ -604,13 +350,9 @@ class TreeNode(MetadataMixin):
         """
         Compute the time of all nodes for the subtree rooted at this node.
 
-        Times are measured forwards from the current node. They are computed
-        by adding the current node's branch length to the relative depth of each node.
-
-        Returns
-        --------
-        dict[TreeNode, float]
-            Mapping from node to its time.
+        Times are measured forwards from the current node.
+        The time of the current node is defined as its branch length,
+        and increases by the branch lengths down the tree.
         """
         origin = self.branch_length_or_raise()
         return {node: origin + depth for node, depth in self.depths.items()}
@@ -620,8 +362,9 @@ class TreeNode(MetadataMixin):
         """
         Compute the time of this node.
 
-        Time is measured forwards from the root. It is computed
-        by adding the root's branch length to the depth of the node.
+        Times are measured forwards from the root of the tree.
+        The time of the root is defined as its branch length,
+        and increases by the branch lengths down the tree.
 
         Returns
         --------
@@ -638,11 +381,7 @@ class TreeNode(MetadataMixin):
         Compute the age of all nodes for the subtree rooted at this node.
 
         Ages are measured backwards in time from the most recent leaf of the subtree in branch-length units.
-
-        Returns
-        --------
-        dict[TreeNode, float]
-            Mapping from node to its age.
+        The age of the most recent leaf is defined as 0, and increases by the branch lengths up the tree.
         """
         ages: dict[TreeNode, float] = {self: self.height}
         for node in self.iter_descendants():
@@ -655,11 +394,7 @@ class TreeNode(MetadataMixin):
         Return the age of this node.
 
         Ages are measured backwards in time from the most recent leaf of the tree in branch-length units.
-
-        Returns
-        --------
-        float
-            The age of this node.
+        The age of the most recent leaf is defined as 0, and increases by the branch lengths up the tree.
         """
         return self.root.height - self.get_distance(self.root)
 
@@ -669,11 +404,6 @@ class TreeNode(MetadataMixin):
         Return the origin time of the subtree rooted at this node.
 
         The origin time is defined as the age of the current node plus its branch length.
-
-        Returns
-        --------
-        float
-            The origin time of the subtree.
         """
         return self.age + self.branch_length_or_raise()
 
@@ -684,12 +414,9 @@ class TreeNode(MetadataMixin):
         Parameters
         -----------
         normalize : bool, optional
-            Whether to normalize the Sackin index to [0, 1] for binary trees. Default is False.
-
-        Returns
-        --------
-        float
-            The Sackin index, normalized if requested.
+            If the normalize flag is set to True, the Sackin index is normalized to the range [0, 1] for binary trees,
+            where 0 corresponds to a perfectly balanced tree and 1 corresponds to a completely unbalanced (pectinate) tree.
+            For non-binary trees, normalization is not defined and a ValueError is raised. Default is False.
         """
         sackin_index = sum(
             dl for node, dl in self.depth_levels.items() if node.is_leaf()
@@ -718,11 +445,6 @@ class TreeNode(MetadataMixin):
         Deep-copy this node and its descendants.
 
         The returned node is a new tree with duplicated metadata and structure.
-
-        Returns
-        --------
-        TreeNode
-            A deep copy of this node and its subtree.
         """
         new_node = TreeNode(self.name, self.branch_length)
         new_node.update(self.metadata)
@@ -737,7 +459,7 @@ class TreeNode(MetadataMixin):
         Parameters
         -----------
         key : Mapping["TreeNode", Any] | None, optional
-            Mapping used to sort children. Defaults to the number of leaf descendants if None.
+            Mapping used to sort children. Defaults to the number of leaf descendants of each node.
         """
         if key is None:
             key = self.leaf_counts
@@ -746,19 +468,7 @@ class TreeNode(MetadataMixin):
             node._children.sort(key=lambda child: key[child])
 
     def get_descendant(self, name: str) -> "TreeNode":
-        """
-        Find the first descendant node with the given name.
-
-        Parameters
-        -----------
-        name : str
-            The node name to search for.
-
-        Returns
-        --------
-        TreeNode
-            The first node whose name matches.
-        """
+        """Find the first descendant node with the given name."""
         for node in self:
             if node.name == name:
                 return node
@@ -769,34 +479,13 @@ class TreeNode(MetadataMixin):
     # -------------
 
     def __repr__(self) -> str:
-        """
-        Return a string representation of the node.
-
-        Returns
-        --------
-        str
-            String representation of the node.
-        """
+        """Return a string representation of the node."""
         return f"TreeNode(name='{self.name}', branch_length={self.branch_length}, metadata={self.metadata})"
 
     def __iter__(self) -> Iterator["TreeNode"]:
-        """
-        Iterate over all nodes in the subtree rooted at this node in preorder.
-
-        Returns
-        --------
-        Iterator[TreeNode]
-            Preorder traversal iterator.
-        """
+        """Iterate over all nodes in the subtree rooted at this node in preorder."""
         return self.iter_preorder()
 
     def __len__(self) -> int:
-        """
-        Return the number of nodes in the subtree rooted at this node.
-
-        Returns
-        --------
-        int
-            The count of nodes in the subtree.
-        """
+        """Return the number of nodes in the subtree rooted at this node."""
         return sum(1 for _ in self)

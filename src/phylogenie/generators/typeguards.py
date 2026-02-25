@@ -1,8 +1,8 @@
 from typing import Any, TypeGuard
 
-import phylogenie._typeguards as tg
-import phylogenie._typings as pgt
-import phylogenie.generators._configs as cfg
+import phylogenie.generators.configs as cfg
+import phylogenie.typeguards as tg
+import phylogenie.typings as pgt
 
 
 def is_many_scalar_configs(x: Any) -> TypeGuard[pgt.Many[cfg.Scalar]]:

@@ -54,13 +54,11 @@ context:
 # ---------------------
 
 tree_generator:
-  backend: phylogenie
-
   init_state: A
   max_time: max_time
 
   timed_events:
-    - type: sampling
+    - spec: sampling
       times: [max_time]
       firings: 1.0
       state: A|B 
@@ -86,7 +84,7 @@ tree_generator:
   # - migration_rates (None by default).
   # It also needs you to specify the states involved in the simulation, as a list of strings, and assumes sampling without removal (ancestor sampling).
 
-  parameterization: FBD
+  spec: phylogenie.FBD
   states: [A, B]
   migration_rates: [[0.06], [0.04]]
   diversification: d

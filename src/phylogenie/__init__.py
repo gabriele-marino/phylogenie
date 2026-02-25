@@ -22,19 +22,6 @@ from phylogenie.skyline import (
     skyline_vector,
 )
 from phylogenie.tree_node import TreeNode
-from phylogenie.treesimulator import (
-    Model,
-    StochasticEvent,
-    TimedEvent,
-    generate_trees,
-    get_BD_model,
-    get_BDEI_model,
-    get_BDSS_model,
-    get_canonical_model,
-    get_epidemiological_model,
-    get_FBD_model,
-    simulate_tree,
-)
 
 __all__ = [
     "draw_colored_dated_tree_categorical",
@@ -62,15 +49,4 @@ __all__ = [
     "skyline_parameter",
     "skyline_vector",
     "TreeNode",
-    "Model",
-    "StochasticEvent",
-    "TimedEvent",
-    "generate_trees",
-    "get_BD_model",
-    "get_BDEI_model",
-    "get_BDSS_model",
-    "get_canonical_model",
-    "get_epidemiological_model",
-    "get_FBD_model",
-    "simulate_tree",
 ]
