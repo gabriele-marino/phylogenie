@@ -8,19 +8,7 @@ from phylogenie.draw import (
 )
 from phylogenie.io import dump_fasta, dump_newick, load_fasta, load_newick, load_nexus
 from phylogenie.main import run
-from phylogenie.msa import MSA, Sequence
-from phylogenie.skyline import (
-    SkylineMatrix,
-    SkylineMatrixCoercible,
-    SkylineParameter,
-    SkylineParameterLike,
-    SkylineVector,
-    SkylineVectorCoercible,
-    SkylineVectorLike,
-    skyline_matrix,
-    skyline_parameter,
-    skyline_vector,
-)
+from phylogenie.msa import MSA, SamplingTime, Sequence
 from phylogenie.tree_node import TreeNode
 
 __all__ = [
@@ -38,15 +26,6 @@ __all__ = [
     "run",
     "MSA",
     "Sequence",
-    "SkylineMatrix",
-    "SkylineMatrixCoercible",
-    "SkylineParameter",
-    "SkylineParameterLike",
-    "SkylineVector",
-    "SkylineVectorCoercible",
-    "SkylineVectorLike",
-    "skyline_matrix",
-    "skyline_parameter",
-    "skyline_vector",
+    "SamplingTime",
     "TreeNode",
 ]

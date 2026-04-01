@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from phylogenie.io import dump_newick
 from phylogenie.tree_node import TreeNode
-from phylogenie.treesimulator.core import Model
+from phylogenie.treesimulator.model import Model
 
 
 def simulate_tree(
@@ -98,5 +98,5 @@ def generate_trees(
     )
 
     return pd.DataFrame(
-        [md for md in tqdm(jobs, f"Generating trees in {output_dir}...", n_trees)]
+        md for md in tqdm(jobs, f"Generating trees in {output_dir}...", n_trees)
     )

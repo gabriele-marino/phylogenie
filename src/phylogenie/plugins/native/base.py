@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Annotated, Any, Callable
+from typing import Any, Callable
 
 from numpy.random import Generator, default_rng
 from pydantic import Field
@@ -16,11 +16,11 @@ from phylogenie.treesimulator import Model, simulate_tree
 class PhylogenieTreeGenerator(TreeGenerator):
     n_leaves: cfg.Integer | None = None
     max_time: cfg.Scalar | None = None
+    timed_events: tuple[TimedEventConfig, ...] = Field(default_factory=tuple)
     timeout: float | None = None
     acceptance_criterion: str | None = None
-    tree_logs: Annotated[dict[str, str], Field(default_factory=dict)]
-    model_logs: Annotated[dict[str, str], Field(default_factory=dict)]
-    timed_events: Annotated[list[TimedEventConfig], Field(default_factory=list)]
+    tree_logs: dict[str, str] = Field(default_factory=dict)
+    model_logs: dict[str, str] = Field(default_factory=dict)
 
     @abstractmethod
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model: ...
@@ -44,19 +44,19 @@ class PhylogenieTreeGenerator(TreeGenerator):
             else lambda tree: f.eval_expression(
                 self.acceptance_criterion,  # pyright: ignore
                 context,
-                extra_context={"tree": tree},
+                tree=tree,
             )
         )
 
         def _tree_logs(tree: TreeNode) -> dict[str, Any]:
             return {
-                key: f.eval_expression(expr, context, extra_context={"tree": tree})
+                key: f.eval_expression(expr, context, tree=tree)
                 for key, expr in self.tree_logs.items()
             }
 
         def _model_logs(model: Model) -> dict[str, Any]:
             return {
-                key: f.eval_expression(expr, context, extra_context={"model": model})
+                key: f.eval_expression(expr, context, model=model)
                 for key, expr in self.model_logs.items()
             }
 

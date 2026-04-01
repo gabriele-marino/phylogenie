@@ -1,4 +1,5 @@
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 from phylogenie.tree_node import TreeNode
@@ -73,26 +74,15 @@ def parse_newick(newick: str, translations: dict[str, str] | None = None) -> Tre
         i += 1
 
 
-def load_newick(filepath: str | Path) -> TreeNode | list[TreeNode]:
-    """
-    Load one or more Newick trees from a file.
-
-    If the file contains a single tree, a TreeNode is returned. If it contains
-    multiple trees (one per line), a list of TreeNode objects is returned.
-    The parser supports embedded metadata in the `[&key=value]` syntax.
-    """
-    with open(filepath, "r") as file:
-        trees = [parse_newick(newick) for newick in file]
-    return trees[0] if len(trees) == 1 else trees
+def load_newick(filepath: str | Path) -> list[TreeNode]:
+    """Load one or more trees from a Newick file."""
+    with open(filepath, "r", encoding="utf-8") as file:
+        return [parse_newick(newick) for newick in file]
 
 
-def to_newick(node: TreeNode) -> str:
-    """
-    Serialize a TreeNode object to a Newick string.
-
-    Metadata keys are encoded using the `[&key=value]` syntax.
-    """
-    children_newick = ",".join([to_newick(child) for child in node.children])
+def _to_newick(node: TreeNode) -> str:
+    """Convert a TreeNode object to a Newick string (without the trailing ';')."""
+    children_newick = ",".join([_to_newick(child) for child in node.children])
     newick = node.name
     if node.metadata:
         reprs = {k: repr(v).replace("'", '"') for k, v in node.metadata.items()}
@@ -114,10 +104,15 @@ def to_newick(node: TreeNode) -> str:
     return newick
 
 
-def dump_newick(trees: TreeNode | list[TreeNode], filepath: str | Path):
+def to_newick(node: TreeNode) -> str:
+    """Convert a TreeNode object to a Newick string."""
+    return _to_newick(node) + ";"
+
+
+def dump_newick(trees: TreeNode | Iterable[TreeNode], filepath: str | Path):
     """Write one or more trees to a Newick file, with one tree per line."""
     if isinstance(trees, TreeNode):
         trees = [trees]
-    with open(filepath, "w") as file:
+    with open(filepath, "w", encoding="utf-8") as file:
         for t in trees:
-            file.write(to_newick(t) + ";\n")
+            file.write(to_newick(t) + "\n")

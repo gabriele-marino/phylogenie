@@ -21,6 +21,7 @@ class Model(MetadataMixin):
         self._init_state = init_state
         self._init_metadata = init_metadata
         self._events: list[Event] = []
+        self.reset()
 
     @staticmethod
     def _get_node_name(node_id: int, state: str) -> str:
@@ -85,16 +86,14 @@ class Model(MetadataMixin):
             if node.name not in self._sampled_nodes and not node.children:
                 if node.parent is None:
                     return None
-                else:
-                    node.parent.remove_child(node)
+                node.parent.remove_child(node)
             elif len(node.children) == 1:
                 (child,) = node.children
                 child.update_parent(node.parent)
                 child.branch_length += node.branch_length  # pyright: ignore
                 if node.parent is None:
                     return child
-                else:
-                    node.parent.remove_child(node)
+                node.parent.remove_child(node)
         return tree
 
     @property

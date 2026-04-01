@@ -71,7 +71,8 @@ class Registry(Generic[BaseModelT]):
         def decorator(cls: type[BaseModelT]) -> type[BaseModelT]:
             if not issubclass(cls, self.base_type):
                 raise TypeError(
-                    f"{cls.__name__} must be a subclass of {self.base_type.__name__}"
+                    f"{cls.__name__} must be a subclass of "
+                    f"{self.base_type.__name__} to be registered in {self.name}"
                 )
             if key in self._registry:
                 raise RuntimeError(f"{self.name}: '{key}' already registered")
@@ -109,5 +110,5 @@ class Registry(Generic[BaseModelT]):
         return cls.model_validate(value)
 
     @property
-    def Validator(self) -> BeforeValidator:
+    def validator(self) -> BeforeValidator:
         return BeforeValidator(self.load)

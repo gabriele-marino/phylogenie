@@ -53,7 +53,7 @@ tree_generator:
   # - transmission_rate;
   # - recovery_rate;
   # - sampling_rate,
-  # and one Integer parameter:
+  # and one integer parameter:
   # - susceptibles.
 
   transmission_rate: mu

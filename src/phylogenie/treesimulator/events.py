@@ -5,7 +5,7 @@ from typing import Protocol
 
 from phylogenie.skyline import SkylineParameter
 from phylogenie.tree_node import TreeNode
-from phylogenie.treesimulator.core import STATE, Event, Model
+from phylogenie.treesimulator.model import STATE, Event, Model
 
 
 def _get_next_greater(times: Iterable[float], current_time: float) -> float | None:
@@ -14,12 +14,12 @@ def _get_next_greater(times: Iterable[float], current_time: float) -> float | No
 
 class StochasticEventFunction(Protocol):
     def reactant_combinations(self, model: Model) -> int: ...
-    def apply(self, model: Model): ...
+    def apply(self, model: Model) -> None: ...
 
 
 class TimedEventFunction(Protocol):
     def max_firings(self, model: Model) -> int: ...
-    def apply_firings(self, model: Model, firings: int): ...
+    def apply_firings(self, model: Model, firings: int) -> None: ...
 
 
 @dataclass

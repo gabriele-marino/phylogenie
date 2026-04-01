@@ -4,13 +4,13 @@ from numpy.random import Generator
 
 import phylogenie.generators.configs as cfg
 import phylogenie.generators.factories as f
-import phylogenie.treesimulator.parameterizations.open_population as pmt
-from phylogenie.generators.tree import TreeGeneratorRegistry
+import phylogenie.treesimulator.open_population as ts
+from phylogenie.generators.tree import TREE_GENERATOR_REGISTRY
 from phylogenie.plugins.native.base import PhylogenieTreeGenerator
 from phylogenie.treesimulator import Model
 
 
-@TreeGeneratorRegistry.register("phylogenie.canonical")
+@TREE_GENERATOR_REGISTRY.register("phylogenie.canonical")
 class CanonicalGenerator(PhylogenieTreeGenerator):
     states: list[str]
     init_state: str
@@ -22,7 +22,7 @@ class CanonicalGenerator(PhylogenieTreeGenerator):
     birth_rates_among_states: cfg.SkylineMatrix = None
 
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model:
-        return pmt.get_canonical_model(
+        return ts.get_canonical_model(
             init_state=self.init_state.format(**context),
             states=self.states,
             sampling_rates=f.skyline_vector(self.sampling_rates, context),
@@ -36,7 +36,7 @@ class CanonicalGenerator(PhylogenieTreeGenerator):
         )
 
 
-@TreeGeneratorRegistry.register("phylogenie.FBD")
+@TREE_GENERATOR_REGISTRY.register("phylogenie.FBD")
 class FBDGenerator(PhylogenieTreeGenerator):
     states: list[str]
     init_state: str
@@ -47,7 +47,7 @@ class FBDGenerator(PhylogenieTreeGenerator):
     diversification_between_states: cfg.SkylineMatrix = None
 
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model:
-        return pmt.get_FBD_model(
+        return ts.get_fbd_model(
             init_state=self.init_state.format(**context),
             states=self.states,
             diversification=f.skyline_vector(self.diversification, context),
@@ -60,7 +60,7 @@ class FBDGenerator(PhylogenieTreeGenerator):
         )
 
 
-@TreeGeneratorRegistry.register("phylogenie.epidemiological")
+@TREE_GENERATOR_REGISTRY.register("phylogenie.epidemiological")
 class EpidemiologicalGenerator(PhylogenieTreeGenerator):
     states: list[str]
     init_state: str
@@ -71,7 +71,7 @@ class EpidemiologicalGenerator(PhylogenieTreeGenerator):
     reproduction_numbers_among_states: cfg.SkylineMatrix = None
 
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model:
-        return pmt.get_epidemiological_model(
+        return ts.get_epidemiological_model(
             init_state=self.init_state.format(**context),
             states=self.states,
             reproduction_numbers=f.skyline_vector(self.reproduction_numbers, context),
@@ -86,23 +86,23 @@ class EpidemiologicalGenerator(PhylogenieTreeGenerator):
         )
 
 
-@TreeGeneratorRegistry.register("phylogenie.BD")
+@TREE_GENERATOR_REGISTRY.register("phylogenie.BD")
 class BDGenerator(PhylogenieTreeGenerator):
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     sampling_proportion: cfg.SkylineParameter
 
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model:
-        return pmt.get_BD_model(
+        return ts.get_bd_model(
             reproduction_number=f.skyline_parameter(self.reproduction_number, context),
             infectious_period=f.skyline_parameter(self.infectious_period, context),
             sampling_proportion=f.skyline_parameter(self.sampling_proportion, context),
         )
 
 
-@TreeGeneratorRegistry.register("phylogenie.BDEI")
+@TREE_GENERATOR_REGISTRY.register("phylogenie.BDEI")
 class BDEIGenerator(PhylogenieTreeGenerator):
-    init_state: str = pmt.EXPOSED_STATE
+    init_state: str = ts.EXPOSED_STATE
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     incubation_period: cfg.SkylineParameter
@@ -110,12 +110,12 @@ class BDEIGenerator(PhylogenieTreeGenerator):
 
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model:
         init_state = self.init_state.format(**context)
-        if init_state not in [pmt.EXPOSED_STATE, pmt.INFECTIOUS_STATE]:
+        if init_state not in [ts.EXPOSED_STATE, ts.INFECTIOUS_STATE]:
             raise ValueError(
                 f"Invalid init_state '{init_state}' for BDEI model. "
-                f"It must be either '{pmt.EXPOSED_STATE}' or '{pmt.INFECTIOUS_STATE}'."
+                f"It must be either '{ts.EXPOSED_STATE}' or '{ts.INFECTIOUS_STATE}'."
             )
-        return pmt.get_BDEI_model(
+        return ts.get_bdei_model(
             init_state=init_state,
             reproduction_number=f.skyline_parameter(self.reproduction_number, context),
             infectious_period=f.skyline_parameter(self.infectious_period, context),
@@ -124,9 +124,9 @@ class BDEIGenerator(PhylogenieTreeGenerator):
         )
 
 
-@TreeGeneratorRegistry.register("phylogenie.BDSS")
+@TREE_GENERATOR_REGISTRY.register("phylogenie.BDSS")
 class BDSSGenerator(PhylogenieTreeGenerator):
-    init_state: str = pmt.INFECTIOUS_STATE
+    init_state: str = ts.INFECTIOUS_STATE
     reproduction_number: cfg.SkylineParameter
     infectious_period: cfg.SkylineParameter
     superspreading_ratio: cfg.SkylineParameter
@@ -135,12 +135,12 @@ class BDSSGenerator(PhylogenieTreeGenerator):
 
     def _get_model(self, context: dict[str, Any], rng: Generator) -> Model:
         init_state = self.init_state.format(**context)
-        if init_state not in [pmt.INFECTIOUS_STATE, pmt.SUPERSPREADER_STATE]:
+        if init_state not in [ts.INFECTIOUS_STATE, ts.SUPERSPREADER_STATE]:
             raise ValueError(
                 f"Invalid init_state '{init_state}' for BDSS model. "
-                f"It must be either '{pmt.INFECTIOUS_STATE}' or '{pmt.SUPERSPREADER_STATE}'."
+                f"It must be either '{ts.INFECTIOUS_STATE}' or '{ts.SUPERSPREADER_STATE}'."
             )
-        return pmt.get_BDSS_model(
+        return ts.get_bdss_model(
             init_state=init_state,
             reproduction_number=f.skyline_parameter(self.reproduction_number, context),
             infectious_period=f.skyline_parameter(self.infectious_period, context),

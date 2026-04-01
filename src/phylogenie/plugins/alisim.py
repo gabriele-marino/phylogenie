@@ -2,10 +2,10 @@ import subprocess
 from typing import Any
 
 import phylogenie.generators.factories as f
-from phylogenie.generators.msa import MSAGenerator, MSAGeneratorRegistry
+from phylogenie.generators.msa import MSA_GENERATOR_REGISTRY, MSAGenerator
 
 
-@MSAGeneratorRegistry.register("alisim")
+@MSA_GENERATOR_REGISTRY.register("alisim")
 class AliSimGenerator(MSAGenerator):
     iqtree_path: str = "iqtree2"
     args: dict[str, Any]

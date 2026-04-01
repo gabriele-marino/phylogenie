@@ -3,17 +3,16 @@ from abc import ABC, abstractmethod
 from typing import Annotated, Any
 
 import phylogenie.generators.configs as cfg
-from phylogenie.generators.dataset import DatasetGenerator, DatasetGeneratorRegistry
+from phylogenie.generators.dataset import DATASET_GENERATOR_REGISTRY, DatasetGenerator
 from phylogenie.generators.tree import TreeGeneratorConfig
 from phylogenie.io import dump_newick, load_newick
-from phylogenie.tree_node import TreeNode
 from phylogenie.utils import Registry
 
 MSAS_DIRNAME = "MSAs"
 TREES_DIRNAME = "trees"
 
 
-class MSAGenerator(ABC, cfg.StrictBaseModel):
+class MSAGenerator(ABC, cfg.ForbidExtraBaseModel):
     @abstractmethod
     def generate(
         self,
@@ -24,11 +23,11 @@ class MSAGenerator(ABC, cfg.StrictBaseModel):
     ) -> None: ...
 
 
-MSAGeneratorRegistry: Registry["MSAGenerator"] = Registry(MSAGenerator)
-MSAGeneratorConfig = Annotated[MSAGenerator, MSAGeneratorRegistry.Validator]
+MSA_GENERATOR_REGISTRY: Registry["MSAGenerator"] = Registry(MSAGenerator)
+MSAGeneratorConfig = Annotated[MSAGenerator, MSA_GENERATOR_REGISTRY.validator]
 
 
-@DatasetGeneratorRegistry.register("msa")
+@DATASET_GENERATOR_REGISTRY.register("msa")
 class MSADatasetGenerator(DatasetGenerator):
     tree_generator: TreeGeneratorConfig
     msa_generator: MSAGeneratorConfig
@@ -51,8 +50,7 @@ class MSADatasetGenerator(DatasetGenerator):
         metadata = self.tree_generator.generate(tree_filename, context, seed)
 
         tree_file = f"{tree_filename}.nwk"
-        tree = load_newick(tree_file)
-        assert isinstance(tree, TreeNode)
+        (tree,) = load_newick(tree_file)
 
         times = tree.times
         for leaf in tree.get_leaves():

@@ -1,14 +1,13 @@
 from phylogenie.skyline import SkylineParameterLike, skyline_parameter
-from phylogenie.treesimulator.core import Model
-from phylogenie.treesimulator.parameterizations.core import (
+from phylogenie.treesimulator.events import (
     Death,
     Sampling,
     StochasticEvent,
 )
+from phylogenie.treesimulator.model import Model
 
 INFECTIOUS_STATE = "I"
 SUSCEPTIBLE_STATE = "S"
-
 SUSCEPTIBLES = "susceptibles"
 
 
@@ -22,7 +21,7 @@ class Transmission:
         model.birth_from(parent_node, INFECTIOUS_STATE)
 
 
-def get_SIR_model(
+def get_sir_model(
     transmission_rate: SkylineParameterLike,
     recovery_rate: SkylineParameterLike,
     sampling_rate: SkylineParameterLike,

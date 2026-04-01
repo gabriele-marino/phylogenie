@@ -1,6 +1,6 @@
 [project]
 name = "phylogenie"
-version = "3.8.0"
+version = "3.9.0"
 description = "Generate phylogenetic datasets with minimal setup effort"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,7 +30,7 @@ phylogenie = "phylogenie.main:main"
 
 [project.entry-points."phylogenie.plugins"]
 native_open_population = "phylogenie.plugins.native.open_population"
-native_sir = "phylogenie.plugins.native.sir"
+native_closed_population = "phylogenie.plugins.native.closed_population"
 alisim = "phylogenie.plugins.alisim"
 
 [build-system]

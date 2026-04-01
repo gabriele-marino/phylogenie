@@ -9,14 +9,14 @@ from phylogenie.skyline import (
     skyline_vector,
 )
 from phylogenie.tree_node import TreeNode
-from phylogenie.treesimulator.core import Model
-from phylogenie.treesimulator.parameterizations.core import (
+from phylogenie.treesimulator.events import (
     Death,
     Migration,
     Sampling,
     SingleReactantEventFunction,
     StochasticEvent,
 )
+from phylogenie.treesimulator.model import Model
 
 INFECTIOUS_STATE = "I"
 EXPOSED_STATE = "E"
@@ -41,11 +41,11 @@ def get_canonical_model(
     migration_rates: SkylineMatrixCoercible | None = None,
     birth_rates_among_states: SkylineMatrixCoercible | None = None,
 ) -> Model:
-    N = len(states)
+    n_states = len(states)
 
-    birth_rates = skyline_vector(birth_rates, N)
-    death_rates = skyline_vector(death_rates, N)
-    sampling_rates = skyline_vector(sampling_rates, N)
+    birth_rates = skyline_vector(birth_rates, n_states)
+    death_rates = skyline_vector(death_rates, n_states)
+    sampling_rates = skyline_vector(sampling_rates, n_states)
 
     model = Model(init_state=init_state)
     for i, state in enumerate(states):
@@ -61,7 +61,7 @@ def get_canonical_model(
         )
 
     if migration_rates is not None:
-        migration_rates = skyline_matrix(migration_rates, N, N - 1)
+        migration_rates = skyline_matrix(migration_rates, n_states, n_states - 1)
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
                 model.add_event(
@@ -72,7 +72,9 @@ def get_canonical_model(
                 )
 
     if birth_rates_among_states is not None:
-        birth_rates_among_states = skyline_matrix(birth_rates_among_states, N, N - 1)
+        birth_rates_among_states = skyline_matrix(
+            birth_rates_among_states, n_states, n_states - 1
+        )
         for i, state in enumerate(states):
             for j, other_state in enumerate([s for s in states if s != state]):
                 model.add_event(
@@ -85,7 +87,7 @@ def get_canonical_model(
     return model
 
 
-def get_FBD_model(
+def get_fbd_model(
     init_state: str,
     states: Sequence[str],
     sampling_proportions: SkylineVectorCoercible = 0,
@@ -94,17 +96,20 @@ def get_FBD_model(
     migration_rates: SkylineMatrixCoercible | None = None,
     diversification_between_states: SkylineMatrixCoercible | None = None,
 ) -> Model:
-    N = len(states)
+    n_states = len(states)
 
-    diversification = skyline_vector(diversification, N)
-    turnover = skyline_vector(turnover, N)
-    sampling_proportions = skyline_vector(sampling_proportions, N)
+    diversification = skyline_vector(diversification, n_states)
+    turnover = skyline_vector(turnover, n_states)
+    sampling_proportions = skyline_vector(sampling_proportions, n_states)
 
     birth_rates = diversification / (1 - turnover)
     death_rates = turnover * birth_rates
     sampling_rates = sampling_proportions * death_rates
     birth_rates_among_states = (
-        (skyline_matrix(diversification_between_states, N, N - 1) + death_rates)
+        (
+            skyline_matrix(diversification_between_states, n_states, n_states - 1)
+            + death_rates
+        )
         if diversification_between_states is not None
         else None
     )
@@ -130,18 +135,18 @@ def get_epidemiological_model(
     migration_rates: SkylineMatrixCoercible | None = None,
     reproduction_numbers_among_states: SkylineMatrixCoercible | None = None,
 ) -> Model:
-    N = len(states)
+    n_states = len(states)
 
-    reproduction_numbers = skyline_vector(reproduction_numbers, N)
-    become_uninfectious_rates = skyline_vector(become_uninfectious_rates, N)
-    sampling_proportions = skyline_vector(sampling_proportions, N)
+    reproduction_numbers = skyline_vector(reproduction_numbers, n_states)
+    become_uninfectious_rates = skyline_vector(become_uninfectious_rates, n_states)
+    sampling_proportions = skyline_vector(sampling_proportions, n_states)
 
     birth_rates = reproduction_numbers * become_uninfectious_rates
     sampling_rates = become_uninfectious_rates * sampling_proportions
     death_rates = become_uninfectious_rates - sampling_rates
     birth_rates_among_states = (
         (
-            skyline_matrix(reproduction_numbers_among_states, N, N - 1)
+            skyline_matrix(reproduction_numbers_among_states, n_states, n_states - 1)
             * become_uninfectious_rates
         )
         if reproduction_numbers_among_states is not None
@@ -160,7 +165,7 @@ def get_epidemiological_model(
     )
 
 
-def get_BD_model(
+def get_bd_model(
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
@@ -174,7 +179,7 @@ def get_BD_model(
     )
 
 
-def get_BDEI_model(
+def get_bdei_model(
     init_state: str,
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
@@ -191,7 +196,7 @@ def get_BDEI_model(
     )
 
 
-def get_BDSS_model(
+def get_bdss_model(
     init_state: str,
     reproduction_number: SkylineParameterLike,
     infectious_period: SkylineParameterLike,
@@ -199,17 +204,17 @@ def get_BDSS_model(
     superspreaders_proportion: SkylineParameterLike,
     sampling_proportion: SkylineParameterLike,
 ) -> Model:
-    f_SS = superspreaders_proportion
-    r_SS = superspreading_ratio
-    R_0_IS = reproduction_number * f_SS / (1 + r_SS * f_SS - f_SS)
-    R_0_SI = (reproduction_number - r_SS * R_0_IS) * r_SS
-    R_0_S = r_SS * R_0_IS
-    R_0_I = R_0_SI / r_SS
+    f_ss = superspreaders_proportion
+    r_ss = superspreading_ratio
+    r0_is = reproduction_number * f_ss / (1 + r_ss * f_ss - f_ss)
+    r0_si = (reproduction_number - r_ss * r0_is) * r_ss
+    r0_s = r_ss * r0_is
+    r0_i = r0_si / r_ss
     return get_epidemiological_model(
         init_state=init_state,
         states=[INFECTIOUS_STATE, SUPERSPREADER_STATE],
-        reproduction_numbers=[R_0_I, R_0_S],
-        reproduction_numbers_among_states=[[R_0_IS], [R_0_SI]],
+        reproduction_numbers=[r0_i, r0_s],
+        reproduction_numbers_among_states=[[r0_is], [r0_si]],
         become_uninfectious_rates=1 / infectious_period,
         sampling_proportions=sampling_proportion,
     )

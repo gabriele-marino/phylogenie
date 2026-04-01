@@ -3,6 +3,7 @@ from typing import Any, TypeGuard, Union, overload
 
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
+from phylogenie.skyline.ops import SkylineBinaryOpsMixin
 from phylogenie.skyline.parameter import SkylineParameter, is_skyline_parameter_like
 from phylogenie.skyline.vector import (
     SkylineVector,
@@ -12,7 +13,6 @@ from phylogenie.skyline.vector import (
     is_many_skyline_vectors_coercible,
     is_many_skyline_vectors_like,
     is_skyline_vector_like,
-    is_skyline_vector_operand,
     skyline_vector,
 )
 
@@ -20,12 +20,10 @@ SkylineMatrixOperand = Union[SkylineVectorOperand, "SkylineMatrix"]
 SkylineMatrixCoercible = Union[pgt.OneOrMany[SkylineVectorCoercible], "SkylineMatrix"]
 
 
-def is_skyline_matrix_operand(x: Any) -> TypeGuard[SkylineMatrixOperand]:
-    return isinstance(x, SkylineMatrix) or is_skyline_vector_operand(x)
-
-
-class SkylineMatrix:
-    """Represent a matrix of skyline vectors."""
+class SkylineMatrix(
+    SkylineBinaryOpsMixin[SkylineMatrixOperand, SkylineVector, "SkylineMatrix"]
+):
+    """Matrix of skyline vectors."""
 
     def __init__(
         self,
@@ -33,7 +31,10 @@ class SkylineMatrix:
         value: pgt.Many3DScalars | None = None,
         change_times: pgt.ManyScalars | None = None,
     ):
-        """Initialize a SkylineMatrix from either a sequence of vectors or a value tensor with change times."""
+        """
+        Initialize a SkylineMatrix from either a sequence of
+        vectors or a value 3D tensor with change times.
+        """
         if params is not None and value is None and change_times is None:
             if is_many_skyline_vectors_like(params):
                 self._params = [
@@ -42,23 +43,29 @@ class SkylineMatrix:
                 ]
             else:
                 raise TypeError(
-                    f"It is impossible to create a SkylineMatrix from `params` {params} of type {type(params)}. Please provide a sequence composed of SkylineVectorLike objects (a SkylineVectorLike object can either be a SkylineVector or a sequence of scalars and/or SkylineParameters)."
+                    f"It is impossible to create a SkylineMatrix from `params` {params} "
+                    f"of type {type(params)}. Please provide a sequence composed of "
+                    "SkylineVectorLike objects (a SkylineVectorLike object can "
+                    "either be a SkylineVector or a sequence of scalars and/or SkylineParameters)."
                 )
             lengths = {len(p) for p in self._params}
             if len(lengths) > 1:
                 raise ValueError(
-                    f"All `params` must have the same length to create a SkylineMatrix (got params={params} with lengths {lengths})."
+                    f"All `params` must have the same length to create a SkylineMatrix "
+                    f"(got params={params} with lengths {lengths})."
                 )
         elif params is None and value is not None and change_times is not None:
-            if tg.is_many_3D_scalars(value):
+            if tg.is_many_3d_scalars(value):
                 lengths = {len(matrix) for matrix in value}
                 if len(lengths) > 1:
                     raise ValueError(
-                        f"All matrices in the `value` of a SkylineMatrix must have the same number of rows (got matrices={value} with row lengths {lengths})."
+                        f"All matrices in the `value` of a SkylineMatrix must have the "
+                        f"same number of rows (got matrices={value} with row lengths {lengths})."
                     )
             else:
                 raise TypeError(
-                    f"It is impossible to create a SkylineMatrix from `value` {value} of type {type(value)}. Please provide a nested (3D) sequence of scalar values."
+                    f"It is impossible to create a SkylineMatrix from `value` {value} of type "
+                    f"{type(value)}. Please provide a nested (3D) sequence of scalar values."
                 )
             self._params = [
                 SkylineVector(
@@ -68,7 +75,8 @@ class SkylineMatrix:
             ]
         else:
             raise ValueError(
-                "Either `params` or both `value` and `change_times` must be provided to create a SkylineMatrix."
+                "Either `params` or both `value` and `change_times` "
+                "must be provided to create a SkylineMatrix."
             )
 
     @property
@@ -94,7 +102,7 @@ class SkylineMatrix:
     @property
     def change_times(self) -> pgt.Vector1D:
         """Return the union of change times across all rows."""
-        return tuple(sorted(set([t for row in self.params for t in row.change_times])))
+        return tuple(sorted(set(t for row in self.params for t in row.change_times)))
 
     @property
     def value(self) -> pgt.Vector3D:
@@ -105,49 +113,19 @@ class SkylineMatrix:
         """Evaluate the matrix at a given time."""
         return tuple(param.get_value_at_time(time) for param in self.params)
 
+    @classmethod
+    def is_valid_operand(cls, other: Any) -> TypeGuard[SkylineMatrixOperand]:
+        return isinstance(other, SkylineMatrix) or SkylineVector.is_valid_operand(other)
+
     def _operate(
         self,
         other: SkylineMatrixOperand,
-        func: Callable[
-            [SkylineVector, SkylineVector | SkylineParameter], SkylineVector
-        ],
+        func: Callable[[SkylineVector, SkylineVector], SkylineVector],
     ) -> "SkylineMatrix":
-        if is_skyline_matrix_operand(other):
-            other = skyline_matrix(other, self.n_rows, self.n_cols)
-        elif isinstance(other, SkylineMatrix):
-            if other.shape != self.shape:
-                raise ValueError(
-                    f"It is impossible to operate on SkylineMatrices of different shapes (got self={self.shape} and other={other.shape})."
-                )
-        else:
-            return NotImplemented
+        other = skyline_matrix(other, self.n_rows, self.n_cols)
         return SkylineMatrix(
             [func(p1, p2) for p1, p2 in zip(self.params, other.params)]
         )
-
-    def __add__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: x + y)
-
-    def __radd__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: y + x)
-
-    def __sub__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: x - y)
-
-    def __rsub__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: y - x)
-
-    def __mul__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: x * y)
-
-    def __rmul__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: y * x)
-
-    def __truediv__(self, operand: SkylineMatrixOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: x / y)
-
-    def __rtruediv__(self, operand: SkylineVectorOperand) -> "SkylineMatrix":
-        return self._operate(operand, lambda x, y: y / x)
 
     @property
     def T(self) -> "SkylineMatrix":
@@ -198,7 +176,9 @@ class SkylineMatrix:
     def __setitem__(self, item: int, value: SkylineVectorLike) -> None:
         if not is_skyline_vector_like(value):
             raise TypeError(
-                f"It is impossible to set item of SkylineMatrix to value {value} of type {type(value)}. Please provide a SkylineVectorLike object (i.e., a SkylineVector or a sequence of scalars and/or SkylineParameters)."
+                f"It is impossible to set item of SkylineMatrix to value {value} "
+                f"of type {type(value)}. Please provide a SkylineVectorLike object "
+                "(i.e., a SkylineVector or a sequence of scalars and/or SkylineParameters)."
             )
         self._params[item] = skyline_vector(value, self.n_cols)
 
@@ -209,7 +189,8 @@ def skyline_matrix(
     """Coerce a value into a SkylineMatrix of a specific shape."""
     if n_rows <= 0 or n_cols <= 0:
         raise ValueError(
-            f" n_rows and n_cols must be positive integers to create a SkylineMatrix (got n_rows={n_rows} and n_cols={n_cols})."
+            f" n_rows and n_cols must be positive integers to create a "
+            f"SkylineMatrix (got n_rows={n_rows} and n_cols={n_cols})."
         )
 
     if is_skyline_parameter_like(x):
@@ -217,7 +198,7 @@ def skyline_matrix(
     if is_skyline_vector_like(x) or is_many_skyline_vectors_coercible(x):
         if len(x) == n_rows:
             return SkylineMatrix([skyline_vector(p, n_cols) for p in x])
-        elif len(x) == n_cols:
+        if len(x) == n_cols:
             return SkylineMatrix([skyline_vector(p, n_rows) for p in x]).T
         raise ValueError(
             f"Expected a SkylineVectorLike of size {n_rows} or {n_cols}, got {x} of size {len(x)}."
@@ -225,9 +206,11 @@ def skyline_matrix(
 
     if not isinstance(x, SkylineMatrix):
         raise TypeError(
-            f"It is impossible to coerce {x} of type {type(x)} into a SkylineMatrix. Please provide either:\n"
+            f"It is impossible to coerce {x} of type {type(x)}"
+            "into a SkylineMatrix. Please provide either:\n"
             "- a SkylineMatrix,\n"
-            "- a SkylineVectorCoercible object (i.e., a scalar, a SkylineParameter, a SkylineVector, or a sequence of scalars and/or SkylineParameters),\n"
+            "- a SkylineVectorCoercible object (i.e., a scalar, a SkylineParameter, "
+            "a SkylineVector, or a sequence of scalars and/or SkylineParameters),\n"
             "- a sequence of SkylineVectorCoercible objects."
         )
 

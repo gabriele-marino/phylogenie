@@ -101,7 +101,10 @@ class TreeNode(MetadataMixin):
         return tuple(node for node in self if node.is_internal())
 
     def is_binary(self) -> bool:
-        """Determine whether the subtree rooted at this node is binary (every node has 0 or 2 children)."""
+        """
+        Determine whether the subtree rooted at this node
+        is binary (every node has 0 or 2 children).
+        """
         return all(len(node.children) == 2 for node in self.get_internal_nodes())
 
     def branch_length_or_raise(self) -> float:
@@ -136,7 +139,10 @@ class TreeNode(MetadataMixin):
             yield node
 
     def iter_upward(self, stop: "TreeNode | None" = None) -> Iterator["TreeNode"]:
-        """Iterate from this node upward through its ancestors, including self and up to (but excluding) a stop node."""
+        """
+        Iterate from this node upward through its ancestors,
+        including self and up to (but excluding) a stop node.
+        """
         if self == stop:
             return
         yield self
@@ -273,8 +279,9 @@ class TreeNode(MetadataMixin):
         """
         Compute the height of all nodes for the subtree rooted at this node.
 
-        The height is defined as the distance in branch-length units from a node to its farthest leaf.
-        It is 0 for leaf nodes, and increases by the branch lengths up the tree.
+        The height is defined as the distance in branch-length units
+        from a node to its farthest leaf. It is 0 for leaf nodes,
+        and increases by the branch lengths up the tree.
         """
         heights: dict["TreeNode", float] = {}
         for node in self.iter_postorder():
@@ -293,8 +300,9 @@ class TreeNode(MetadataMixin):
         """
         Return the height of the node.
 
-        The height is defined as the distance in branch-length units from a node to its farthest leaf.
-        It is 0 for leaf nodes, and increases by the branch lengths up the tree.
+        The height is defined as the distance in branch-length units
+        from a node to its farthest leaf. It is 0 for leaf nodes,
+        and increases by the branch lengths up the tree.
         """
         return self.heights[self]
 
@@ -380,8 +388,10 @@ class TreeNode(MetadataMixin):
         """
         Compute the age of all nodes for the subtree rooted at this node.
 
-        Ages are measured backwards in time from the most recent leaf of the subtree in branch-length units.
-        The age of the most recent leaf is defined as 0, and increases by the branch lengths up the tree.
+        Ages are measured backwards in time from the
+        most recent leaf of the subtree in branch-length units.
+        The age of the most recent leaf is defined as 0,
+        and increases by the branch lengths up the tree.
         """
         ages: dict[TreeNode, float] = {self: self.height}
         for node in self.iter_descendants():
@@ -393,8 +403,10 @@ class TreeNode(MetadataMixin):
         """
         Return the age of this node.
 
-        Ages are measured backwards in time from the most recent leaf of the tree in branch-length units.
-        The age of the most recent leaf is defined as 0, and increases by the branch lengths up the tree.
+        Ages are measured backwards in time from the
+        most recent leaf of the tree in branch-length units.
+        The age of the most recent leaf is defined as 0,
+        and increases by the branch lengths up the tree.
         """
         return self.root.height - self.get_distance(self.root)
 
@@ -414,9 +426,12 @@ class TreeNode(MetadataMixin):
         Parameters
         -----------
         normalize : bool, optional
-            If the normalize flag is set to True, the Sackin index is normalized to the range [0, 1] for binary trees,
-            where 0 corresponds to a perfectly balanced tree and 1 corresponds to a completely unbalanced (pectinate) tree.
-            For non-binary trees, normalization is not defined and a ValueError is raised. Default is False.
+            If the normalize flag is set to True, the Sackin index
+            is normalized to the range [0, 1] for binary trees,
+            where 0 corresponds to a perfectly balanced tree and 1
+            corresponds to a completely unbalanced (pectinate) tree.
+            For non-binary trees, normalization is not defined
+            and a ValueError is raised. Default is False.
         """
         sackin_index = sum(
             dl for node, dl in self.depth_levels.items() if node.is_leaf()
@@ -459,7 +474,8 @@ class TreeNode(MetadataMixin):
         Parameters
         -----------
         key : Mapping["TreeNode", Any] | None, optional
-            Mapping used to sort children. Defaults to the number of leaf descendants of each node.
+            Mapping used to sort children.
+            Defaults to the number of leaf descendants of each node.
         """
         if key is None:
             key = self.leaf_counts
@@ -480,7 +496,7 @@ class TreeNode(MetadataMixin):
 
     def __repr__(self) -> str:
         """Return a string representation of the node."""
-        return f"TreeNode(name='{self.name}', branch_length={self.branch_length}, metadata={self.metadata})"
+        return f"TreeNode(name='{self.name}', branch_length={self.branch_length})"
 
     def __iter__(self) -> Iterator["TreeNode"]:
         """Iterate over all nodes in the subtree rooted at this node in preorder."""

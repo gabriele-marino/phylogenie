@@ -10,14 +10,14 @@ from pydantic import Field
 from tqdm import tqdm
 
 import phylogenie.generators.configs as cfg
-from phylogenie.generators.factories import context
+import phylogenie.generators.factories as f
 from phylogenie.utils import Registry
 
 DATA_DIRNAME = "data"
 METADATA_FILENAME = "metadata.csv"
 
 
-class DatasetGenerator(ABC, cfg.StrictBaseModel):
+class DatasetGenerator(ABC, cfg.ForbidExtraBaseModel):
     output_dir: str = "phylogenie-outputs"
     n_samples: int | dict[str, int] = 1
     n_jobs: int = -1
@@ -33,9 +33,9 @@ class DatasetGenerator(ABC, cfg.StrictBaseModel):
         rng = default_rng(seed)
         while True:
             try:
-                ctx = context(self.context, rng)
-                metadata = self._generate_from_context(data_dir, file_id, ctx, seed)
-                return {"file_id": file_id, **ctx, **metadata}
+                context = f.context(self.context, rng)
+                metadata = self._generate_from_context(data_dir, file_id, context, seed)
+                return {"file_id": file_id, **context, **metadata}
             except TimeoutError:
                 print("Simulation timed out. Retrying with different context...")
 
@@ -51,9 +51,7 @@ class DatasetGenerator(ABC, cfg.StrictBaseModel):
             joblib.delayed(self._generate_one)(data_dir, str(i), rng.getrandbits(32))
             for i in range(n_samples)
         )
-        df = pd.DataFrame(
-            [j for j in tqdm(jobs, f"Generating {data_dir}...", n_samples)]
-        )
+        df = pd.DataFrame(j for j in tqdm(jobs, f"Generating {data_dir}...", n_samples))
         df.to_csv(os.path.join(output_dir, METADATA_FILENAME), index=False)
 
     def generate(self):
@@ -66,9 +64,9 @@ class DatasetGenerator(ABC, cfg.StrictBaseModel):
             self._generate(self.n_samples, self.output_dir, rng)
 
 
-DatasetGeneratorRegistry: Registry["DatasetGenerator"] = Registry(
+DATASET_GENERATOR_REGISTRY: Registry["DatasetGenerator"] = Registry(
     DatasetGenerator, "data_type"
 )
 DatasetGeneratorConfig = Annotated[
-    "DatasetGenerator", DatasetGeneratorRegistry.Validator
+    "DatasetGenerator", DATASET_GENERATOR_REGISTRY.validator
 ]

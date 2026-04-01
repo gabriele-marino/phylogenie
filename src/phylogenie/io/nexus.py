@@ -11,13 +11,15 @@ def _parse_translate_block(lines: Iterator[str]) -> dict[str, str]:
     translations: dict[str, str] = {}
     for line in lines:
         line = line.strip()
+        if not line:
+            continue
         match = re.match(r"(\d+)\s+['\"]?([^'\",;]+)['\"]?", line)
-        if match is None:
-            if ";" in line:
-                return translations
-            else:
-                raise ValueError("Invalid translate line. Expected '<num> <name>'.")
-        translations[match.group(1)] = match.group(2)
+        if match is not None:
+            translations[match.group(1)] = match.group(2)
+        if ";" in line:
+            return translations
+        elif match is None:
+            raise ValueError("Invalid translate line. Expected '<num> <name>'.")
     raise ValueError("Translate block not terminated with ';'.")
 
 
@@ -27,6 +29,8 @@ def _parse_trees_block(lines: Iterator[str]) -> dict[str, TreeNode]:
     translations = {}
     for line in lines:
         line = line.strip()
+        if not line:
+            continue
         if line.upper() == "TRANSLATE":
             translations = _parse_translate_block(lines)
         elif line.upper() == "END;":
@@ -45,13 +49,8 @@ def _parse_trees_block(lines: Iterator[str]) -> dict[str, TreeNode]:
 
 
 def load_nexus(nexus_file: str | Path) -> dict[str, TreeNode]:
-    """
-    Load trees from a NEXUS file.
-
-    Only the TREES block is parsed. Tree names are preserved in the returned
-    dictionary.
-    """
-    with open(nexus_file, "r") as f:
+    """Load trees from a NEXUS file."""
+    with open(nexus_file, "r", encoding="utf-8") as f:
         for line in f:
             if line.strip().upper() == "BEGIN TREES;":
                 return _parse_trees_block(f)

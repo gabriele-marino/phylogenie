@@ -1,15 +1,3 @@
-"""
-Core configuration models.
-
-This module provides foundational configuration models used as building
-blocks for generator configurations. Each configuration describes the
-inputs required by a factory function to construct a specific component.
-
-The models defined here standardize how scalar values, distributions,
-and time-varying ("skyline") parameters are represented, enabling
-flexible and composable configuration schemas across the codebase.
-"""
-
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -17,7 +5,7 @@ from pydantic import BaseModel, ConfigDict
 import phylogenie.typings as pgt
 
 
-class StrictBaseModel(BaseModel):
+class ForbidExtraBaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
@@ -38,17 +26,17 @@ OneOrManyScalars = Scalar | pgt.Many[Scalar]
 OneOrMany2DScalars = Scalar | pgt.Many2D[Scalar]
 
 
-class SkylineParameterModel(StrictBaseModel):
+class SkylineParameterModel(ForbidExtraBaseModel):
     value: ManyScalars
     change_times: ManyScalars
 
 
-class SkylineVectorModel(StrictBaseModel):
+class SkylineVectorModel(ForbidExtraBaseModel):
     value: str | pgt.Many[OneOrManyScalars]
     change_times: ManyScalars
 
 
-class SkylineMatrixModel(StrictBaseModel):
+class SkylineMatrixModel(ForbidExtraBaseModel):
     value: str | pgt.Many[OneOrMany2DScalars]
     change_times: ManyScalars
 

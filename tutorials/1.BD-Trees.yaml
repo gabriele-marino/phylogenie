@@ -127,8 +127,11 @@ tree_generator:
   # - acceptance_criterion: str (None by default)
   #   A string representing a Python boolean function that takes a TreeNode object named "tree" as input and returns True if the tree meets the acceptance criterion, and False otherwise. If provided, the simulation will continue until a tree satisfying the criterion is generated. The function can refer to any attribute or method of the Phylogenie TreeNode class (cfr. 6.FBD-Trees.yaml).
 
-  # - logs: dict[str, str] (None by default)
-  #   A dictionary where keys are names of additional log entries and values are strings representing Python expressions to compute the corresponding log values from the simulated tree, similarly to acceptance_criterion.
+  # - tree_logs: dict[str, str] (None by default)
+  #   A dictionary where keys are names of additional log entries and values are strings representing Python functions that take a TreeNode object named "tree" as input and return the value to be logged for that entry. The functions can refer to any attribute or method of the Phylogenie TreeNode class.
+
+  # - model_logs: dict[str, str] (None by default)
+  #   A dictionary where keys are names of additional log entries and values are strings representing Python functions that take a Model object named "model" as input and return the value to be logged for that entry. The functions can refer to any attribute or method of the Phylogenie Model class.
 
   # -----------------------
   # Parameterization config

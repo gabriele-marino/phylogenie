@@ -4,6 +4,7 @@ from typing import Any, TypeGuard, Union
 
 import phylogenie.typeguards as tg
 import phylogenie.typings as pgt
+from phylogenie.skyline.ops import SkylineBinaryOpsMixin
 
 SkylineParameterLike = Union[pgt.Scalar, "SkylineParameter"]
 
@@ -18,8 +19,10 @@ def is_many_skyline_parameters_like(
     return tg.is_many(x) and all(is_skyline_parameter_like(v) for v in x)
 
 
-class SkylineParameter:
-    """Represent a piecewise-constant scalar parameter over time."""
+class SkylineParameter(
+    SkylineBinaryOpsMixin[SkylineParameterLike, pgt.Scalar, "SkylineParameter"]
+):
+    """Piecewise-constant scalar parameter over time."""
 
     def __init__(
         self,
@@ -31,19 +34,24 @@ class SkylineParameter:
             value = [value]
         elif not tg.is_many_scalars(value):
             raise TypeError(
-                f"It is impossible to create a SkylineParameter from `value` {value} of type {type(value)}. Please provide a scalar or a sequence of scalars."
+                f"It is impossible to create a SkylineParameter from `value` "
+                f"{value} of type {type(value)}. Please provide a scalar or a sequence of scalars."
             )
 
         if change_times is None:
             change_times = []
         elif not tg.is_many_scalars(change_times):
             raise TypeError(
-                f"It is impossible to create a SkylineParameter from `change_times` {change_times} of type {type(change_times)}. Please provide a sequence of scalars."
+                f"It is impossible to create a SkylineParameter from `change_times` "
+                f"{change_times} of type {type(change_times)}."
+                "Please provide a sequence of scalars."
             )
 
         if len(value) != len(change_times) + 1:
             raise ValueError(
-                f"`value` must have exactly one more element than `change_times` (got value={value} of length {len(value)} and change_times={change_times} of length {len(change_times)})."
+                f"`value` must have exactly one more element than `change_times` "
+                f"(got value={value} of length {len(value)} and change_times={change_times} "
+                f"of length {len(change_times)})."
             )
         if any(t1 >= t2 for t1, t2 in zip(change_times, change_times[1:])):
             raise ValueError(
@@ -78,45 +86,22 @@ class SkylineParameter:
             raise ValueError(f"Time cannot be negative (got t={t}).")
         return self.value[bisect_right(self.change_times, t)]
 
+    @classmethod
+    def is_valid_operand(cls, other: Any) -> TypeGuard[SkylineParameterLike]:
+        return is_skyline_parameter_like(other)
+
     def _operate(
         self,
         other: SkylineParameterLike,
-        f: Callable[[pgt.Scalar, pgt.Scalar], pgt.Scalar],
+        func: Callable[[pgt.Scalar, pgt.Scalar], pgt.Scalar],
     ) -> "SkylineParameter":
-        if is_skyline_parameter_like(other):
-            other = skyline_parameter(other)
-        else:
-            return NotImplemented
+        other = skyline_parameter(other)
         change_times = sorted(set(self.change_times + other.change_times))
         value = [
-            f(self.get_value_at_time(t), other.get_value_at_time(t))
+            func(self.get_value_at_time(t), other.get_value_at_time(t))
             for t in (0, *change_times)
         ]
         return SkylineParameter(value, change_times)
-
-    def __add__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: x + y)
-
-    def __radd__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: y + x)
-
-    def __sub__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: x - y)
-
-    def __rsub__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: y - x)
-
-    def __mul__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: x * y)
-
-    def __rmul__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: y * x)
-
-    def __truediv__(self, other: SkylineParameterLike) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: x / y)
-
-    def __rtruediv__(self, other: pgt.Scalar) -> "SkylineParameter":
-        return self._operate(other, lambda x, y: y / x)
 
     def __bool__(self) -> bool:
         return any(self.value)

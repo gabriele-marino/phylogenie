@@ -1,8 +1,9 @@
 import os
+import sys
 from argparse import ArgumentParser
 from glob import glob
 from importlib import import_module
-from importlib.metadata import entry_points
+from importlib.metadata import entry_points, version
 
 from pydantic import TypeAdapter, ValidationError
 from yaml import safe_load
@@ -24,22 +25,22 @@ def _generate_from_config_file(config_file: str):
     """Load a configuration file, validate it, and run generation."""
     adapter: TypeAdapter[DatasetGenerator] = TypeAdapter(DatasetGeneratorConfig)
     try:
-        with open(config_file, "r") as f:
+        with open(config_file, "r", encoding="utf-8") as f:
             try:
                 config = safe_load(f)
             except Exception as e:
                 print(f"❌ Failed to parse {config_file}: {e}")
-                exit(-1)
+                sys.exit(-1)
 
             try:
                 generator = adapter.validate_python(config)
             except ValidationError as e:
                 print("❌ Invalid configuration:")
                 print(_format_validation_error(e))
-                exit(-1)
+                sys.exit(-1)
     except Exception as e:
         print(f"❌ Failed to load {config_file}: {e}")
-        exit(-1)
+        sys.exit(-1)
     generator.generate()
 
 
@@ -59,6 +60,12 @@ def main():
     """Entry point for the CLI."""
     parser = ArgumentParser(
         description="Generate dataset(s) starting from provided config(s)."
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {version('phylogenie')}",
+        help="Show phylogenie version and exit.",
     )
     parser.add_argument(
         "config_path",

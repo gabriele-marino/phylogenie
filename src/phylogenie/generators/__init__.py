@@ -1,27 +1,27 @@
 from phylogenie.generators.dataset import (
+    DATASET_GENERATOR_REGISTRY,
     DatasetGenerator,
     DatasetGeneratorConfig,
-    DatasetGeneratorRegistry,
 )
 from phylogenie.generators.msa import (
+    MSA_GENERATOR_REGISTRY,
     MSAGenerator,
     MSAGeneratorConfig,
-    MSAGeneratorRegistry,
 )
 from phylogenie.generators.tree import (
+    TREE_GENERATOR_REGISTRY,
     TreeGenerator,
     TreeGeneratorConfig,
-    TreeGeneratorRegistry,
 )
 
 __all__ = [
+    "DATASET_GENERATOR_REGISTRY",
     "DatasetGenerator",
     "DatasetGeneratorConfig",
-    "DatasetGeneratorRegistry",
+    "MSA_GENERATOR_REGISTRY",
     "MSAGenerator",
     "MSAGeneratorConfig",
-    "MSAGeneratorRegistry",
+    "TREE_GENERATOR_REGISTRY",
     "TreeGenerator",
     "TreeGeneratorConfig",
-    "TreeGeneratorRegistry",
 ]
