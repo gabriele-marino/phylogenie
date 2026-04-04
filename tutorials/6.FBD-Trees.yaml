@@ -59,7 +59,7 @@ tree_generator:
 
   timed_events:
     - spec: sampling
-      times: [max_time]
+      time: max_time
       firings: 1.0
       state: A|B 
       removal: True

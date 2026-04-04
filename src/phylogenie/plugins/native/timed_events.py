@@ -10,7 +10,7 @@ from phylogenie.utils import Registry
 
 
 class TimedEvent(ABC, cfg.ForbidExtraBaseModel):
-    times: cfg.ManyScalars
+    time: cfg.Scalar
     firings: cfg.Scalar
 
     @abstractmethod
@@ -19,10 +19,10 @@ class TimedEvent(ABC, cfg.ForbidExtraBaseModel):
     ) -> ts.TimedEventFunction: ...
 
     def factory(self, context: dict[str, Any], rng: Generator) -> ts.TimedEvent:
-        times = f.many_scalars(self.times, context)
+        time = f.scalar(self.time, context)
         firings = f.scalar(self.firings, context)
         return ts.TimedEvent(
-            times=times, firings=firings, fn=self.fn_factory(context, rng)
+            time=time, firings=firings, fn=self.fn_factory(context, rng)
         )
 
 

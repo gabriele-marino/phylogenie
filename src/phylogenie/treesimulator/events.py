@@ -1,15 +1,10 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Protocol
 
 from phylogenie.skyline import SkylineParameter
 from phylogenie.tree_node import TreeNode
 from phylogenie.treesimulator.model import STATE, Event, Model
-
-
-def _get_next_greater(times: Iterable[float], current_time: float) -> float | None:
-    return next((v for v in times if v > current_time), None)
 
 
 class StochasticEventFunction(Protocol):
@@ -32,7 +27,9 @@ class StochasticEvent(Event):
             self.fn.apply(model)
 
     def get_next_firing_time(self, model: Model) -> float | None:
-        next_change_time = _get_next_greater(self.rate.change_times, model.current_time)
+        next_change_time = next(
+            (t for t in self.rate.change_times if t > model.current_time), None
+        )
         rate = self.rate.get_value_at_time(model.current_time)
         propensity = rate * self.fn.reactant_combinations(model)
         if not propensity:
@@ -47,7 +44,7 @@ class StochasticEvent(Event):
 
 @dataclass
 class TimedEvent(Event):
-    times: Iterable[float]
+    time: float
     firings: float | int
     fn: TimedEventFunction
 
@@ -61,7 +58,7 @@ class TimedEvent(Event):
         self.fn.apply_firings(model, firings)
 
     def get_next_firing_time(self, model: Model) -> float | None:
-        return _get_next_greater(self.times, model.current_time)
+        return self.time if self.time > model.current_time else None
 
 
 @dataclass(kw_only=True)
